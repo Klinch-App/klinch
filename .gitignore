@@ -1,3 +1,5 @@
 .env
+.env.save
 .DS_Store
 Expenses/
+node_modules/

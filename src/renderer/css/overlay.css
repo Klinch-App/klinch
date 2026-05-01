@@ -1,0 +1,267 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-app-region: no-drag;
+}
+
+.overlay-wrap {
+  width: 100%;
+  height: 100vh;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-card {
+  flex: 1;
+  background: rgba(8, 6, 26, 0.82);
+  border: 1px solid rgba(124, 58, 255, 0.35);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(124, 58, 255, 0.2);
+  position: relative;
+}
+
+/* ── Controls bar ────────────────────────────────────────────────────────── */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: rgba(124, 58, 255, 0.07);
+  border-bottom: 1px solid rgba(124, 58, 255, 0.15);
+  -webkit-app-region: drag;
+  cursor: grab;
+  flex-shrink: 0;
+  height: 32px;
+}
+
+.controls:active { cursor: grabbing; }
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 7px rgba(34, 197, 94, 0.7);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.status-dot.active {
+  background: #7C3AFF;
+  box-shadow: 0 0 9px rgba(124, 58, 255, 0.9);
+}
+
+.controls-label {
+  font: 600 10px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  flex: 1;
+  -webkit-app-region: drag;
+}
+
+.ctrl-btn {
+  -webkit-app-region: no-drag;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.6);
+  font: 600 10px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 4px 8px;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.ctrl-btn:hover {
+  background: rgba(124, 58, 255, 0.2);
+  color: #fff;
+  border-color: rgba(124, 58, 255, 0.45);
+}
+
+.ctrl-btn.on {
+  background: rgba(124, 58, 255, 0.22);
+  color: #a78bff;
+  border-color: rgba(124, 58, 255, 0.5);
+}
+
+.ctrl-btn-dismiss {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.3);
+  padding: 4px 7px;
+}
+
+.ctrl-btn-dismiss:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  -webkit-app-region: no-drag;
+}
+
+.speed-label {
+  font: 500 10px/1 -apple-system, BlinkMacSystemFont, 'SF Mono', monospace;
+  color: rgba(255, 255, 255, 0.45);
+  min-width: 44px;
+  text-align: center;
+}
+
+.ctrl-btn-speed {
+  padding: 4px 6px;
+  font-size: 13px;
+  line-height: 1;
+  min-width: 20px;
+}
+
+/* ── Content area ────────────────────────────────────────────────────────── */
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Teleprompter */
+.teleprompter-track {
+  overflow: hidden;
+  width: 100%;
+}
+
+.teleprompter-text {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #fff;
+  text-shadow: 0 0 22px rgba(124, 58, 255, 0.5), 0 1px 4px rgba(0, 0, 0, 0.9);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  will-change: transform;
+}
+
+/* Bullets */
+.bullets {
+  list-style: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.bullet.show { opacity: 1; transform: none; }
+
+.bullet-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7C3AFF;
+  box-shadow: 0 0 8px rgba(124, 58, 255, 0.7);
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+
+/* Waiting / empty state */
+.waiting {
+  font: italic 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(255, 255, 255, 0.22);
+  width: 100%;
+  text-align: center;
+}
+
+/* Paused badge */
+.pause-badge {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: rgba(124, 58, 255, 0.18);
+  border: 1px solid rgba(124, 58, 255, 0.38);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font: 700 9px/1.8 -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: 1.2px;
+  color: #a78bff;
+  text-transform: uppercase;
+  pointer-events: none;
+  display: none;
+}
+
+.pause-badge.show { display: block; }
+
+/* ── Transcript (listening state) ───────────────────────────────────────── */
+
+.teleprompter-text.transcript-mode {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 14px;
+  text-shadow: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Thinking / generating state ────────────────────────────────────────── */
+
+.thinking-text {
+  font: italic 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(124, 58, 255, 0.75);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thinking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7C3AFF;
+  box-shadow: 0 0 9px rgba(124, 58, 255, 0.9);
+  display: inline-block;
+  flex-shrink: 0;
+  animation: klinch-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes klinch-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.6); }
+}
