@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://api.deepgram.com;">
+  <title>Klinch</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- Drag region for macOS frameless window -->
+    <div class="titlebar"></div>
+
+    <div class="app-body">
+
+      <!-- Sidebar -->
+      <nav class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-mark">K</div>
+          <span class="sidebar-logo-text">Klinch</span>
+        </div>
+
+        <div class="nav-item active" data-page="dashboard">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="1" width="6" height="6" rx="1.5"/>
+            <rect x="1" y="9" width="6" height="6" rx="1.5"/>
+            <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+          </svg>
+          Dashboard
+        </div>
+
+        <div class="nav-item" data-page="interviews">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="6.5"/>
+            <path d="M5.5 8l1.5 1.5 3-3.5"/>
+          </svg>
+          Interviews
+        </div>
+
+        <div class="nav-item" data-page="companies">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 14V5l6-3 6 3v9"/>
+            <rect x="6" y="9" width="4" height="5" rx="0.5"/>
+          </svg>
+          Companies
+        </div>
+
+        <div class="nav-item" data-page="jobs">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1.5" y="4.5" width="13" height="10" rx="1.5"/>
+            <path d="M5 4.5V3a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/>
+          </svg>
+          Jobs
+        </div>
+
+        <div class="nav-item" data-page="calendar">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/>
+            <path d="M5 1v3M11 1v3M1.5 6.5h13"/>
+          </svg>
+          Calendar
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-item" data-page="coach">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 1.5a6.5 6.5 0 1 0 0 13A6.5 6.5 0 0 0 8 1.5z"/>
+            <path d="M8 5v4l2.5 1.5"/>
+          </svg>
+          Coach
+        </div>
+
+        <div class="sidebar-spacer"></div>
+
+        <div class="nav-item" data-page="settings">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="2.5"/>
+            <path d="M8 1.5v1.3M8 13.2v1.3M1.5 8h1.3M13.2 8h1.3M3.4 3.4l.9.9M11.7 11.7l.9.9M12.6 3.4l-.9.9M4.3 11.7l-.9.9"/>
+          </svg>
+          Settings
+        </div>
+      </nav>
+
+      <!-- Main content area -->
+      <main class="main-content" id="main-content">
+
+        <!-- Dashboard page -->
+        <div id="page-dashboard">
+          <div class="dashboard-hero">
+            <div class="hero-greeting">Ready to interview</div>
+            <div class="hero-title">Welcome to Klinch</div>
+            <div class="hero-subtitle">Your AI-powered SDR interview coach. Set up your profile to get started.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+              <button class="hero-cta" style="margin-top:0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 1v12M1 7h12"/>
+                </svg>
+                Add Your First Interview
+              </button>
+              <button class="hero-cta" id="btn-launch-overlay" style="margin-top:0;background:rgba(124,58,255,0.15);border:1px solid rgba(124,58,255,0.4);">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="3" width="12" height="8" rx="2"/>
+                  <circle cx="7" cy="7" r="2"/>
+                </svg>
+                Launch Overlay
+              </button>
+            </div>
+          </div>
+
+          <div class="section-title">Overview</div>
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-label">Interviews</div>
+              <div class="card-value">0</div>
+              <div class="card-sub">No interviews yet</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Companies</div>
+              <div class="card-value">0</div>
+              <div class="card-sub">No companies added</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Coach Score</div>
+              <div class="card-value">—</div>
+              <div class="card-sub">Complete an interview to see score</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Credits</div>
+              <div class="card-value">3</div>
+              <div class="card-sub">Free trial</div>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:28px">Live Interview</div>
+          <div class="interview-panel">
+            <div class="interview-controls">
+              <div class="device-status">
+                <span class="device-dot" id="device-dot"></span>
+                <span id="device-label">Audio device: checking…</span>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button class="hero-cta" id="btn-start-interview"
+                        style="margin-top:0;padding:9px 20px;font-size:13px">
+                  Start Interview
+                </button>
+                <button class="hero-cta" id="btn-stop-interview"
+                        style="margin-top:0;padding:9px 20px;font-size:13px;
+                               background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);
+                               display:none">
+                  Stop Interview
+                </button>
+              </div>
+            </div>
+            <div class="transcript-panel">
+              <div class="transcript-label">Live Transcript</div>
+              <div class="transcript-body" id="transcript-body">Transcript will appear here once an interview starts…</div>
+            </div>
+          </div>
+
+          <div class="section-title">Upcoming Interviews</div>
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-text">No upcoming interviews</div>
+            <div class="empty-state-sub">Add an interview to see it here</div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- BlackHole explainer popup -->
+  <div id="bh-explainer" class="explainer-backdrop" style="display:none">
+    <div class="explainer-card">
+      <div class="explainer-icon">🎧</div>
+      <h2 class="explainer-title">Why does Klinch need this?</h2>
+      <p class="explainer-body">
+        When you're in an interview on Zoom or Google Meet, Klinch needs to <strong>hear what the interviewer is saying</strong> so it can give you real-time coaching.
+      </p>
+      <p class="explainer-body">
+        <strong>BlackHole</strong> is a free, open-source audio driver made by Existential Audio. It creates a virtual cable between your interview app and Klinch — think of it like a silent wire that lets Klinch listen in, without touching your mic or any other audio.
+      </p>
+      <ul class="explainer-list">
+        <li>✓ Free and open source — used by thousands of podcasters and developers</li>
+        <li>✓ Doesn't record or send your audio anywhere</li>
+        <li>✓ Won't affect music, calls, or anything outside of Klinch</li>
+        <li>✓ Can be uninstalled any time in 30 seconds</li>
+      </ul>
+      <div class="explainer-actions">
+        <button class="setup-btn-primary" id="bh-confirm-btn">Got it — take me to the download →</button>
+        <button class="setup-btn-secondary" id="bh-cancel-btn">Maybe later</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Setup modal — shown on first launch until audio is configured -->
+  <div id="setup-modal" class="setup-modal" style="display:none">
+    <div class="setup-card">
+      <div class="setup-logo">
+        <div class="setup-logo-mark">K</div>
+        <span class="setup-logo-text">Klinch</span>
+      </div>
+      <h1 class="setup-title">Let's set up audio capture</h1>
+      <p class="setup-subtitle">Klinch needs two things to hear your interviews. This is a one-time setup.</p>
+
+      <div class="setup-steps">
+
+        <!-- Step 1: BlackHole -->
+        <div class="setup-step" id="step-bh">
+          <div class="setup-step-num" id="bh-num">1</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">Install BlackHole audio driver</div>
+            <div class="setup-step-desc">BlackHole is a free virtual audio device that routes your interview audio into Klinch without affecting anything else.</div>
+            <div class="setup-step-actions">
+              <button class="setup-btn-primary" id="bh-download-btn">Download BlackHole →</button>
+              <button class="setup-btn-secondary" id="bh-check-btn" style="display:none">I've installed it — check again</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Multi-Output Device (auto-created) -->
+        <div class="setup-step" id="step-mo">
+          <div class="setup-step-num" id="mo-num">2</div>
+          <div class="setup-step-body">
+            <div class="setup-step-title">Configure audio device</div>
+            <div class="setup-step-desc" id="mo-desc">Klinch will automatically create a virtual audio device so you can hear everything normally during interviews.</div>
+            <div class="setup-step-guide" id="mo-guide" style="display:none"></div>
+            <div class="setup-step-actions">
+              <button class="setup-btn-secondary" id="mo-check-btn" style="display:none">Try again</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="setup-cta" id="setup-continue-btn" disabled>Continue to Klinch →</button>
+    </div>
+  </div>
+
+  <script src="js/stt.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/setup.js"></script>
+</body>
+</html>
