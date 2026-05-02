@@ -113,7 +113,7 @@
 
           <div class="section-title">Overview</div>
           <div class="card-grid">
-            <div class="card">
+            <div class="card" data-nav="interviews">
               <div class="card-label">Interviews</div>
               <div class="card-value" data-stat="interviews">0</div>
               <div class="card-sub">No interviews yet</div>
@@ -170,7 +170,138 @@
           </div>
         </div>
 
+        <!-- Interviews page -->
+        <div id="page-interviews" style="display:none">
+
+          <!-- Page header -->
+          <div class="iv-page-header">
+            <div class="iv-page-title">Interviews</div>
+            <button class="hero-cta add-interview-trigger" style="margin-top:0;padding:9px 18px;font-size:13px">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 1v12M1 7h12"/>
+              </svg>
+              Add Interview
+            </button>
+          </div>
+
+          <!-- Top row: stats + calendar -->
+          <div class="iv-top-row">
+
+            <!-- Left: stats + pipeline -->
+            <div class="iv-left-panel">
+              <div class="iv-stat-grid">
+                <div class="iv-stat-card">
+                  <div class="iv-stat-label">Total</div>
+                  <div class="iv-stat-value" id="iv-stat-total">0</div>
+                </div>
+                <div class="iv-stat-card">
+                  <div class="iv-stat-label">Upcoming</div>
+                  <div class="iv-stat-value" id="iv-stat-upcoming">0</div>
+                </div>
+                <div class="iv-stat-card">
+                  <div class="iv-stat-label">This Week</div>
+                  <div class="iv-stat-value" id="iv-stat-week">0</div>
+                </div>
+                <div class="iv-stat-card">
+                  <div class="iv-stat-label">Completed</div>
+                  <div class="iv-stat-value" id="iv-stat-completed">0</div>
+                </div>
+              </div>
+              <div class="iv-pipeline-section">
+                <div class="iv-pipeline-title">Pipeline</div>
+                <div id="iv-pipeline-bars"></div>
+              </div>
+            </div>
+
+            <!-- Right: mini-calendar -->
+            <div class="iv-calendar-panel">
+              <div class="iv-cal-header-row">
+                <div class="iv-cal-title">Next 4 Weeks</div>
+              </div>
+              <div id="iv-calendar-grid"></div>
+            </div>
+
+          </div>
+
+          <!-- Filter bar -->
+          <div class="iv-filter-bar">
+            <div class="iv-toggle">
+              <button class="iv-toggle-btn active" data-view="upcoming">Upcoming</button>
+              <button class="iv-toggle-btn" data-view="completed">Completed</button>
+            </div>
+            <select id="iv-filter-company" class="iv-filter-select">
+              <option value="">All Companies</option>
+            </select>
+            <select id="iv-filter-stage" class="iv-filter-select">
+              <option value="">All Stages</option>
+              <option value="Recruiter Screen">Recruiter Screen</option>
+              <option value="Hiring Manager">Hiring Manager</option>
+              <option value="Executive">Executive</option>
+              <option value="Peer">Peer</option>
+              <option value="Culture Fit">Culture Fit</option>
+              <option value="Technical Screen">Technical Screen</option>
+              <option value="Case Study / Presentation">Case Study / Presentation</option>
+              <option value="Panel">Panel</option>
+              <option value="Group">Group</option>
+              <option value="Final Round">Final Round</option>
+            </select>
+            <select id="iv-filter-format" class="iv-filter-select">
+              <option value="">All Formats</option>
+              <option value="Virtual">Virtual</option>
+              <option value="Phone Screen">Phone Screen</option>
+            </select>
+            <div class="iv-search-wrap">
+              <svg class="iv-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="6.5" cy="6.5" r="5"/>
+                <path d="M10.5 10.5l3.5 3.5"/>
+              </svg>
+              <input id="iv-search" class="iv-search" type="search" placeholder="Search company or interviewer…">
+            </div>
+          </div>
+
+          <!-- Interview feed -->
+          <div id="iv-feed" class="interview-cards-grid"></div>
+          <div id="iv-empty" class="empty-state" style="display:none">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">No interviews found</div>
+            <div class="empty-state-sub">Add your first interview or adjust your filters</div>
+          </div>
+
+        </div>
+
       </main>
+    </div>
+  </div>
+
+  <!-- Interview detail modal -->
+  <div id="iv-detail-modal" class="iv-detail-modal">
+    <div class="ivd-card">
+      <button class="ivd-close" id="ivd-close">✕</button>
+      <div class="ivd-header">
+        <div class="ivd-logo-wrap" id="ivd-logo-wrap"></div>
+        <div class="ivd-company-info">
+          <div class="ivd-company-name" id="ivd-company"></div>
+          <div class="ivd-role-title" id="ivd-role"></div>
+        </div>
+      </div>
+      <div class="ivd-meta">
+        <span id="ivd-stage"></span>
+        <span id="ivd-format"></span>
+        <span id="ivd-status"></span>
+      </div>
+      <div class="ivd-date-row">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;color:var(--text-muted)">
+          <rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/>
+          <path d="M5 1v3M11 1v3M1.5 6.5h13"/>
+        </svg>
+        <span id="ivd-date"></span>
+      </div>
+      <div class="ivd-section-label">Interviewer(s)</div>
+      <div id="ivd-interviewers"></div>
+      <div id="ivd-summary-wrap" style="margin-top:18px;display:none">
+        <div class="ivd-section-label">Role Summary</div>
+        <div class="ivd-summary" id="ivd-summary"></div>
+      </div>
     </div>
   </div>
 
@@ -387,5 +518,6 @@
   <script src="js/app.js"></script>
   <script src="js/setup.js"></script>
   <script src="js/add-interview.js"></script>
+  <script src="js/pages/interviews.js"></script>
 </body>
 </html>

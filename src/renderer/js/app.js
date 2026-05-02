@@ -1,9 +1,27 @@
 // ── Sidebar navigation ────────────────────────────────────────────────────────
-document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (navItem) navItem.classList.add('active');
+
+  // Show the matching page div, hide all others
+  document.querySelectorAll('[id^="page-"]').forEach(p => {
+    p.style.display = p.id === `page-${page}` ? '' : 'none';
   });
+
+  if (page === 'interviews' && window.InterviewsPage) {
+    window.InterviewsPage.refresh();
+  }
+}
+window.navigateTo = navigateTo;
+
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => navigateTo(item.dataset.page));
+});
+
+// ── Dashboard stat card click-throughs ────────────────────────────────────────
+document.querySelectorAll('.card[data-nav]').forEach(card => {
+  card.addEventListener('click', () => navigateTo(card.dataset.nav));
 });
 
 // ── Overlay launch button ─────────────────────────────────────────────────────
