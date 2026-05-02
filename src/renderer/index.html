@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://api.deepgram.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' wss://api.deepgram.com; img-src 'self' data: https:;">
   <title>Klinch</title>
   <link rel="stylesheet" href="css/app.css">
 </head>
@@ -95,7 +95,7 @@
             <div class="hero-title">Welcome to Klinch</div>
             <div class="hero-subtitle">Your AI-powered SDR interview coach. Set up your profile to get started.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
-              <button class="hero-cta" style="margin-top:0">
+              <button class="hero-cta add-interview-trigger" style="margin-top:0">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M7 1v12M1 7h12"/>
                 </svg>
@@ -115,12 +115,12 @@
           <div class="card-grid">
             <div class="card">
               <div class="card-label">Interviews</div>
-              <div class="card-value">0</div>
+              <div class="card-value" data-stat="interviews">0</div>
               <div class="card-sub">No interviews yet</div>
             </div>
             <div class="card">
               <div class="card-label">Companies</div>
-              <div class="card-value">0</div>
+              <div class="card-value" data-stat="companies">0</div>
               <div class="card-sub">No companies added</div>
             </div>
             <div class="card">
@@ -161,8 +161,9 @@
             </div>
           </div>
 
-          <div class="section-title">Upcoming Interviews</div>
-          <div class="empty-state">
+          <div class="section-title" style="margin-top:28px">Upcoming Interviews</div>
+          <div id="upcoming-interviews-grid" class="interview-cards-grid"></div>
+          <div id="upcoming-empty-state" class="empty-state">
             <div class="empty-state-icon">📅</div>
             <div class="empty-state-text">No upcoming interviews</div>
             <div class="empty-state-sub">Add an interview to see it here</div>
@@ -241,8 +242,141 @@
     </div>
   </div>
 
+  <!-- Add Interview Modal -->
+  <div id="add-interview-modal" class="ai-modal-backdrop" style="display:none">
+    <div class="ai-modal-card">
+
+      <div class="ai-modal-header">
+        <button class="ai-back-btn" id="ai-back">← Back</button>
+        <div class="ai-step-dots">
+          <span class="ai-step-dot" data-step="1"></span>
+          <span class="ai-step-dot" data-step="2"></span>
+          <span class="ai-step-dot" data-step="3"></span>
+          <span class="ai-step-dot" data-step="4"></span>
+        </div>
+        <button class="ai-close-btn" id="ai-close">✕</button>
+      </div>
+
+      <div class="ai-modal-body" style="position:relative">
+
+        <!-- Step 1: Company -->
+        <div id="ai-step-1">
+          <h2 class="ai-step-title">Which company is this for?</h2>
+          <p class="ai-step-sub">Search for the company to pull in their logo and info.</p>
+          <div class="ai-search-wrap">
+            <input type="text" id="ai-company-input" class="ai-modal-input" placeholder="Type company name…" autocomplete="off">
+            <div id="ai-company-results" class="ai-search-dropdown" style="display:none"></div>
+          </div>
+          <div id="ai-selected-company" class="ai-selected-entity" style="display:none">
+            <div class="ai-entity-logo">
+              <img id="ai-sel-logo-img" src="" alt="">
+              <div id="ai-sel-logo-fb" class="ai-logo-fallback" style="display:none"></div>
+            </div>
+            <div class="ai-entity-main">
+              <div class="ai-entity-name" id="ai-sel-company-name"></div>
+              <div class="ai-entity-sub" id="ai-sel-company-domain"></div>
+            </div>
+            <button class="ai-entity-change" id="ai-company-change">Change</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Interviewer -->
+        <div id="ai-step-2" style="display:none">
+          <h2 class="ai-step-title">Who is interviewing you?</h2>
+          <p class="ai-step-sub">Enter their name and title. Paste a LinkedIn URL to auto-fill their photo.</p>
+          <div id="ai-manual-fields">
+            <div class="ai-field-group">
+              <label class="ai-field-label">Name</label>
+              <input type="text" id="ai-manual-name" class="ai-modal-input" placeholder="Jane Smith">
+            </div>
+            <div class="ai-field-group">
+              <label class="ai-field-label">Title</label>
+              <input type="text" id="ai-manual-title" class="ai-modal-input" placeholder="Senior Recruiter">
+            </div>
+          </div>
+          <div class="ai-field-group" style="margin-top:6px">
+            <label class="ai-field-label">LinkedIn URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional — auto-fills photo)</span></label>
+            <div style="display:flex;gap:10px">
+              <input type="url" id="ai-interviewer-url" class="ai-modal-input" placeholder="https://linkedin.com/in/their-name" style="flex:1">
+              <button class="ai-btn-secondary" id="ai-fetch-btn">Fetch</button>
+            </div>
+            <div id="ai-fetch-status" class="ai-field-status"></div>
+          </div>
+          <div id="ai-selected-interviewer" class="ai-selected-entity" style="display:none">
+            <div class="ai-entity-photo">
+              <img id="ai-interviewer-photo" src="" alt="">
+              <div id="ai-interviewer-photo-fb" class="ai-entity-photo-fb" style="display:none"></div>
+            </div>
+            <div class="ai-entity-main">
+              <div class="ai-entity-name" id="ai-interviewer-name"></div>
+              <div class="ai-entity-sub" id="ai-interviewer-title"></div>
+            </div>
+            <button class="ai-entity-change" id="ai-interviewer-change">Edit</button>
+          </div>
+          <div id="ai-manual-form" style="display:none"></div>
+        </div>
+
+        <!-- Step 3: Job Description -->
+        <div id="ai-step-3" style="display:none">
+          <h2 class="ai-step-title">What's the role?</h2>
+          <p class="ai-step-sub">Copy and paste the full job description from LinkedIn or wherever you found the role.</p>
+          <textarea id="ai-jd-textarea" class="ai-modal-textarea" placeholder="Paste the full job description here…"></textarea>
+          <div id="ai-jd-structured" class="ai-jd-structured" style="display:none">
+            <div class="ai-jd-role-title" id="ai-jd-role-title"></div>
+            <div class="ai-jd-section">
+              <div class="ai-jd-section-label">Key Responsibilities</div>
+              <ul id="ai-jd-resp" class="ai-jd-list"></ul>
+            </div>
+            <div class="ai-jd-section">
+              <div class="ai-jd-section-label">Must-Have</div>
+              <ul id="ai-jd-must" class="ai-jd-list"></ul>
+            </div>
+            <div class="ai-jd-section" id="ai-jd-nice-section">
+              <div class="ai-jd-section-label">Nice-to-Have</div>
+              <ul id="ai-jd-nice" class="ai-jd-list"></ul>
+            </div>
+            <button class="ai-entity-change" id="ai-jd-edit" style="margin-top:10px">Edit JD</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Details -->
+        <div id="ai-step-4" style="display:none">
+          <h2 class="ai-step-title">When is the interview?</h2>
+          <p class="ai-step-sub">Set the date, time, and stage for this interview.</p>
+          <div class="ai-field-row">
+            <div class="ai-field-group" style="flex:1">
+              <label class="ai-field-label">Date</label>
+              <input type="date" id="ai-date" class="ai-modal-input">
+            </div>
+            <div class="ai-field-group" style="flex:1">
+              <label class="ai-field-label">Time</label>
+              <input type="time" id="ai-time" class="ai-modal-input">
+            </div>
+          </div>
+          <div class="ai-field-group">
+            <label class="ai-field-label">Interview Stage</label>
+            <select id="ai-stage" class="ai-modal-select">
+              <option value="Recruiter Screen">Recruiter Screen</option>
+              <option value="Hiring Manager">Hiring Manager</option>
+              <option value="Panel">Panel</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="ai-toast" class="ai-toast" style="display:none"></div>
+      </div>
+
+      <div class="ai-modal-footer">
+        <span id="ai-step-label" class="ai-step-label">Step 1 of 4 — Company</span>
+        <button class="ai-btn-primary" id="ai-next">Continue →</button>
+      </div>
+
+    </div>
+  </div>
+
   <script src="js/stt.js"></script>
   <script src="js/app.js"></script>
   <script src="js/setup.js"></script>
+  <script src="js/add-interview.js"></script>
 </body>
 </html>
