@@ -534,7 +534,8 @@ function renderInterviews() {
       : '';
 
     return `
-      <div class="icard">
+      <div class="icard" data-id="${iv.id}">
+        <button class="icard-delete-btn" aria-label="Delete interview">✕</button>
         <div class="icard-top">
           <div class="icard-logo-wrap">${logoHtml}</div>
           <div class="icard-company-info">
@@ -571,5 +572,88 @@ document.querySelectorAll('.add-interview-trigger').forEach(btn => {
 });
 
 renderInterviews();
+
+// ── Delete interview flow ─────────────────────────────────────────────────────
+
+(function setupDeleteFlow() {
+  // Inject modal once
+  const backdrop = document.createElement('div');
+  backdrop.className = 'delete-confirm-backdrop';
+  backdrop.id = 'delete-confirm-backdrop';
+  backdrop.innerHTML = `
+    <div class="delete-confirm-card">
+      <p class="delete-confirm-title" id="delete-confirm-msg">
+        Are you sure you want to delete the interview with <strong id="delete-confirm-company"></strong>?
+      </p>
+      <div class="delete-confirm-field">
+        <label class="delete-confirm-label" for="delete-reason-select">Reason for deleting (optional)</label>
+        <select class="delete-confirm-reason" id="delete-reason-select">
+          <option value="">Select a reason…</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Withdrew application">Withdrew application</option>
+          <option value="Offer declined">Offer declined</option>
+          <option value="Rescheduling">Rescheduling</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="delete-confirm-actions">
+        <button class="btn-delete-confirm" id="btn-delete-confirm">Delete</button>
+        <button class="btn-keep" id="btn-keep-interview">Keep it</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  let pendingId = null;
+
+  function openDeleteModal(id, companyName) {
+    pendingId = id;
+    document.getElementById('delete-confirm-company').textContent = companyName;
+    document.getElementById('delete-reason-select').value = '';
+    backdrop.classList.add('visible');
+  }
+
+  function closeDeleteModal() {
+    backdrop.classList.remove('visible');
+    pendingId = null;
+  }
+
+  function confirmDelete() {
+    if (!pendingId) return;
+    const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const updated = all.filter(iv => iv.id !== pendingId);
+    localStorage.setItem('klinch_interviews', JSON.stringify(updated));
+    closeDeleteModal();
+    renderInterviews();
+  }
+
+  // Event delegation on grid for delete button clicks
+  const grid = _el('upcoming-interviews-grid');
+  if (grid) {
+    grid.addEventListener('click', e => {
+      const btn = e.target.closest('.icard-delete-btn');
+      if (!btn) return;
+      e.stopPropagation();
+      const card = btn.closest('.icard');
+      const id = card?.dataset.id;
+      if (!id) return;
+      const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+      const iv = all.find(x => x.id === id);
+      openDeleteModal(id, iv?.company?.name || 'this company');
+    });
+  }
+
+  document.getElementById('btn-delete-confirm').addEventListener('click', confirmDelete);
+  document.getElementById('btn-keep-interview').addEventListener('click', closeDeleteModal);
+
+  // Close on backdrop click
+  backdrop.addEventListener('click', e => {
+    if (e.target === backdrop) closeDeleteModal();
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && backdrop.classList.contains('visible')) closeDeleteModal();
+  });
+})();
 
 window.AddInterview = { open: openModal };
