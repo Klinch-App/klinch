@@ -43,6 +43,7 @@ function openModal() {
   _state.format = 'Virtual';
 
   // Reset step 4
+  _el('ai-time').value  = '';
   _el('ai-stage').value = 'Recruiter Screen';
   _el('ai-stage-other').style.display = 'none';
   _el('ai-stage-other').value = '';
@@ -423,6 +424,24 @@ function _setDefaultDate() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     dateEl.value = d.toISOString().split('T')[0];
+  }
+  _initTimeSelect();
+}
+
+function _initTimeSelect() {
+  const sel = _el('ai-time');
+  if (sel.options.length > 1) return; // already populated
+  for (let h = 0; h < 24; h++) {
+    for (const m of [0, 30]) {
+      const val   = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const ampm  = h < 12 ? 'AM' : 'PM';
+      const hour  = h % 12 || 12;
+      const label = `${hour}:${m === 0 ? '00' : '30'} ${ampm}`;
+      const opt   = document.createElement('option');
+      opt.value   = val;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    }
   }
 }
 
