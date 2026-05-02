@@ -1,64 +1,37 @@
-const { ipcMain, app } = require('electron');
-const path = require('path');
-const fs = require('fs');
+const { ipcMain } = require('electron');
 const Anthropic = require('@anthropic-ai/sdk');
-
-let _cacheFile = null;
-
-function cacheFile() {
-  if (!_cacheFile) _cacheFile = path.join(app.getPath('userData'), 'proxycurl-cache.json');
-  return _cacheFile;
-}
-
-function loadCache() {
-  try { return JSON.parse(fs.readFileSync(cacheFile(), 'utf8')); } catch { return {}; }
-}
-
-function saveCache(cache) {
-  try { fs.writeFileSync(cacheFile(), JSON.stringify(cache, null, 2)); } catch (err) {
-    console.error('proxycurl cache write failed:', err.message);
-  }
-}
 
 async function apolloSearch(query) {
   const res = await fetch(`https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error(`Clearbit ${res.status}`);
+  if (!res.ok) throw new Error(`Company search ${res.status}`);
   const companies = await res.json();
-  // Normalise to the shape the renderer expects
+  const logoKey = process.env.LOGO_DEV_API_KEY || '';
   const organizations = companies.slice(0, 8).map(c => ({
     id: c.domain,
     name: c.name,
     primary_domain: c.domain,
-    logo_url: c.domain ? `https://www.google.com/s2/favicons?domain=${c.domain}&sz=64` : null,
+    logo_url: c.domain ? `https://img.logo.dev/${c.domain}?token=${logoKey}` : null,
   }));
   return { organizations };
 }
 
 async function proxycurlFetch(linkedinUrl) {
-  const cache = loadCache();
-  const key = linkedinUrl.toLowerCase().replace(/\/+$/, '');
-  if (cache[key]) return { data: cache[key], cached: true };
+  const apiKey = process.env.PROXYCURL_API_KEY;
+  if (!apiKey) throw new Error('No Proxycurl API key configured');
 
-  // NinjaPear API (formerly Proxycurl) — requires a key from nubela.co
-  const apiKey = process.env.PROXYCURL_API_KEY || process.env.NINJAPEAR_API_KEY;
-  if (!apiKey) throw new Error('No NinjaPear/Proxycurl API key configured');
-
-  const url = `https://nubela.co/api/v1/employee/profile?linkedin_url=${encodeURIComponent(linkedinUrl)}`;
+  const url = `https://nubela.co/proxycurl/api/v2/linkedin?linkedin_profile_url=${encodeURIComponent(linkedinUrl)}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
-  if (!res.ok) throw new Error(`NinjaPear ${res.status}`);
+  if (!res.ok) throw new Error(`Proxycurl ${res.status}`);
   const data = await res.json();
 
-  // NinjaPear response shape: { first_name, last_name, headline, photo_url, ... }
-  // Normalise to the fields our UI expects
   const normalised = {
-    first_name: data.first_name || data.firstName || '',
-    last_name:  data.last_name  || data.lastName  || '',
-    occupation: data.headline   || data.title      || data.occupation || '',
-    profile_pic_url: data.photo_url || data.profile_pic_url || data.photoUrl || null,
+    first_name: data.first_name || '',
+    last_name:  data.last_name  || '',
+    occupation: data.occupation || '',
+    profile_pic_url: data.profile_pic_url || null,
   };
 
-  if (normalised.first_name) { cache[key] = normalised; saveCache(cache); }
-  return { data: normalised, cached: false };
+  return { data: normalised };
 }
 
 async function processJd(jdText) {

@@ -11,7 +11,7 @@ const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
   launchBtn.addEventListener('click', async () => {
     await window.klinch.invoke('overlay:launch');
-    launchBtn.textContent = 'Overlay Active';
+    launchBtn.textContent = 'Klinch Ear Active';
     launchBtn.style.opacity = '0.6';
     launchBtn.style.cursor = 'default';
   });
@@ -22,7 +22,7 @@ if (launchBtn) {
         <rect x="1" y="3" width="12" height="8" rx="2"/>
         <circle cx="7" cy="7" r="2"/>
       </svg>
-      Launch Overlay`;
+      Launch Klinch Ear`;
     launchBtn.style.opacity = '';
     launchBtn.style.cursor = '';
   });
@@ -52,13 +52,13 @@ function renderTranscript(interimText = null, interimSpeaker = null) {
     lines.push(`${prefix}: ${interimText}…`);
   }
 
-  transcriptBody.textContent = lines.join('\n') || 'Transcript will appear here once an interview starts…';
+  transcriptBody.textContent = lines.join('\n') || 'Transcript will appear here once Klinch Ear is active…';
 }
 
 if (btnStart) {
   btnStart.addEventListener('click', async () => {
     btnStart.disabled = true;
-    btnStart.textContent = 'Starting…';
+    btnStart.textContent = 'Starting Klinch Ear…';
 
     await window.klinch.invoke('overlay:launch');
 
@@ -68,7 +68,7 @@ if (btnStart) {
       btnStop.style.display  = '';
     }
     btnStart.disabled = false;
-    btnStart.textContent = 'Start Interview';
+    btnStart.textContent = 'Start Klinch Ear';
   });
 }
 

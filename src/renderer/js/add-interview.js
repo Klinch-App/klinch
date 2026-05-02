@@ -1,10 +1,15 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 
+function _emptyInterviewer() {
+  return { name: '', title: '', photo_url: null, linkedin_url: null };
+}
+
 const _state = {
   step: 1,
-  company: null,      // { name, logo_url, domain, apollo_id }
-  interviewer: null,  // { name, title, photo_url, linkedin_url }
-  jd: null,           // { raw, structured }
+  company: null,       // { name, logo_url, domain, apollo_id }
+  interviewers: [_emptyInterviewer()],
+  jd: null,            // { raw, structured }
+  format: 'Virtual',   // 'Virtual' | 'Phone Screen'
 };
 
 let _searchTimeout = null;
@@ -24,7 +29,6 @@ const _stepPanels   = [1, 2, 3, 4].map(n => document.getElementById(`ai-step-${n
 function openModal() {
   _state.step = 1;
   _state.company = null;
-  _state.interviewer = null;
   _state.jd = null;
 
   // Reset step 1
@@ -35,14 +39,13 @@ function openModal() {
   _el('ai-selected-company').style.display = 'none';
 
   // Reset step 2
-  _el('ai-manual-name').value = '';
-  _el('ai-manual-title').value = '';
-  _el('ai-interviewer-url').value = '';
-  _el('ai-fetch-btn').disabled = false;
-  _el('ai-fetch-btn').textContent = 'Fetch';
-  _el('ai-fetch-status').textContent = '';
-  _el('ai-fetch-status').className = 'ai-field-status';
-  _el('ai-selected-interviewer').style.display = 'none';
+  _state.interviewers = [_emptyInterviewer()];
+  _state.format = 'Virtual';
+
+  // Reset step 4
+  _el('ai-stage').value = 'Recruiter Screen';
+  _el('ai-stage-other').style.display = 'none';
+  _el('ai-stage-other').value = '';
 
   // Reset step 3
   _el('ai-jd-textarea').value = '';
@@ -98,7 +101,8 @@ function _goToStep(n) {
   _stepLabel.textContent = `Step ${n} of 4 — ${STEP_LABELS[n - 1]}`;
   _updateNextBtn();
 
-  if (n === 4) _setDefaultDate();
+  if (n === 2) _renderInterviewerList();
+  if (n === 4) { _setDefaultDate(); _syncFormatToggle(); }
 }
 
 function _updateNextBtn() {
@@ -121,15 +125,7 @@ _nextBtn.addEventListener('click', async () => {
     if (!_state.company) return _showError('Please select a company first.');
     _goToStep(2);
   } else if (n === 2) {
-    const name = _el('ai-manual-name').value.trim();
-    if (!name) return _showError('Please enter the interviewer\'s name.');
-    // Merge manual fields with any photo fetched via LinkedIn
-    _state.interviewer = {
-      name,
-      title: _el('ai-manual-title').value.trim(),
-      photo_url: _state.interviewer?.photo_url || null,
-      linkedin_url: _el('ai-interviewer-url').value.trim() || null,
-    };
+    if (!_state.interviewers[0]?.name.trim()) return _showError('Please enter the interviewer\'s name.');
     _goToStep(3);
   } else if (n === 3) {
     if (_state.jd) { _goToStep(4); return; }
@@ -237,66 +233,125 @@ _el('ai-company-change').addEventListener('click', () => {
   inp.focus();
 });
 
-// ── Step 2: Interviewer ───────────────────────────────────────────────────────
+// ── Step 2: Interviewers ──────────────────────────────────────────────────────
 
-_el('ai-fetch-btn').addEventListener('click', _fetchInterviewer);
-
-async function _fetchInterviewer() {
-  const url = _el('ai-interviewer-url').value.trim();
-  if (!url) return _showError('Please enter a LinkedIn URL.');
-
-  const btn = _el('ai-fetch-btn');
-  const status = _el('ai-fetch-status');
-  btn.disabled = true;
-  btn.textContent = 'Fetching…';
-  status.textContent = 'Looking up profile…';
-  status.className = 'ai-field-status ai-status-loading';
-
-  const res = await window.klinch.invoke('proxycurl:fetch', { linkedin_url: url });
-
-  btn.disabled = false;
-  btn.textContent = 'Fetch';
-
-  if (!res.ok || !res.data?.first_name) {
-    status.textContent = 'Could not fetch LinkedIn profile — continue with name and title below.';
-    status.className = 'ai-field-status ai-status-error';
-    return;
-  }
-
-  const p = res.data;
-  // Store the photo; name/title come from the manual fields the user already filled
-  _state.interviewer = { ..._state.interviewer, photo_url: p.profile_pic_url || null };
-
-  status.textContent = 'Profile photo fetched ✓';
-  status.className = 'ai-field-status ai-status-ok';
-
-  // Pre-fill name/title from LinkedIn if fields are still empty
-  if (!_el('ai-manual-name').value.trim()) {
-    _el('ai-manual-name').value = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-  }
-  if (!_el('ai-manual-title').value.trim()) {
-    _el('ai-manual-title').value = p.occupation || p.headline || '';
-  }
-
-  const photo = _el('ai-interviewer-photo');
-  if (p.profile_pic_url) {
-    photo.src = p.profile_pic_url;
-    photo.style.display = '';
-    _el('ai-interviewer-photo-fb').style.display = 'none';
-    photo.addEventListener('error', () => {
-      photo.style.display = 'none';
-      _el('ai-interviewer-photo-fb').style.display = 'flex';
-    }, { once: true });
-    _el('ai-selected-interviewer').style.display = '';
-  }
+function _esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-_el('ai-interviewer-change').addEventListener('click', () => {
-  _state.interviewer = null;
-  _el('ai-selected-interviewer').style.display = 'none';
-  _el('ai-fetch-status').textContent = '';
-  _el('ai-fetch-status').className = 'ai-field-status';
+function _renderInterviewerList() {
+  const list = _el('ai-interviewers-list');
+  list.innerHTML = _state.interviewers.map((iv, idx) => `
+    <div class="ai-interviewer-entry" data-idx="${idx}">
+      ${_state.interviewers.length > 1 ? `
+        <div class="ai-iw-entry-header">
+          <span class="ai-iw-entry-label">Interviewer ${idx + 1}</span>
+          ${idx > 0 ? `<button class="ai-iw-remove-btn" data-idx="${idx}">Remove</button>` : ''}
+        </div>` : ''}
+      <div class="ai-field-group">
+        <label class="ai-field-label">Name</label>
+        <input type="text" class="ai-modal-input ai-iw-name" data-idx="${idx}" placeholder="Jane Smith" value="${_esc(iv.name)}">
+      </div>
+      <div class="ai-field-group">
+        <label class="ai-field-label">Title</label>
+        <input type="text" class="ai-modal-input ai-iw-title" data-idx="${idx}" placeholder="Senior Recruiter" value="${_esc(iv.title)}">
+      </div>
+      <div class="ai-field-group">
+        <label class="ai-field-label">LinkedIn URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span></label>
+        <div style="display:flex;gap:10px">
+          <input type="url" class="ai-modal-input ai-iw-url" data-idx="${idx}" placeholder="https://linkedin.com/in/…" value="${_esc(iv.linkedin_url || '')}" style="flex:1">
+          <button class="ai-btn-secondary ai-iw-fetch" data-idx="${idx}">Fetch</button>
+        </div>
+        <div class="ai-field-status ai-iw-status" data-idx="${idx}"></div>
+      </div>
+      ${iv.photo_url ? `
+        <div class="ai-iw-photo-badge">
+          <img src="${_esc(iv.photo_url)}" class="ai-iw-photo-thumb" alt="">
+          Photo fetched ✓
+        </div>` : ''}
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.ai-iw-name').forEach(inp => {
+    inp.addEventListener('input', e => { _state.interviewers[+e.target.dataset.idx].name = e.target.value; });
+  });
+  list.querySelectorAll('.ai-iw-title').forEach(inp => {
+    inp.addEventListener('input', e => { _state.interviewers[+e.target.dataset.idx].title = e.target.value; });
+  });
+  list.querySelectorAll('.ai-iw-url').forEach(inp => {
+    inp.addEventListener('input', e => { _state.interviewers[+e.target.dataset.idx].linkedin_url = e.target.value; });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') _fetchLinkedIn(+e.target.dataset.idx); });
+  });
+  list.querySelectorAll('.ai-iw-fetch').forEach(btn => {
+    btn.addEventListener('click', e => _fetchLinkedIn(+e.currentTarget.dataset.idx));
+  });
+  list.querySelectorAll('.ai-iw-remove-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      _state.interviewers.splice(+e.currentTarget.dataset.idx, 1);
+      _renderInterviewerList();
+    });
+  });
+}
+
+_el('ai-add-interviewer-btn').addEventListener('click', () => {
+  _state.interviewers.push(_emptyInterviewer());
+  _renderInterviewerList();
+  // Focus the new entry's name field
+  const entries = _el('ai-interviewers-list').querySelectorAll('.ai-iw-name');
+  if (entries.length) entries[entries.length - 1].focus();
 });
+
+async function _fetchLinkedIn(idx) {
+  const iv = _state.interviewers[idx];
+  const url = (iv.linkedin_url || '').trim();
+  if (!url) return _showError('Please enter a LinkedIn URL.');
+
+  const entry = _el('ai-interviewers-list').querySelector(`.ai-interviewer-entry[data-idx="${idx}"]`);
+  const fetchBtn = entry.querySelector('.ai-iw-fetch');
+  const statusEl = entry.querySelector('.ai-iw-status');
+
+  fetchBtn.disabled = true;
+  fetchBtn.textContent = 'Fetching…';
+  statusEl.textContent = 'Looking up profile…';
+  statusEl.className = 'ai-field-status ai-status-loading';
+
+  const cacheKey = 'klinch_li_' + url.toLowerCase().replace(/\/+$/, '');
+  let p = null;
+  try { const c = localStorage.getItem(cacheKey); if (c) p = JSON.parse(c); } catch { /* ignore */ }
+
+  if (!p) {
+    const res = await window.klinch.invoke('proxycurl:fetch', { linkedin_url: url });
+    fetchBtn.disabled = false;
+    fetchBtn.textContent = 'Fetch';
+    if (!res.ok || !res.data?.first_name) {
+      statusEl.textContent = 'Could not fetch profile — enter name and title manually.';
+      statusEl.className = 'ai-field-status ai-status-error';
+      return;
+    }
+    p = res.data;
+    try { localStorage.setItem(cacheKey, JSON.stringify(p)); } catch { /* full */ }
+  } else {
+    fetchBtn.disabled = false;
+    fetchBtn.textContent = 'Fetch';
+  }
+
+  _state.interviewers[idx].photo_url = p.profile_pic_url || null;
+  statusEl.textContent = 'Profile photo fetched ✓';
+  statusEl.className = 'ai-field-status ai-status-ok';
+
+  const nameInp = entry.querySelector('.ai-iw-name');
+  const titleInp = entry.querySelector('.ai-iw-title');
+  if (!nameInp.value.trim()) {
+    nameInp.value = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+    _state.interviewers[idx].name = nameInp.value;
+  }
+  if (!titleInp.value.trim()) {
+    titleInp.value = p.occupation || '';
+    _state.interviewers[idx].title = titleInp.value;
+  }
+
+  if (p.profile_pic_url) _renderInterviewerList();
+}
 
 // ── Step 3: Job Description ───────────────────────────────────────────────────
 
@@ -340,7 +395,25 @@ _el('ai-jd-edit').addEventListener('click', () => {
   _updateNextBtn();
 });
 
-// ── Step 4: Date default ──────────────────────────────────────────────────────
+// ── Step 4: Format toggle + Date ─────────────────────────────────────────────
+
+_el('ai-stage').addEventListener('change', () => {
+  _el('ai-stage-other').style.display = _el('ai-stage').value === 'Other' ? '' : 'none';
+  if (_el('ai-stage').value === 'Other') _el('ai-stage-other').focus();
+});
+
+document.querySelectorAll('.ai-format-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    _state.format = btn.dataset.value;
+    _syncFormatToggle();
+  });
+});
+
+function _syncFormatToggle() {
+  document.querySelectorAll('.ai-format-opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === _state.format);
+  });
+}
 
 function _setDefaultDate() {
   const dateEl = _el('ai-date');
@@ -356,16 +429,21 @@ function _setDefaultDate() {
 async function _completeInterview() {
   const date = _el('ai-date').value;
   const time = _el('ai-time').value;
-  const stage = _el('ai-stage').value;
+  const stageRaw = _el('ai-stage').value;
+  const stage = stageRaw === 'Other'
+    ? (_el('ai-stage-other').value.trim() || 'Other')
+    : stageRaw;
 
   if (!date) return _showError('Please select a date.');
+  if (stageRaw === 'Other' && !_el('ai-stage-other').value.trim()) return _showError('Please enter a stage name.');
 
   const record = {
     id: crypto.randomUUID(),
     company: _state.company,
-    interviewer: _state.interviewer,
+    interviewers: _state.interviewers.filter(iv => iv.name.trim()),
     jd: _state.jd,
     stage,
+    format: _state.format,
     scheduled_at: time ? `${date}T${time}` : date,
     status: 'pending',
     created_at: new Date().toISOString(),
@@ -419,18 +497,41 @@ function renderInterviews() {
          <div class="icard-logo-fb" data-fb-id="clogo-${iv.id}" style="display:none">${(iv.company?.name || '?')[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb">${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
 
-    const photoHtml = iv.interviewer?.photo_url
-      ? `<img src="${iv.interviewer.photo_url}" class="icard-photo" alt="" data-fb="cphoto-${iv.id}">
-         <div class="icard-photo-fb" data-fb-id="cphoto-${iv.id}" style="display:none">${(iv.interviewer?.name || '?')[0].toUpperCase()}</div>`
-      : iv.interviewer
-        ? `<div class="icard-photo-fb">${(iv.interviewer?.name || '?')[0].toUpperCase()}</div>`
-        : '';
+    // Support both old single-interviewer records and new array records
+    const interviewers = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
+
+    const photoStackHtml = interviewers.slice(0, 3).map((iw, i) => iw.photo_url
+      ? `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
+           <img src="${iw.photo_url}" class="icard-photo" alt="" data-fb="cphoto-${iv.id}-${i}">
+           <div class="icard-photo-fb" data-fb-id="cphoto-${iv.id}-${i}" style="display:none">${(iw.name || '?')[0].toUpperCase()}</div>
+         </div>`
+      : `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
+           <div class="icard-photo-fb">${(iw.name || '?')[0].toUpperCase()}</div>
+         </div>`
+    ).join('');
+
+    const primaryName = interviewers[0]?.name || '';
+    const extraCount = interviewers.length - 1;
+    const interviewerNameHtml = extraCount > 0
+      ? `${primaryName} <span style="color:var(--text-muted)">+${extraCount}</span>`
+      : primaryName;
 
     const stageBadgeClass = {
-      'Recruiter Screen': 'badge-recruiter',
-      'Hiring Manager': 'badge-hiring',
-      'Panel': 'badge-panel',
+      'Recruiter Screen':          'badge-recruiter',
+      'Hiring Manager':            'badge-hiring',
+      'Executive':                 'badge-executive',
+      'Peer':                      'badge-peer',
+      'Culture Fit':               'badge-culture',
+      'Technical Screen':          'badge-technical',
+      'Case Study / Presentation': 'badge-case-study',
+      'Panel':                     'badge-panel',
+      'Group':                     'badge-group',
+      'Final Round':               'badge-final',
     }[iv.stage] || 'badge-recruiter';
+
+    const formatBadgeHtml = iv.format
+      ? `<span class="icard-format-badge ${iv.format === 'Virtual' ? 'badge-virtual' : 'badge-phone'}">${iv.format}</span>`
+      : '';
 
     return `
       <div class="icard">
@@ -440,14 +541,17 @@ function renderInterviews() {
             <div class="icard-company-name">${iv.company?.name || 'Unknown Company'}</div>
             <div class="icard-role">${iv.jd?.structured?.role_title || 'Role TBD'}</div>
           </div>
-          <span class="icard-stage-badge ${stageBadgeClass}">${iv.stage}</span>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+            <span class="icard-stage-badge ${stageBadgeClass}">${iv.stage}</span>
+            ${formatBadgeHtml}
+          </div>
         </div>
-        ${iv.interviewer ? `
+        ${interviewers.length ? `
         <div class="icard-interviewer">
-          <div class="icard-photo-wrap">${photoHtml}</div>
+          <div class="icard-photo-stack">${photoStackHtml}</div>
           <div class="icard-interviewer-info">
-            <div class="icard-interviewer-name">${iv.interviewer.name}</div>
-            <div class="icard-interviewer-title">${iv.interviewer.title || ''}</div>
+            <div class="icard-interviewer-name">${interviewerNameHtml}</div>
+            <div class="icard-interviewer-title">${interviewers[0]?.title || ''}</div>
           </div>
         </div>` : ''}
         <div class="icard-footer">

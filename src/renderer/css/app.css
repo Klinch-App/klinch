@@ -723,6 +723,103 @@ html, body {
 .ai-btn-secondary:hover { border-color: var(--border); color: var(--text-primary); }
 .ai-btn-secondary:disabled { opacity: 0.4; cursor: default; }
 
+/* Format toggle */
+.ai-format-toggle {
+  display: flex;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+}
+.ai-format-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.ai-format-opt:hover:not(.active) { background: var(--bg-hover); color: var(--text-primary); }
+.ai-format-opt.active { background: var(--primary); color: #fff; }
+
+/* Multi-interviewer entry */
+.ai-interviewer-entry {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ai-interviewer-entry:first-child { padding-top: 0; }
+.ai-interviewer-entry:last-child  { border-bottom: none; padding-bottom: 0; }
+.ai-iw-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ai-iw-entry-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+.ai-iw-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  transition: color 0.15s, background 0.15s;
+}
+.ai-iw-remove-btn:hover { color: #F87171; background: rgba(239,68,68,0.1); }
+.ai-iw-photo-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #4ADE80;
+}
+.ai-iw-photo-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.ai-btn-add-interviewer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 9px 16px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.ai-btn-add-interviewer:hover {
+  border-color: var(--primary);
+  color: var(--primary-light);
+  background: rgba(124,58,255,0.05);
+}
+
 /* Company / interviewer search */
 .ai-search-wrap {
   position: relative;
@@ -779,15 +876,11 @@ html, body {
 }
 
 .ai-search-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
+  margin-top: 4px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  z-index: 10;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -1123,9 +1216,16 @@ html, body {
   border-radius: 4px;
   flex-shrink: 0;
 }
-.badge-recruiter { background: rgba(124,58,255,0.15); color: var(--primary-light); }
-.badge-hiring    { background: rgba(220,60,160,0.15); color: #E879C0; }
-.badge-panel     { background: rgba(245,158,11,0.15); color: #FBBF24; }
+.badge-recruiter  { background: rgba(124,58,255,0.15); color: var(--primary-light); }
+.badge-hiring     { background: rgba(220,60,160,0.15); color: #E879C0; }
+.badge-panel      { background: rgba(245,158,11,0.15); color: #FBBF24; }
+.badge-executive  { background: rgba(6,182,212,0.15);  color: #22D3EE; }
+.badge-peer       { background: rgba(20,184,166,0.15); color: #2DD4BF; }
+.badge-culture    { background: rgba(34,197,94,0.15);  color: #4ADE80; }
+.badge-technical  { background: rgba(249,115,22,0.15); color: #FB923C; }
+.badge-case-study { background: rgba(99,102,241,0.15); color: #818CF8; }
+.badge-group      { background: rgba(245,158,11,0.15); color: #FBBF24; }
+.badge-final      { background: rgba(239,68,68,0.15);  color: #F87171; }
 
 .icard-interviewer {
   display: flex;
@@ -1156,6 +1256,28 @@ html, body {
   color: var(--primary-light);
   background: rgba(124, 58, 255, 0.15);
 }
+
+.icard-photo-stack {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.icard-photo-stack .icard-photo-wrap {
+  margin-left: -8px;
+  border: 2px solid var(--bg-surface);
+}
+.icard-photo-stack .icard-photo-wrap:first-child { margin-left: 0; }
+
+.icard-format-badge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.badge-virtual { background: rgba(34,197,94,0.1);  color: #4ADE80; }
+.badge-phone   { background: rgba(59,130,246,0.1); color: #60A5FA; }
 
 .icard-interviewer-info { min-width: 0; }
 .icard-interviewer-name {
