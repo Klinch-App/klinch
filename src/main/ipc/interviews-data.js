@@ -1,4 +1,4 @@
-const { ipcMain } = require('electron');
+const { ipcMain, shell } = require('electron');
 const Anthropic = require('@anthropic-ai/sdk');
 
 async function apolloSearch(query) {
@@ -55,19 +55,46 @@ async function apolloPeople(domain) {
     headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
     body: JSON.stringify({ organization_domains: [domain], page: 1, per_page: 6 }),
   });
-  if (!res.ok) throw new Error(`Apollo people ${res.status}`);
   const data = await res.json();
+  if (!res.ok) {
+    console.log('[people] ERROR', res.status, JSON.stringify(data).slice(0, 300));
+    throw new Error(`Apollo people ${res.status}`);
+  }
+  console.log('[people] domain:', domain, '| count:', data.people?.length);
   return data.people || [];
 }
 
 async function newsFetch(query) {
-  const apiKey = process.env.NEWS_API_KEY;
-  if (!apiKey) throw new Error('No News API key');
-  const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent('"' + query + '"')}&language=en&sortBy=publishedAt&pageSize=6&apiKey=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`NewsAPI ${res.status}`);
-  const data = await res.json();
-  return data.articles || [];
+  // Strip legal suffixes so "Salesforce, Inc." searches as "Salesforce"
+  const cleaned = query.replace(/[,.]?\s*(Inc\.?|Corp\.?|LLC|Ltd\.?|Limited|Co\.?|PLC|plc)\s*$/i, '').trim();
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent('"' + cleaned + '"')}&hl=en-US&gl=US&ceid=US:en`;
+  const res = await fetch(rssUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  if (!res.ok) throw new Error(`Google News RSS ${res.status}`);
+  const xml = await res.text();
+
+  const items = [];
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    if (items.length >= 6) break;
+    const b = m[1];
+    const rawTitle = (b.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/) || b.match(/<title>([\s\S]*?)<\/title>/))?.[1] || '';
+    // Google News titles end with " - Source Name"; strip that suffix
+    const title = rawTitle.replace(/\s+[-–]\s+[^-–\n]+$/, '').trim();
+    const link  = b.match(/<link>([\s\S]*?)<\/link>/)?.[1]?.trim() || '';
+    const pub   = b.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() || '';
+    const src   = b.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1]?.trim() || '';
+    items.push({
+      title: _decodeEntities(title),
+      url:   link,
+      publishedAt: pub ? new Date(pub).toISOString() : null,
+      source: { name: _decodeEntities(src) },
+      description: '',
+    });
+  }
+  return items;
+}
+
+function _decodeEntities(s) {
+  return (s || '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
 }
 
 async function processJd(jdText) {
@@ -109,14 +136,15 @@ function init() {
     catch (err) { return { ok: false, error: err.message }; }
   });
 
-  ipcMain.handle('apollo:people', async (_e, { domain }) => {
-    try { return { ok: true, data: await apolloPeople(domain) }; }
-    catch (err) { return { ok: false, error: err.message }; }
-  });
-
   ipcMain.handle('news:fetch', async (_e, { query }) => {
     try { return { ok: true, data: await newsFetch(query) }; }
     catch (err) { return { ok: false, error: err.message }; }
+  });
+
+  ipcMain.handle('shell:open-external', async (_e, { url }) => {
+    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+      await shell.openExternal(url);
+    }
   });
 }
 

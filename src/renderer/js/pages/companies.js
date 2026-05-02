@@ -146,7 +146,12 @@ window.CompaniesPage = (() => {
          <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="co-hero-logo" style="display:none">${(company.name || '?')[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb co-hero-logo-fb">${(company.name || '?')[0].toUpperCase()}</div>`;
     _el('co-hero-name').textContent   = company.name;
-    _el('co-hero-domain').textContent = company.domain || '';
+    const domainEl = _el('co-hero-domain');
+    domainEl.textContent = company.domain || '';
+    domainEl.onclick = company.domain
+      ? () => window.klinch.invoke('shell:open-external', { url: 'https://' + company.domain })
+      : null;
+    domainEl.style.cursor = company.domain ? 'pointer' : '';
     if (window.wireImgFallbacks) window.wireImgFallbacks(logoEl);
 
     // Static sections
@@ -171,7 +176,7 @@ window.CompaniesPage = (() => {
     _el('co-sec-news-body').innerHTML     = _skeleton(3);
 
     _loadSectionOverview(key, company.domain, cache);
-    _loadSectionPeople(key, company.domain, cache);
+    _loadSectionPeople(key, company.name, cache);
     _loadSectionNews(key, company.name, cache);
   }
 
@@ -358,49 +363,25 @@ window.CompaniesPage = (() => {
     `;
   }
 
-  // ── Lazy: Key People (Apollo) ─────────────────────────────────────────────────
+  // ── Lazy: Key People (LinkedIn CTA) ──────────────────────────────────────────
 
-  async function _loadSectionPeople(key, domain, cache) {
+  function _loadSectionPeople(key, companyName, cache) {
     const el = _el('co-sec-people-body');
+    // Use LinkedIn company people page if we have it from org enrich; otherwise search
+    const liBase = cache.org?.linkedin_url?.replace(/\/$/, '');
+    const href   = liBase
+      ? `${liBase}/people/`
+      : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent('"' + companyName + '"')}&origin=GLOBAL_SEARCH_HEADER`;
 
-    if (cache.people) { _renderPeople(cache.people); return; }
-    if (!domain)      { el.innerHTML = '<div class="co-empty-hint">No domain available</div>'; return; }
+    el.innerHTML = `
+      <div class="co-li-cta">
+        <div class="co-li-cta-label">Search hiring managers &amp; decision-makers at ${_esc(companyName)}</div>
+        <div class="co-li-cta-btn" data-url="${_esc(href)}">View on LinkedIn →</div>
+      </div>`;
 
-    const res = await window.klinch.invoke('apollo:people', { domain });
-
-    if (!res.ok) { el.innerHTML = '<div class="co-empty-hint">Could not load contacts</div>'; return; }
-
-    const people = res.data || [];
-    if (!people.length) { el.innerHTML = '<div class="co-empty-hint">No contacts found</div>'; return; }
-
-    const c = _getCache();
-    if (!c[key]) c[key] = {};
-    c[key].people = people;
-    _saveCache(c);
-
-    _renderPeople(people);
-  }
-
-  function _renderPeople(people) {
-    const el = _el('co-sec-people-body');
-    el.innerHTML = people.slice(0, 6).map((p, i) => {
-      const name  = p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || '?';
-      const photo = p.photo_url
-        ? `<img src="${_esc(p.photo_url)}" class="icard-photo" alt="" data-fb="co-person-${i}">
-           <div class="icard-photo-fb" data-fb-id="co-person-${i}" style="display:none">${name[0].toUpperCase()}</div>`
-        : `<div class="icard-photo-fb">${name[0].toUpperCase()}</div>`;
-
-      return `
-        <div class="co-iw-row">
-          <div class="icard-photo-wrap">${photo}</div>
-          <div class="co-iw-info">
-            <div class="co-iw-name">${_esc(name)}</div>
-            ${p.title ? `<div class="co-iw-title">${_esc(p.title)}</div>` : ''}
-          </div>
-        </div>`;
-    }).join('');
-
-    if (window.wireImgFallbacks) window.wireImgFallbacks(el);
+    el.querySelector('[data-url]').addEventListener('click', () => {
+      window.klinch.invoke('shell:open-external', { url: href });
+    });
   }
 
   // ── Lazy: Recent News (NewsAPI) ───────────────────────────────────────────────
@@ -408,7 +389,7 @@ window.CompaniesPage = (() => {
   async function _loadSectionNews(key, companyName, cache) {
     const el = _el('co-sec-news-body');
 
-    if (cache.news && cache.news_cached_at && cache.news_exact_match) {
+    if (cache.news && cache.news_cached_at && cache.news_search_v2) {
       const age = Date.now() - new Date(cache.news_cached_at).getTime();
       if (age < 86400000) { _renderNews(cache.news); return; }
     }
@@ -424,7 +405,7 @@ window.CompaniesPage = (() => {
     if (!c[key]) c[key] = {};
     c[key].news             = articles;
     c[key].news_cached_at   = new Date().toISOString();
-    c[key].news_exact_match = true;
+    c[key].news_search_v2   = true;
     _saveCache(c);
 
     _renderNews(articles);
@@ -436,13 +417,20 @@ window.CompaniesPage = (() => {
       const date = a.publishedAt
         ? new Date(a.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
+      const url = a.url || '';
       return `
-        <div class="co-news-item">
+        <div class="co-news-item${url ? ' co-news-link' : ''}" ${url ? `data-url="${_esc(url)}"` : ''}>
           <div class="co-news-title">${_esc(a.title || '')}</div>
           <div class="co-news-meta">${_esc(a.source?.name || '')}${date ? ' · ' + _esc(date) : ''}</div>
           ${a.description ? `<div class="co-news-desc">${_esc(a.description)}</div>` : ''}
         </div>`;
     }).join('');
+
+    el.querySelectorAll('.co-news-item[data-url]').forEach(item => {
+      item.addEventListener('click', () => {
+        window.klinch.invoke('shell:open-external', { url: item.dataset.url });
+      });
+    });
   }
 
   // ── Add Interviewer Modal ─────────────────────────────────────────────────────
