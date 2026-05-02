@@ -1,8 +1,9 @@
 require('dotenv').config();
 const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session } = require('electron');
 const path = require('path');
-const interview = require('./src/main/ipc/interview');
-const audio    = require('./src/main/ipc/audio');
+const interview      = require('./src/main/ipc/interview');
+const audio          = require('./src/main/ipc/audio');
+const interviewsData = require('./src/main/ipc/interviews-data');
 
 nativeTheme.themeSource = 'dark';
 
@@ -172,6 +173,7 @@ app.whenReady().then(() => {
   createMainWindow();
 
   audio.init();
+  interviewsData.init();
 
   // Wire interview pipeline IPC (Claude, STT relay, session management)
   interview.init({

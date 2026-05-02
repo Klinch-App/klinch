@@ -7,7 +7,7 @@
 
 ## Current Status
 **Phase:** Phase 1 — Core MVP
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-02
 **Build started:** 2026-05-01
 
 ---
@@ -63,21 +63,37 @@
   - Step 2: Auto-creates Klinch Multi-Output device in background — no Audio MIDI Setup required
   - Completion persisted in localStorage; re-checks on each launch in case devices were removed
   - Full new-user setup requires only one manual action: install the BlackHole pkg
+- [x] Add Interview flow — 4-step modal (`src/renderer/js/add-interview.js`)
+  - **Step 1 — Company Search:** Clearbit autocomplete API (free, no key required); logos via Google favicon service (`google.com/s2/favicons`); letter-initial fallback when no logo; dropdown results with click-to-select; "Change" to reset
+  - **Step 2 — Interviewer:** Name + title as primary fields; optional LinkedIn URL field attempts photo fetch via NinjaPear (formerly Proxycurl); fetch silently adds photo and pre-fills name/title if empty; fully functional without LinkedIn
+  - **Step 3 — Job Description:** Textarea for raw JD paste; "Process with AI" calls Claude (`claude-sonnet-4-6`) to return structured JSON; renders role title, responsibilities, must-haves, nice-to-haves; "Edit JD" to go back
+  - **Step 4 — Details:** Date picker, time picker, stage selector (Recruiter Screen / Hiring Manager / Panel)
+  - On completion: record saved to `localStorage`; interview card appears on dashboard immediately
+  - Dashboard interview cards show: company logo, company name, role title, stage badge (colour-coded), interviewer name + initials, date + time, "Upcoming" status badge
+  - Stat cards (Interviews count, Companies count) update live after each addition
+- [x] `src/main/ipc/interviews-data.js` — main-process IPC handlers
+  - `apollo:search` → Clearbit company autocomplete, normalised response shape
+  - `proxycurl:fetch` → NinjaPear (formerly Proxycurl) LinkedIn profile enrichment; file-based cache in userData (`proxycurl-cache.json`) so same profile is never fetched twice
+  - `claude:process-jd` → Claude API call; parses raw JD text into structured JSON
+- [x] CSP updated: `img-src 'self' data: https:` allows external logos and profile photos
+- [x] Inline `onerror` attributes replaced with JS event listeners throughout (inline handlers blocked by `script-src 'self'`); custom `_wireImgFallbacks()` utility handles img load errors across search results and interview cards
 
 ---
 
 ## What's In Progress
 Nothing currently in progress.
 
+
+
 ---
 
 ## What's Next (Priority Order)
 1. Post-interview feedback UI (backend already built — needs results screen)
 2. Basic onboarding / priming session flow (resume, LinkedIn, 10 priming questions → candidate brain)
-3. Supabase auth + user profile
-4. Per-interview setup (company, interviewer, job description, stage)
-5. Stripe billing integration
-6. Interview consent acknowledgement screen (NDA + recording consent)
+3. Supabase auth + user profile (migrate interviews from localStorage to Supabase)
+4. Stripe billing integration
+5. Interview consent acknowledgement screen (NDA + recording consent)
+6. LinkedIn interviewer enrichment — NinjaPear requires active company website to sign up; alternatives: PDL (peopledatalabs.com, 1k free/month) or RapidAPI LinkedIn scrapers
 
 ---
 
@@ -91,6 +107,11 @@ Nothing currently in progress.
 - **Dual getUserMedia streams over Aggregate Device:** Capturing BlackHole and mic as separate streams gives perfect speaker attribution for post-interview feedback without needing to create an Aggregate Device in Audio MIDI Setup.
 - **Bundled `audio-devices` binary over SwitchAudioSource:** SwitchAudioSource requires Homebrew (too much friction for end users). The open-source `audio-devices` Swift CLI was compiled for ARM64 and bundled in `bin/` — no install step needed.
 - **`macos-audio-devices` npm package rejected:** Ships an Intel-only binary that fails on Apple Silicon without Rosetta.
+- **Clearbit free autocomplete over Apollo paid search:** Apollo's `mixed_companies/search` endpoint requires a paid plan. Clearbit's `autocomplete.clearbit.com/v1/companies/suggest` is free, no auth, instant results. Logos served from `google.com/s2/favicons` (always returns something, no rate limit).
+- **Manual entry as primary interviewer path:** NinjaPear (formerly Proxycurl) requires an active company website to sign up — not accessible while tryklinch.com is pre-launch. LinkedIn URL is optional and only adds a profile photo if the fetch succeeds. Manual name + title always works.
+- **localStorage over Supabase for interviews:** Supabase not yet integrated. localStorage gives instant persistence for MVP without blocking the UI build. Migration to Supabase is the next major step.
+- **All external API calls in main process, not renderer:** Apollo, Proxycurl/NinjaPear, and Claude calls all live in `src/main/ipc/interviews-data.js` and are invoked via IPC. Keeps API keys out of the renderer and respects `connect-src 'self'` CSP.
+- **JS event listeners over inline `onerror` attributes:** `script-src 'self'` in the CSP blocks inline event handlers (`onerror="..."`). All image fallback logic uses `addEventListener('error', ...)` in JS instead.
 
 ---
 
@@ -111,8 +132,8 @@ Nothing currently in progress.
 ## API Keys Status
 - [x] ANTHROPIC_API_KEY
 - [x] DEEPGRAM_API_KEY
-- [ ] PROXYCURL_API_KEY
-- [ ] APOLLO_API_KEY
+- [ ] PROXYCURL_API_KEY — Proxycurl is sunset; migrated to NinjaPear (nubela.co); key in .env is invalid; NinjaPear requires active company website to sign up
+- [ ] APOLLO_API_KEY — key in .env is valid but `mixed_companies/search` requires paid plan; switched to Clearbit free autocomplete instead
 - [ ] NEWS_API_KEY
 - [ ] STRIPE_SECRET_KEY
 - [ ] STRIPE_WEBHOOK_SECRET
@@ -133,6 +154,7 @@ Nothing currently in progress.
 | 2026-05-01 | Transparent always-on-top overlay: teleprompter + bullet modes, global hotkeys, click-through, IPC wiring | ~45 min |
 | 2026-05-01 | Core interview pipeline: BlackHole STT, VAD, Claude streaming, overlay states, interview panel, .env fix | ~60 min |
 | 2026-05-01 | Replaced webkitSpeechRecognition with Deepgram WebSocket; dual-stream capture (BlackHole + mic); speaker-labelled transcripts; post-interview feedback infrastructure; automated audio device management with bundled ARM64 binary; first-launch onboarding flow with BlackHole explainer | ~3 hrs |
+| 2026-05-02 | Add Interview 4-step modal: company search (Clearbit), interviewer (NinjaPear/manual), JD processing (Claude), date/stage details; interview cards on dashboard; main-process IPC for all external APIs; CSP fixes; img fallback via JS event listeners | ~2 hrs |
 
 ---
 
