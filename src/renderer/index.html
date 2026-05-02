@@ -106,7 +106,7 @@
                   <rect x="1" y="3" width="12" height="8" rx="2"/>
                   <circle cx="7" cy="7" r="2"/>
                 </svg>
-                Launch Overlay
+                Launch Klinch Ear
               </button>
             </div>
           </div>
@@ -135,7 +135,7 @@
             </div>
           </div>
 
-          <div class="section-title" style="margin-top:28px">Live Interview</div>
+          <div class="section-title" style="margin-top:28px">Klinch Ear</div>
           <div class="interview-panel">
             <div class="interview-controls">
               <div class="device-status">
@@ -145,19 +145,19 @@
               <div style="display:flex;gap:10px">
                 <button class="hero-cta" id="btn-start-interview"
                         style="margin-top:0;padding:9px 20px;font-size:13px">
-                  Start Interview
+                  Start Klinch Ear
                 </button>
                 <button class="hero-cta" id="btn-stop-interview"
                         style="margin-top:0;padding:9px 20px;font-size:13px;
                                background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);
                                display:none">
-                  Stop Interview
+                  Stop Klinch Ear
                 </button>
               </div>
             </div>
             <div class="transcript-panel">
               <div class="transcript-label">Live Transcript</div>
-              <div class="transcript-body" id="transcript-body">Transcript will appear here once an interview starts…</div>
+              <div class="transcript-body" id="transcript-body">Transcript will appear here once Klinch Ear is active…</div>
             </div>
           </div>
 
@@ -283,37 +283,14 @@
         <!-- Step 2: Interviewer -->
         <div id="ai-step-2" style="display:none">
           <h2 class="ai-step-title">Who is interviewing you?</h2>
-          <p class="ai-step-sub">Enter their name and title. Paste a LinkedIn URL to auto-fill their photo.</p>
-          <div id="ai-manual-fields">
-            <div class="ai-field-group">
-              <label class="ai-field-label">Name</label>
-              <input type="text" id="ai-manual-name" class="ai-modal-input" placeholder="Jane Smith">
-            </div>
-            <div class="ai-field-group">
-              <label class="ai-field-label">Title</label>
-              <input type="text" id="ai-manual-title" class="ai-modal-input" placeholder="Senior Recruiter">
-            </div>
-          </div>
-          <div class="ai-field-group" style="margin-top:6px">
-            <label class="ai-field-label">LinkedIn URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional — auto-fills photo)</span></label>
-            <div style="display:flex;gap:10px">
-              <input type="url" id="ai-interviewer-url" class="ai-modal-input" placeholder="https://linkedin.com/in/their-name" style="flex:1">
-              <button class="ai-btn-secondary" id="ai-fetch-btn">Fetch</button>
-            </div>
-            <div id="ai-fetch-status" class="ai-field-status"></div>
-          </div>
-          <div id="ai-selected-interviewer" class="ai-selected-entity" style="display:none">
-            <div class="ai-entity-photo">
-              <img id="ai-interviewer-photo" src="" alt="">
-              <div id="ai-interviewer-photo-fb" class="ai-entity-photo-fb" style="display:none"></div>
-            </div>
-            <div class="ai-entity-main">
-              <div class="ai-entity-name" id="ai-interviewer-name"></div>
-              <div class="ai-entity-sub" id="ai-interviewer-title"></div>
-            </div>
-            <button class="ai-entity-change" id="ai-interviewer-change">Edit</button>
-          </div>
-          <div id="ai-manual-form" style="display:none"></div>
+          <p class="ai-step-sub">Add each interviewer's name and title. You can add multiple.</p>
+          <div id="ai-interviewers-list"></div>
+          <button class="ai-btn-add-interviewer" id="ai-add-interviewer-btn">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M6 1v10M1 6h10"/>
+            </svg>
+            Add Interviewer
+          </button>
         </div>
 
         <!-- Step 3: Job Description -->
@@ -358,8 +335,36 @@
             <select id="ai-stage" class="ai-modal-select">
               <option value="Recruiter Screen">Recruiter Screen</option>
               <option value="Hiring Manager">Hiring Manager</option>
+              <option value="Executive">Executive</option>
+              <option value="Peer">Peer</option>
+              <option value="Culture Fit">Culture Fit</option>
+              <option value="Technical Screen">Technical Screen</option>
+              <option value="Case Study / Presentation">Case Study / Presentation</option>
               <option value="Panel">Panel</option>
+              <option value="Group">Group</option>
+              <option value="Final Round">Final Round</option>
+              <option value="Other">Other…</option>
             </select>
+            <input type="text" id="ai-stage-other" class="ai-modal-input" placeholder="Enter stage name…" style="display:none;margin-top:8px">
+          </div>
+          <div class="ai-field-group">
+            <label class="ai-field-label">Interview Format</label>
+            <div class="ai-format-toggle" id="ai-format-toggle">
+              <button class="ai-format-opt active" data-value="Virtual">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="1" y="3.5" width="9" height="7" rx="1.5"/>
+                  <path d="M10 6.5l3-1.5v4l-3-1.5z"/>
+                </svg>
+                Virtual
+              </button>
+              <button class="ai-format-opt" data-value="Phone Screen">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3.5" y="1" width="7" height="12" rx="1.5"/>
+                  <circle cx="7" cy="11" r="0.75" fill="currentColor" stroke="none"/>
+                </svg>
+                Phone Screen
+              </button>
+            </div>
           </div>
         </div>
 
