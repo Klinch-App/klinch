@@ -408,7 +408,7 @@ window.CompaniesPage = (() => {
   async function _loadSectionNews(key, companyName, cache) {
     const el = _el('co-sec-news-body');
 
-    if (cache.news && cache.news_cached_at) {
+    if (cache.news && cache.news_cached_at && cache.news_exact_match) {
       const age = Date.now() - new Date(cache.news_cached_at).getTime();
       if (age < 86400000) { _renderNews(cache.news); return; }
     }
@@ -422,8 +422,9 @@ window.CompaniesPage = (() => {
 
     const c = _getCache();
     if (!c[key]) c[key] = {};
-    c[key].news           = articles;
-    c[key].news_cached_at = new Date().toISOString();
+    c[key].news             = articles;
+    c[key].news_cached_at   = new Date().toISOString();
+    c[key].news_exact_match = true;
     _saveCache(c);
 
     _renderNews(articles);
