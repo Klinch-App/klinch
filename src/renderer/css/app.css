@@ -549,6 +549,26 @@ html, body {
   color: var(--text-primary);
 }
 
+.setup-btn-info {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.setup-btn-info:hover {
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
 .setup-cta {
   width: 100%;
   padding: 13px;

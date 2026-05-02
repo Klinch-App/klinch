@@ -6,7 +6,8 @@ const path = require('path');
 const BIN = path.join(__dirname, '../../../bin/audio-devices');
 
 const MULTI_OUTPUT_NAME = 'Klinch Multi-Output';
-let previousOutputId = null;
+let previousOutputId   = null;
+let previousOutputName = null;
 
 function run(args) {
   return new Promise((resolve, reject) => {
@@ -76,9 +77,9 @@ function init() {
       const device = JSON.parse(result);
       console.log('[audio] created:', device.name, 'id:', device.id);
 
-      // Set it as the system output immediately
-      await run(`output set ${device.id}`);
-      console.log('[audio] set as default output');
+      // Do NOT set as system output here — output is switched only at interview
+      // start via audio:switch-for-interview, so the system default is never
+      // permanently changed by the setup flow.
 
       return { ok: true, name: device.name };
     } catch (err) {
@@ -96,12 +97,29 @@ function init() {
   ipcMain.handle('audio:switch-for-interview', async () => {
     try {
       const current = JSON.parse(await run('output get --json'));
-      previousOutputId = current.id;
-      console.log('[audio] saving output:', current.name);
-
       const devices = await listDevices();
       const mo = findMultiOutput(devices);
       if (!mo) return { ok: false, error: 'Klinch Multi-Output not found' };
+
+      // If already on Multi-Output (stuck from a previous session that didn't
+      // restore), save real speakers as the restore target instead of saving
+      // Multi-Output, which would make the restore circular.
+      if (current.name === MULTI_OUTPUT_NAME) {
+        const speakers = findSpeakers(devices);
+        if (speakers) {
+          previousOutputId   = speakers.id;
+          previousOutputName = speakers.name;
+          console.log('[audio] already on Multi-Output — saving speakers as restore target:', speakers.name);
+        } else {
+          console.warn('[audio] already on Multi-Output and no speakers found — cannot save restore target');
+          previousOutputId   = null;
+          previousOutputName = null;
+        }
+      } else {
+        previousOutputId   = current.id;
+        previousOutputName = current.name;
+        console.log('[audio] saving output:', current.name);
+      }
 
       await run(`output set ${mo.id}`);
       console.log('[audio] switched to:', mo.name);
@@ -117,8 +135,19 @@ function init() {
     if (!previousOutputId) return { ok: true };
     try {
       await run(`output set ${previousOutputId}`);
-      console.log('[audio] restored output id:', previousOutputId);
-      previousOutputId = null;
+      console.log('[audio] restored output to:', previousOutputName, '(id:', previousOutputId + ')');
+      previousOutputId   = null;
+      previousOutputName = null;
+
+      // Verify we actually left Multi-Output — if still stuck, force speakers
+      const after = JSON.parse(await run('output get --json'));
+      if (after.name === MULTI_OUTPUT_NAME) {
+        console.warn('[audio] still on Multi-Output after restore — forcing speakers');
+        const devices  = await listDevices();
+        const speakers = findSpeakers(devices);
+        if (speakers) await run(`output set ${speakers.id}`);
+      }
+
       return { ok: true };
     } catch (err) {
       console.warn('[audio] restore failed:', err.message);
@@ -127,4 +156,26 @@ function init() {
   });
 }
 
-module.exports = { init };
+// Called by main.js before-quit to ensure output is restored even on force-quit
+async function forceRestoreOutput() {
+  if (!previousOutputId) return;
+  try {
+    await run(`output set ${previousOutputId}`);
+    console.log('[audio] force-restored output on quit:', previousOutputName);
+    previousOutputId   = null;
+    previousOutputName = null;
+  } catch (err) {
+    console.warn('[audio] force-restore failed:', err.message);
+    // Last resort: enumerate devices and set speakers directly
+    try {
+      const devices  = await listDevices();
+      const speakers = findSpeakers(devices);
+      if (speakers) {
+        await run(`output set ${speakers.id}`);
+        console.log('[audio] last-resort restore to speakers:', speakers.name);
+      }
+    } catch (_) {}
+  }
+}
+
+module.exports = { init, forceRestoreOutput };

@@ -180,16 +180,19 @@
       <div class="explainer-icon">🎧</div>
       <h2 class="explainer-title">Why does Klinch need this?</h2>
       <p class="explainer-body">
-        When you're in an interview on Zoom or Google Meet, Klinch needs to <strong>hear what the interviewer is saying</strong> so it can give you real-time coaching.
+        Imagine your computer's audio as water flowing through a pipe. Normally, sound from Zoom goes straight to your speakers — and that's it. Klinch can't hear it.
       </p>
       <p class="explainer-body">
-        <strong>BlackHole</strong> is a free, open-source audio driver made by Existential Audio. It creates a virtual cable between your interview app and Klinch — think of it like a silent wire that lets Klinch listen in, without touching your mic or any other audio.
+        <strong>BlackHole</strong> is a free tool that splits that pipe. Sound still flows to your speakers exactly as normal — but now a silent copy also flows to Klinch, so it can transcribe the interviewer and coach you in real time.
+      </p>
+      <p class="explainer-body">
+        Your microphone, your music, other apps — none of that is touched. BlackHole only runs when Klinch is actively in a session.
       </p>
       <ul class="explainer-list">
-        <li>✓ Free and open source — used by thousands of podcasters and developers</li>
-        <li>✓ Doesn't record or send your audio anywhere</li>
-        <li>✓ Won't affect music, calls, or anything outside of Klinch</li>
-        <li>✓ Can be uninstalled any time in 30 seconds</li>
+        <li>✓ 100% free and open source</li>
+        <li>✓ Your audio never leaves your Mac</li>
+        <li>✓ Nothing else on your computer is affected</li>
+        <li>✓ Uninstalls in 30 seconds if you ever want to remove it</li>
       </ul>
       <div class="explainer-actions">
         <button class="setup-btn-primary" id="bh-confirm-btn">Got it — take me to the download →</button>
@@ -218,6 +221,7 @@
             <div class="setup-step-desc">BlackHole is a free virtual audio device that routes your interview audio into Klinch without affecting anything else.</div>
             <div class="setup-step-actions">
               <button class="setup-btn-primary" id="bh-download-btn">Download BlackHole →</button>
+              <button class="setup-btn-info" id="bh-info-btn" title="Why do I need this?">ⓘ</button>
               <button class="setup-btn-secondary" id="bh-check-btn" style="display:none">I've installed it — check again</button>
             </div>
           </div>
@@ -228,7 +232,7 @@
           <div class="setup-step-num" id="mo-num">2</div>
           <div class="setup-step-body">
             <div class="setup-step-title">Configure audio device</div>
-            <div class="setup-step-desc" id="mo-desc">Klinch will automatically create a virtual audio device so you can hear everything normally during interviews.</div>
+            <div class="setup-step-desc" id="mo-desc">Klinch will automatically create a virtual audio device so you can hear everything normally during interviews. When you're done, it switches everything back — you'll never notice a thing.</div>
             <div class="setup-step-guide" id="mo-guide" style="display:none"></div>
             <div class="setup-step-actions">
               <button class="setup-btn-secondary" id="mo-check-btn" style="display:none">Try again</button>

@@ -13,6 +13,7 @@
   const bhCheck     = document.getElementById('bh-check-btn');
 
   const explainer   = document.getElementById('bh-explainer');
+  const bhInfoBtn   = document.getElementById('bh-info-btn');
   const bhConfirm   = document.getElementById('bh-confirm-btn');
   const bhCancel    = document.getElementById('bh-cancel-btn');
 
@@ -83,6 +84,10 @@
   // ── Button handlers ────────────────────────────────────────────────────────
 
   bhDownload.addEventListener('click', () => {
+    explainer.style.display = 'flex';
+  });
+
+  bhInfoBtn.addEventListener('click', () => {
     explainer.style.display = 'flex';
   });
 
