@@ -267,7 +267,96 @@
             <div class="empty-state-sub">Add your first interview or adjust your filters</div>
           </div>
 
-        </div>
+        </div><!-- /page-interviews -->
+
+        <!-- Companies page -->
+        <div id="page-companies" style="display:none">
+
+          <!-- Layer 1: Grid -->
+          <div id="co-grid-layer">
+            <div class="iv-page-header">
+              <div class="iv-page-title">Companies</div>
+            </div>
+            <div id="co-grid" class="co-grid"></div>
+            <div id="co-empty" class="empty-state" style="display:none">
+              <div class="empty-state-icon">🏢</div>
+              <div class="empty-state-text">No companies yet</div>
+              <div class="empty-state-sub">Add interviews to see companies here</div>
+            </div>
+          </div>
+
+          <!-- Layer 2: Detail -->
+          <div id="co-detail-layer" style="display:none">
+
+            <button id="co-back-btn" class="co-back-btn">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M7.5 1.5L3 6l4.5 4.5"/>
+              </svg>
+              Companies
+            </button>
+
+            <!-- Hero -->
+            <div class="co-hero" id="co-hero">
+              <div class="co-hero-logo" id="co-hero-logo"></div>
+              <div class="co-hero-info">
+                <div class="co-hero-name" id="co-hero-name"></div>
+                <div class="co-hero-domain" id="co-hero-domain"></div>
+              </div>
+            </div>
+
+            <!-- Overview (Apollo enrich — lazy) -->
+            <div class="co-section">
+              <div class="co-section-title">Overview</div>
+              <div id="co-sec-overview-body">
+                <div class="co-skeleton-wrap"><div class="co-skeleton"></div><div class="co-skeleton"></div><div class="co-skeleton"></div></div>
+              </div>
+            </div>
+
+            <!-- My Interviews -->
+            <div class="co-section">
+              <div class="co-section-title">My Interviews</div>
+              <div id="co-sec-interviews-body"></div>
+            </div>
+
+            <!-- Interviewers -->
+            <div class="co-section">
+              <div class="co-section-header">
+                <div class="co-section-title" style="margin-bottom:0">Interviewers</div>
+                <button class="co-add-btn" id="co-add-iw-btn">+ Add</button>
+              </div>
+              <div id="co-sec-interviewers-body" style="margin-top:14px"></div>
+            </div>
+
+            <!-- Role Info -->
+            <div class="co-section">
+              <div class="co-section-title">Role Info</div>
+              <div id="co-sec-roles-body"></div>
+            </div>
+
+            <!-- Key People (Apollo — lazy) -->
+            <div class="co-section">
+              <div class="co-section-title">Key People</div>
+              <div id="co-sec-people-body">
+                <div class="co-skeleton-wrap"><div class="co-skeleton"></div><div class="co-skeleton"></div><div class="co-skeleton"></div></div>
+              </div>
+            </div>
+
+            <!-- Recent News (NewsAPI — lazy) -->
+            <div class="co-section">
+              <div class="co-section-title">Recent News</div>
+              <div id="co-sec-news-body">
+                <div class="co-skeleton-wrap"><div class="co-skeleton"></div><div class="co-skeleton"></div><div class="co-skeleton"></div></div>
+              </div>
+            </div>
+
+            <!-- Prep Notes -->
+            <div class="co-section" style="margin-bottom:40px">
+              <div class="co-section-title">Prep Notes</div>
+              <textarea id="co-notes-input" class="co-notes-input" placeholder="Write your prep notes, talking points, or research here…"></textarea>
+            </div>
+
+          </div>
+        </div><!-- /page-companies -->
 
       </main>
     </div>
@@ -514,10 +603,43 @@
     </div>
   </div>
 
+  <!-- Add Interviewer to Company modal -->
+  <div id="co-add-iw-modal" class="co-modal-backdrop" style="display:none">
+    <div class="co-modal-card">
+      <button class="ivd-close" id="co-add-iw-close">✕</button>
+      <h3 class="co-modal-title">Add Interviewer</h3>
+      <div class="ai-field-group">
+        <label class="ai-field-label">Name</label>
+        <input type="text" id="co-add-iw-name" class="ai-modal-input" placeholder="Jane Smith">
+      </div>
+      <div class="ai-field-group">
+        <label class="ai-field-label">Title</label>
+        <input type="text" id="co-add-iw-title" class="ai-modal-input" placeholder="Senior Recruiter">
+      </div>
+      <div class="ai-field-group">
+        <label class="ai-field-label">LinkedIn URL <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <div style="display:flex;gap:10px">
+          <input type="url" id="co-add-iw-url" class="ai-modal-input" placeholder="https://linkedin.com/in/…" style="flex:1">
+          <button class="ai-btn-secondary" id="co-add-iw-fetch-btn">Fetch</button>
+        </div>
+      </div>
+      <div id="co-add-iw-status" style="font-size:12px;margin-top:-10px;margin-bottom:14px;min-height:16px"></div>
+      <div id="co-add-iw-photo-preview" style="display:none;align-items:center;gap:8px;margin-bottom:16px;font-size:12px;color:#22C55E">
+        <img id="co-add-iw-photo-img" class="ai-iw-photo-thumb" alt="">
+        Photo fetched ✓
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="ai-btn-primary" id="co-add-iw-save-btn" style="flex:1">Save Interviewer</button>
+        <button class="setup-btn-secondary" id="co-add-iw-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/stt.js"></script>
   <script src="js/app.js"></script>
   <script src="js/setup.js"></script>
   <script src="js/add-interview.js"></script>
   <script src="js/pages/interviews.js"></script>
+  <script src="js/pages/companies.js"></script>
 </body>
 </html>

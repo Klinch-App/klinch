@@ -34,6 +34,42 @@ async function proxycurlFetch(linkedinUrl) {
   return { data: normalised };
 }
 
+async function apolloEnrich(domain) {
+  const apiKey = process.env.APOLLO_API_KEY;
+  if (!apiKey) throw new Error('No Apollo API key');
+  const res = await fetch('https://api.apollo.io/v1/organizations/enrich', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+    body: JSON.stringify({ domain }),
+  });
+  if (!res.ok) throw new Error(`Apollo enrich ${res.status}`);
+  const data = await res.json();
+  return data.organization || null;
+}
+
+async function apolloPeople(domain) {
+  const apiKey = process.env.APOLLO_API_KEY;
+  if (!apiKey) throw new Error('No Apollo API key');
+  const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+    body: JSON.stringify({ organization_domains: [domain], page: 1, per_page: 6 }),
+  });
+  if (!res.ok) throw new Error(`Apollo people ${res.status}`);
+  const data = await res.json();
+  return data.people || [];
+}
+
+async function newsFetch(query) {
+  const apiKey = process.env.NEWS_API_KEY;
+  if (!apiKey) throw new Error('No News API key');
+  const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=6&apiKey=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`NewsAPI ${res.status}`);
+  const data = await res.json();
+  return data.articles || [];
+}
+
 async function processJd(jdText) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const msg = await client.messages.create({
@@ -65,6 +101,21 @@ function init() {
 
   ipcMain.handle('claude:process-jd', async (_e, { jd_text }) => {
     try { return { ok: true, data: await processJd(jd_text) }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  });
+
+  ipcMain.handle('apollo:enrich', async (_e, { domain }) => {
+    try { return { ok: true, data: await apolloEnrich(domain) }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  });
+
+  ipcMain.handle('apollo:people', async (_e, { domain }) => {
+    try { return { ok: true, data: await apolloPeople(domain) }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  });
+
+  ipcMain.handle('news:fetch', async (_e, { query }) => {
+    try { return { ok: true, data: await newsFetch(query) }; }
     catch (err) { return { ok: false, error: err.message }; }
   });
 }

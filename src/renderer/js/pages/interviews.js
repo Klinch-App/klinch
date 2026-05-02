@@ -199,9 +199,9 @@ window.InterviewsPage = (() => {
       <div class="icard" data-id="${iv.id}">
         <button class="icard-delete-btn" aria-label="Delete interview">✕</button>
         <div class="icard-top">
-          <div class="icard-logo-wrap">${logoHtml}</div>
+          <div class="icard-logo-wrap" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${logoHtml}</div>
           <div class="icard-company-info">
-            <div class="icard-company-name">${_esc(iv.company?.name || 'Unknown Company')}</div>
+            <div class="icard-company-name" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${_esc(iv.company?.name || 'Unknown Company')}</div>
             <div class="icard-role">${_esc(iv.jd?.structured?.role_title || 'Role TBD')}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
@@ -361,7 +361,7 @@ window.InterviewsPage = (() => {
     _el('iv-filter-format' ).addEventListener('change', e => { _filter.format  = e.target.value; renderFeed(); });
     _el('iv-search').addEventListener('input', e => { _filter.search = e.target.value.trim(); renderFeed(); });
 
-    // Feed: delete takes priority, otherwise open detail
+    // Feed: delete → company nav → card detail
     _el('iv-feed').addEventListener('click', e => {
       const deleteBtn = e.target.closest('.icard-delete-btn');
       if (deleteBtn) {
@@ -372,6 +372,16 @@ window.InterviewsPage = (() => {
         const iv = getAll().find(x => x.id === id);
         if (window.openInterviewDeleteModal) {
           window.openInterviewDeleteModal(id, iv?.company?.name || 'this company');
+        }
+        return;
+      }
+      const navEl = e.target.closest('[data-company-nav]');
+      if (navEl) {
+        e.stopPropagation();
+        const key = navEl.dataset.companyNav;
+        if (key && window.navigateTo && window.CompaniesPage) {
+          window.navigateTo('companies');
+          window.CompaniesPage.openDetail(key);
         }
         return;
       }
@@ -399,5 +409,5 @@ window.InterviewsPage = (() => {
   }
 
   init();
-  return { refresh };
+  return { refresh, openDetail };
 })();
