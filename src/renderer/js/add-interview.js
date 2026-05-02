@@ -74,6 +74,8 @@ function _wireImgFallbacks(container) {
     });
   });
 }
+// Shared with interviews page
+window.wireImgFallbacks = _wireImgFallbacks;
 
 function _showError(msg) {
   const toast = _el('ai-toast');
@@ -624,21 +626,33 @@ renderInterviews();
     localStorage.setItem('klinch_interviews', JSON.stringify(updated));
     closeDeleteModal();
     renderInterviews();
+    window.InterviewsPage?.refresh();
   }
 
-  // Event delegation on grid for delete button clicks
+  // Expose so the interviews page can trigger this modal for its own cards
+  window.openInterviewDeleteModal = openDeleteModal;
+
+  // Event delegation on grid for card and delete button clicks
   const grid = _el('upcoming-interviews-grid');
   if (grid) {
     grid.addEventListener('click', e => {
+      // Delete button takes priority
       const btn = e.target.closest('.icard-delete-btn');
-      if (!btn) return;
-      e.stopPropagation();
-      const card = btn.closest('.icard');
-      const id = card?.dataset.id;
-      if (!id) return;
-      const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-      const iv = all.find(x => x.id === id);
-      openDeleteModal(id, iv?.company?.name || 'this company');
+      if (btn) {
+        e.stopPropagation();
+        const card = btn.closest('.icard');
+        const id = card?.dataset.id;
+        if (!id) return;
+        const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+        const iv = all.find(x => x.id === id);
+        openDeleteModal(id, iv?.company?.name || 'this company');
+        return;
+      }
+
+      // Card body click → navigate to interviews section
+      if (e.target.closest('.icard') && window.navigateTo) {
+        window.navigateTo('interviews');
+      }
     });
   }
 
