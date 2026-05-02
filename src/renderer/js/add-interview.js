@@ -539,9 +539,9 @@ function renderInterviews() {
       <div class="icard" data-id="${iv.id}">
         <button class="icard-delete-btn" aria-label="Delete interview">✕</button>
         <div class="icard-top">
-          <div class="icard-logo-wrap">${logoHtml}</div>
+          <div class="icard-logo-wrap" data-company-nav="${iv.company?.domain || iv.company?.name || ''}">${logoHtml}</div>
           <div class="icard-company-info">
-            <div class="icard-company-name">${iv.company?.name || 'Unknown Company'}</div>
+            <div class="icard-company-name" data-company-nav="${iv.company?.domain || iv.company?.name || ''}">${iv.company?.name || 'Unknown Company'}</div>
             <div class="icard-role">${iv.jd?.structured?.role_title || 'Role TBD'}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
@@ -646,6 +646,17 @@ renderInterviews();
         const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
         const iv = all.find(x => x.id === id);
         openDeleteModal(id, iv?.company?.name || 'this company');
+        return;
+      }
+
+      // Company nav: logo or name click → Companies tab
+      const navEl = e.target.closest('[data-company-nav]');
+      if (navEl) {
+        const key = navEl.dataset.companyNav;
+        if (key && window.navigateTo && window.CompaniesPage) {
+          window.navigateTo('companies');
+          window.CompaniesPage.openDetail(key);
+        }
         return;
       }
 
