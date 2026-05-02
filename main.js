@@ -201,3 +201,13 @@ app.on('window-all-closed', () => {
   try { globalShortcut.unregister('CommandOrControl+Return'); } catch (_) {}
   if (process.platform !== 'darwin') app.quit();
 });
+
+// Restore system audio output before quit — covers force-quit, Cmd+Q, and
+// window close while a session is still active.
+let quitting = false;
+app.on('before-quit', (e) => {
+  if (quitting) return;
+  e.preventDefault();
+  quitting = true;
+  audio.forceRestoreOutput().finally(() => app.quit());
+});
