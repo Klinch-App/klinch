@@ -63,7 +63,7 @@ async function apolloPeople(domain) {
 async function newsFetch(query) {
   const apiKey = process.env.NEWS_API_KEY;
   if (!apiKey) throw new Error('No News API key');
-  const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=6&apiKey=${apiKey}`;
+  const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent('"' + query + '"')}&language=en&sortBy=publishedAt&pageSize=6&apiKey=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`NewsAPI ${res.status}`);
   const data = await res.json();
