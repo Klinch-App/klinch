@@ -8,7 +8,7 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 async function analyzeResume(rawText) {
   const msg = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2000,
     system: 'You are an expert SDR resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.',
     messages: [{
@@ -35,7 +35,7 @@ ${rawText}`,
 
 async function rewriteHighlight(original, reason, rawText) {
   const msg = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 200,
     system: 'You are an expert SDR resume coach. Return only the rewritten resume line — no explanation, no quotes, no preamble.',
     messages: [{
@@ -51,13 +51,19 @@ Resume context: ${rawText.slice(0, 800)}`,
 
 async function roleFitAnalysis(rawText, jdRaw, roleTitle) {
   const msg = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 1000,
     system: 'You are an expert recruiter and ATS specialist. Return ONLY valid JSON — no markdown, no code fences.',
     messages: [{
       role: 'user',
       content: `Analyze how well this resume fits the job description.
-Return ONLY valid JSON: {"keyword_match_score":<0-100>,"keywords_present":["keyword"],"keywords_missing":["keyword"],"strategic_summary":"<2-3 sentences>"}
+Return ONLY valid JSON: {"keyword_match_score":<0-100>,"keywords_present":["keyword"],"keywords_missing":["keyword"],"talking_points":["short actionable tip"],"strategic_summary":"<2-3 sentences>"}
+
+Rules:
+- keywords_present: 3-5 matched strengths from the resume
+- keywords_missing: 2-4 gaps the resume doesn't address
+- talking_points: 2-3 short bullet points on how to position themselves in the interview
+- strategic_summary: 2-3 sentence overall assessment
 
 Role: ${roleTitle}
 Job Description:

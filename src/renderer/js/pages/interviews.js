@@ -346,42 +346,36 @@ window.InterviewsPage = (() => {
         </details>` : ''}`;
     }
 
-    // ── Section 3: Candidate Fit (placeholder) ────────────────────────────────
-    const fitHtml = `
-      <div class="ivdp-fit-locked">
-        <div class="ivdp-fit-score-row">
-          <div class="ivdp-fit-score-circle">
-            <svg viewBox="0 0 36 36" class="ivdp-fit-donut">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
-                stroke-dasharray="84 100" stroke-dashoffset="25" stroke-linecap="round"/>
-            </svg>
-            <div class="ivdp-fit-pct">84%</div>
-          </div>
-          <div class="ivdp-fit-cols">
-            <div class="ivdp-fit-col ivdp-fit-match">
-              <div class="ivdp-fit-col-label">Strengths</div>
-              <div class="ivdp-fit-item">Leadership experience</div>
-              <div class="ivdp-fit-item">SaaS background</div>
-              <div class="ivdp-fit-item">Quota attainment</div>
-            </div>
-            <div class="ivdp-fit-col ivdp-fit-gap">
-              <div class="ivdp-fit-col-label">Gaps</div>
-              <div class="ivdp-fit-item">Enterprise sales cycle</div>
-              <div class="ivdp-fit-item">Technical product exp.</div>
-            </div>
-            <div class="ivdp-fit-col ivdp-fit-talk">
-              <div class="ivdp-fit-col-label">Talking Points</div>
-              <div class="ivdp-fit-item">Frame SDR mgmt as pipeline builder</div>
-              <div class="ivdp-fit-item">Highlight cross-functional wins</div>
-            </div>
-          </div>
-        </div>
-        <div class="ivdp-fit-banner">
-          <span class="ivdp-fit-lock-icon">🔒</span>
-          <span>Upload your resume to unlock Candidate Fit analysis — <span style="color:var(--text-muted);font-size:12px">coming soon</span></span>
-        </div>
+    // ── Section 3: Candidate Fit ──────────────────────────────────────────────
+    const resumeData  = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
+    const hasResume   = !!(resumeData?.raw_text);
+    const hasJd       = !!(iv.jd?.raw);
+    const fitCached   = iv.candidate_fit || null;
+
+    let fitHtml;
+    if (fitCached) {
+      fitHtml = _buildFitHtml(fitCached, iv.id);
+    } else if (!hasResume) {
+      fitHtml = `<div class="ivdp-fit-banner">
+        <span class="ivdp-fit-lock-icon">🔒</span>
+        <span>Upload your resume on the <a class="ivdp-fit-link" data-nav="resume">Resume tab</a> to unlock Candidate Fit analysis.</span>
       </div>`;
+    } else if (!hasJd) {
+      fitHtml = `<div class="ivdp-fit-banner">
+        <span class="ivdp-fit-lock-icon">🔒</span>
+        <span>Add a job description to this interview to unlock Candidate Fit analysis.</span>
+      </div>`;
+    } else {
+      fitHtml = `
+        <div class="ivdp-ai-skeleton" id="ivdp-fit-skeleton">
+          <div class="ivdp-skel-line w80"></div>
+          <div class="ivdp-skel-line w60"></div>
+          <div class="ivdp-skel-line w70"></div>
+          <div class="ivdp-fit-analyzing-note">Analyzing your resume against this role — may take a few moments…</div>
+        </div>
+        <div id="ivdp-fit-body" style="display:none"></div>
+        <button class="ivdp-refresh-btn" id="ivdp-fit-refresh" data-action="refresh-fit" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
+    }
 
     // ── Section 4: Interview Panel ─────────────────────────────────────────────
     const panelHtml = _buildPanelHtml(iv, interviewers);
@@ -472,9 +466,9 @@ window.InterviewsPage = (() => {
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Candidate Fit</div>
-          <span class="ivdp-coming-soon">coming soon</span>
+          ${(hasResume && hasJd) ? `<button class="ivdp-refresh-btn" data-action="refresh-fit" data-iv-id="${iv.id}" style="${fitCached ? '' : 'display:none'}">↺ Refresh</button>` : ''}
         </div>
-        <div class="ivdp-section-body">${fitHtml}</div>
+        <div class="ivdp-section-body" id="ivdp-fit-section-body">${fitHtml}</div>
       </div>
 
       <!-- Section 4: Interview Panel -->
@@ -547,6 +541,12 @@ window.InterviewsPage = (() => {
     // Fire Coach + Context API calls in parallel if not yet cached
     if (!coachCached || !contextCached) {
       _fireAIAnalysis(iv);
+    }
+
+    // Fire Candidate Fit if resume + JD available but not yet cached
+    const _resumeForFit = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
+    if (_resumeForFit?.raw_text && iv.jd?.raw && !iv.candidate_fit) {
+      _fireCandidateFit(iv);
     }
   }
 
@@ -651,6 +651,30 @@ window.InterviewsPage = (() => {
           _patchIv(id, { context_summary: null });
           _fireAIAnalysis(iv, 'context');
         }
+        if (action === 'refresh-fit') {
+          _patchIv(id, { candidate_fit: null });
+          iv.candidate_fit = null;
+          const sectionBody = _el('ivdp-fit-section-body');
+          if (sectionBody) sectionBody.innerHTML = `
+            <div class="ivdp-ai-skeleton" id="ivdp-fit-skeleton">
+              <div class="ivdp-skel-line w80"></div>
+              <div class="ivdp-skel-line w60"></div>
+              <div class="ivdp-skel-line w70"></div>
+              <div class="ivdp-fit-analyzing-note">Analyzing your resume against this role — may take a few moments…</div>
+            </div>
+            <div id="ivdp-fit-body" style="display:none"></div>
+            <button class="ivdp-refresh-btn" id="ivdp-fit-refresh" data-action="refresh-fit" data-iv-id="${id}" style="display:none">↺ Refresh</button>`;
+          _fireCandidateFit(iv);
+        }
+      });
+    }
+
+    // Wire resume link in fit banner
+    const detailPage2 = _el('iv-detail-page');
+    if (detailPage2) {
+      detailPage2.addEventListener('click', e => {
+        const link = e.target.closest('.ivdp-fit-link[data-nav]');
+        if (link && window.navigateTo) window.navigateTo(link.dataset.nav);
       });
     }
   }
@@ -774,9 +798,78 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
     }
   }
 
+  function _buildFitHtml(fit, ivId) {
+    const score       = Math.min(100, Math.max(0, fit.keyword_match_score || 0));
+    const circumference = 100;
+    const dashArray   = `${score} ${circumference}`;
+    const strengths   = (fit.keywords_present || []).slice(0, 5);
+    const gaps        = (fit.keywords_missing || []).slice(0, 4);
+    const talking     = (fit.talking_points   || []).slice(0, 3);
+    return `
+      <div class="ivdp-fit-score-row">
+        <div class="ivdp-fit-score-circle">
+          <svg viewBox="0 0 36 36" class="ivdp-fit-donut">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
+              stroke-dasharray="${dashArray}" stroke-dashoffset="25" stroke-linecap="round"/>
+          </svg>
+          <div class="ivdp-fit-pct">${score}%</div>
+        </div>
+        <div class="ivdp-fit-cols">
+          <div class="ivdp-fit-col ivdp-fit-match">
+            <div class="ivdp-fit-col-label">Strengths</div>
+            ${strengths.map(s => `<div class="ivdp-fit-item">${_esc(s)}</div>`).join('') || '<div class="ivdp-fit-item" style="opacity:.5">None identified</div>'}
+          </div>
+          <div class="ivdp-fit-col ivdp-fit-gap">
+            <div class="ivdp-fit-col-label">Gaps</div>
+            ${gaps.map(g => `<div class="ivdp-fit-item">${_esc(g)}</div>`).join('') || '<div class="ivdp-fit-item" style="opacity:.5">None identified</div>'}
+          </div>
+          <div class="ivdp-fit-col ivdp-fit-talk">
+            <div class="ivdp-fit-col-label">Talking Points</div>
+            ${talking.map(t => `<div class="ivdp-fit-item">${_esc(t)}</div>`).join('') || '<div class="ivdp-fit-item" style="opacity:.5">None identified</div>'}
+          </div>
+        </div>
+      </div>
+      ${fit.strategic_summary ? `<div class="ivdp-fit-summary">${_esc(fit.strategic_summary)}</div>` : ''}`;
+  }
+
+  async function _fireCandidateFit(iv) {
+    const resume = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
+    if (!resume?.raw_text || !iv.jd?.raw) return;
+
+    try {
+      const res = await window.klinch.invoke('claude:role-fit', {
+        raw_text:   resume.raw_text,
+        jd_raw:     iv.jd.raw,
+        role_title: iv.jd?.structured?.role_title || 'this role',
+      });
+
+      const fitSkel    = _el('ivdp-fit-skeleton');
+      const fitBody    = _el('ivdp-fit-body');
+      const fitRefresh = _el('ivdp-fit-refresh');
+
+      if (!res?.ok) throw new Error(res?.error || 'Unknown error');
+
+      _patchIv(iv.id, { candidate_fit: res.data });
+      if (fitSkel)    fitSkel.style.display    = 'none';
+      if (fitBody)  { fitBody.innerHTML = _buildFitHtml(res.data, iv.id); fitBody.style.display = ''; }
+      if (fitRefresh) fitRefresh.style.display = '';
+
+      // also show the header refresh button
+      const headerRefresh = document.querySelector(`.ivdp-section-header [data-action="refresh-fit"]`);
+      if (headerRefresh) headerRefresh.style.display = '';
+    } catch (err) {
+      console.error('[candidate-fit] failed:', err);
+      const fitSkel = _el('ivdp-fit-skeleton');
+      const fitBody = _el('ivdp-fit-body');
+      if (fitSkel) fitSkel.style.display = 'none';
+      if (fitBody) { fitBody.innerHTML = '<div class="ivdp-ai-error">Analysis failed. Try refreshing.</div>'; fitBody.style.display = ''; }
+    }
+  }
+
   async function _callClaude(prompt) {
     const result = await window.klinch.invoke('claude:coach', {
-      model:      'claude-sonnet-4-20250514',
+      model:      'claude-sonnet-4-6',
       max_tokens: 1000,
       messages:   [{ role: 'user', content: prompt }],
     });
