@@ -77,6 +77,11 @@ ${rawText}`,
 // ── IPC registration ───────────────────────────────────────────────────────────
 
 function init() {
+  // Guard against double-registration (e.g. dev hot-reload)
+  const channels = ['resume:parse','claude:resume-analyze','claude:resume-rewrite','claude:role-fit','claude:coach'];
+  channels.forEach(ch => { try { ipcMain.removeHandler(ch); } catch (_) {} });
+  console.log('[resume] registering IPC handlers:', channels.join(', '));
+
   ipcMain.handle('resume:parse', async (_e, { file_name, data }) => {
     try {
       const ext = path.extname(file_name).toLowerCase();
