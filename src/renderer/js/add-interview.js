@@ -43,7 +43,9 @@ function openModal() {
   _state.format = 'Virtual';
 
   // Reset step 4
-  _el('ai-time').value  = '';
+  _el('ai-time').value        = '';
+  _el('ai-time-custom').value = '';
+  _el('ai-time-custom').style.display = 'none';
   _el('ai-stage').value = 'Recruiter Screen';
   _el('ai-stage-other').style.display = 'none';
   _el('ai-stage-other').value = '';
@@ -260,18 +262,13 @@ function _renderInterviewerList() {
         <input type="text" class="ai-modal-input ai-iw-title" data-idx="${idx}" placeholder="Senior Recruiter" value="${_esc(iv.title)}">
       </div>
       <div class="ai-field-group">
-        <label class="ai-field-label">LinkedIn URL <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span></label>
-        <div style="display:flex;gap:10px">
-          <input type="url" class="ai-modal-input ai-iw-url" data-idx="${idx}" placeholder="https://linkedin.com/in/…" value="${_esc(iv.linkedin_url || '')}" style="flex:1">
-          <button class="ai-btn-secondary ai-iw-fetch" data-idx="${idx}">Fetch</button>
-        </div>
-        <div class="ai-field-status ai-iw-status" data-idx="${idx}"></div>
+        <label class="ai-field-label" style="display:flex;align-items:center;gap:5px">
+          LinkedIn URL
+          <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(optional)</span>
+          <span class="ai-info-tip">ⓘ<span class="ai-info-tip-body">Adding a LinkedIn URL helps Klinch build a deeper picture of who you're speaking with — their background, seniority, and career history. This lets the AI tailor coaching to the specific person in the room, not just the role title.</span></span>
+        </label>
+        <input type="url" class="ai-modal-input ai-iw-url" data-idx="${idx}" placeholder="https://linkedin.com/in/…" value="${_esc(iv.linkedin_url || '')}">
       </div>
-      ${iv.photo_url ? `
-        <div class="ai-iw-photo-badge">
-          <img src="${_esc(iv.photo_url)}" class="ai-iw-photo-thumb" alt="">
-          Photo fetched ✓
-        </div>` : ''}
     </div>
   `).join('');
 
@@ -283,10 +280,6 @@ function _renderInterviewerList() {
   });
   list.querySelectorAll('.ai-iw-url').forEach(inp => {
     inp.addEventListener('input', e => { _state.interviewers[+e.target.dataset.idx].linkedin_url = e.target.value; });
-    inp.addEventListener('keydown', e => { if (e.key === 'Enter') _fetchLinkedIn(+e.target.dataset.idx); });
-  });
-  list.querySelectorAll('.ai-iw-fetch').forEach(btn => {
-    btn.addEventListener('click', e => _fetchLinkedIn(+e.currentTarget.dataset.idx));
   });
   list.querySelectorAll('.ai-iw-remove-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -303,58 +296,6 @@ _el('ai-add-interviewer-btn').addEventListener('click', () => {
   const entries = _el('ai-interviewers-list').querySelectorAll('.ai-iw-name');
   if (entries.length) entries[entries.length - 1].focus();
 });
-
-async function _fetchLinkedIn(idx) {
-  const iv = _state.interviewers[idx];
-  const url = (iv.linkedin_url || '').trim();
-  if (!url) return _showError('Please enter a LinkedIn URL.');
-
-  const entry = _el('ai-interviewers-list').querySelector(`.ai-interviewer-entry[data-idx="${idx}"]`);
-  const fetchBtn = entry.querySelector('.ai-iw-fetch');
-  const statusEl = entry.querySelector('.ai-iw-status');
-
-  fetchBtn.disabled = true;
-  fetchBtn.textContent = 'Fetching…';
-  statusEl.textContent = 'Looking up profile…';
-  statusEl.className = 'ai-field-status ai-status-loading';
-
-  const cacheKey = 'klinch_li_' + url.toLowerCase().replace(/\/+$/, '');
-  let p = null;
-  try { const c = localStorage.getItem(cacheKey); if (c) p = JSON.parse(c); } catch { /* ignore */ }
-
-  if (!p) {
-    const res = await window.klinch.invoke('proxycurl:fetch', { linkedin_url: url });
-    fetchBtn.disabled = false;
-    fetchBtn.textContent = 'Fetch';
-    if (!res.ok || !res.data?.first_name) {
-      statusEl.textContent = 'Could not fetch profile — enter name and title manually.';
-      statusEl.className = 'ai-field-status ai-status-error';
-      return;
-    }
-    p = res.data;
-    try { localStorage.setItem(cacheKey, JSON.stringify(p)); } catch { /* full */ }
-  } else {
-    fetchBtn.disabled = false;
-    fetchBtn.textContent = 'Fetch';
-  }
-
-  _state.interviewers[idx].photo_url = p.profile_pic_url || null;
-  statusEl.textContent = 'Profile photo fetched ✓';
-  statusEl.className = 'ai-field-status ai-status-ok';
-
-  const nameInp = entry.querySelector('.ai-iw-name');
-  const titleInp = entry.querySelector('.ai-iw-title');
-  if (!nameInp.value.trim()) {
-    nameInp.value = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-    _state.interviewers[idx].name = nameInp.value;
-  }
-  if (!titleInp.value.trim()) {
-    titleInp.value = p.occupation || '';
-    _state.interviewers[idx].title = titleInp.value;
-  }
-
-  if (p.profile_pic_url) _renderInterviewerList();
-}
 
 // ── Step 3: Job Description ───────────────────────────────────────────────────
 
@@ -429,10 +370,12 @@ function _setDefaultDate() {
 }
 
 function _initTimeSelect() {
-  const sel = _el('ai-time');
+  const sel    = _el('ai-time');
+  const custom = _el('ai-time-custom');
   if (sel.options.length > 1) return; // already populated
-  for (let h = 0; h < 24; h++) {
+  for (let h = 8; h <= 17; h++) {
     for (const m of [0, 30]) {
+      if (h === 17 && m === 30) break;
       const val   = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
       const ampm  = h < 12 ? 'AM' : 'PM';
       const hour  = h % 12 || 12;
@@ -443,13 +386,25 @@ function _initTimeSelect() {
       sel.appendChild(opt);
     }
   }
+  const otherOpt = document.createElement('option');
+  otherOpt.value = 'other';
+  otherOpt.textContent = 'Other time…';
+  sel.appendChild(otherOpt);
+
+  sel.addEventListener('change', () => {
+    const isOther = sel.value === 'other';
+    custom.style.display = isOther ? '' : 'none';
+    if (isOther) custom.focus();
+  });
 }
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
 async function _completeInterview() {
   const date = _el('ai-date').value;
-  const time = _el('ai-time').value;
+  const time = _el('ai-time').value === 'other'
+    ? _el('ai-time-custom').value
+    : _el('ai-time').value;
   const stageRaw = _el('ai-stage').value;
   const stage = stageRaw === 'Other'
     ? (_el('ai-stage-other').value.trim() || 'Other')

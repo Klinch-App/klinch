@@ -373,7 +373,7 @@ window.ApplicationsPage = (() => {
   function openAddModal(prefill = null) {
     _aa.step    = 1;
     _aa.company = prefill?.company || null;
-    _aa.jd      = null;
+    _aa.jd      = prefill?.jd || null;
 
     if (_aa.company) {
       _el('aa-company-input').style.display = 'none';
@@ -399,7 +399,12 @@ window.ApplicationsPage = (() => {
     _el('aa-jd-textarea').style.display   = '';
     _el('aa-toast').style.display = 'none';
 
-    _aaShowStep(1);
+    if (prefill?.company && prefill?.role_title && prefill?.jd) {
+      _aaSave();
+      return;
+    }
+
+    _aaShowStep(prefill?.company && prefill?.role_title ? 2 : 1);
     _el('add-app-modal').style.display = '';
   }
 
@@ -668,6 +673,7 @@ window.ApplicationsPage = (() => {
         openAddModal({
           company:      rec.company,
           role_title:   rec.jd?.structured?.role_title || '',
+          jd:           rec.jd || null,
           date_applied: new Date().toISOString().slice(0, 10),
         });
       }
