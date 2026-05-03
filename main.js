@@ -4,6 +4,7 @@ const path = require('path');
 const interview      = require('./src/main/ipc/interview');
 const audio          = require('./src/main/ipc/audio');
 const interviewsData = require('./src/main/ipc/interviews-data');
+const resumeData     = require('./src/main/ipc/resume');
 
 nativeTheme.themeSource = 'dark';
 
@@ -174,6 +175,7 @@ app.whenReady().then(() => {
 
   audio.init();
   interviewsData.init();
+  resumeData.init();
 
   // Wire interview pipeline IPC (Claude, STT relay, session management)
   interview.init({

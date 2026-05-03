@@ -9,6 +9,7 @@ function navigateTo(page) {
     p.style.display = p.id === `page-${page}` ? '' : 'none';
   });
 
+  if (page === 'resume'       && window.ResumePage)       window.ResumePage.reset();
   if (page === 'interviews'   && window.InterviewsPage)   window.InterviewsPage.reset();
   if (page === 'companies'    && window.CompaniesPage)    window.CompaniesPage.reset();
   if (page === 'applications' && window.ApplicationsPage) window.ApplicationsPage.reset();
