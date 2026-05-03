@@ -1,25 +1,8 @@
 const { ipcMain } = require('electron');
-const path  = require('path');
-const fs    = require('fs');
+const path      = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-// ── File parsing ───────────────────────────────────────────────────────────────
-
-async function parsePdf(filePath) {
-  // Use lib path to avoid test-file side-effects in some environments
-  const pdfParse = require('pdf-parse/lib/pdf-parse.js');
-  const buffer   = fs.readFileSync(filePath);
-  const data     = await pdfParse(buffer);
-  return data.text.trim();
-}
-
-async function parseDocx(filePath) {
-  const mammoth = require('mammoth');
-  const result  = await mammoth.extractRawText({ path: filePath });
-  return result.value.trim();
-}
 
 // ── Claude helpers ─────────────────────────────────────────────────────────────
 
@@ -94,13 +77,22 @@ ${rawText}`,
 // ── IPC registration ───────────────────────────────────────────────────────────
 
 function init() {
-  ipcMain.handle('resume:parse', async (_e, { file_path }) => {
+  ipcMain.handle('resume:parse', async (_e, { file_name, buffer }) => {
     try {
-      const ext = path.extname(file_path).toLowerCase();
+      const ext = path.extname(file_name).toLowerCase();
+      const buf = Buffer.from(buffer);
       let text;
-      if      (ext === '.pdf')  text = await parsePdf(file_path);
-      else if (ext === '.docx') text = await parseDocx(file_path);
-      else throw new Error(`Unsupported file type: ${ext}`);
+      if (ext === '.pdf') {
+        const pdfParse = require('pdf-parse/lib/pdf-parse.js');
+        const data     = await pdfParse(buf);
+        text           = data.text.trim();
+      } else if (ext === '.docx') {
+        const mammoth = require('mammoth');
+        const result  = await mammoth.extractRawText({ buffer: buf });
+        text          = result.value.trim();
+      } else {
+        throw new Error(`Unsupported file type: ${ext}`);
+      }
       return { ok: true, text };
     } catch (err) {
       console.error('[resume:parse]', err.message);
