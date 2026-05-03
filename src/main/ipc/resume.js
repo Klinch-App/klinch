@@ -77,15 +77,16 @@ ${rawText}`,
 // ── IPC registration ───────────────────────────────────────────────────────────
 
 function init() {
-  ipcMain.handle('resume:parse', async (_e, { file_name, buffer }) => {
+  ipcMain.handle('resume:parse', async (_e, { file_name, data }) => {
     try {
       const ext = path.extname(file_name).toLowerCase();
-      const buf = Buffer.from(buffer);
+      // data arrives as a plain number array; rebuild a Node Buffer from it
+      const buf = Buffer.from(data);
       let text;
       if (ext === '.pdf') {
         const pdfParse = require('pdf-parse/lib/pdf-parse.js');
-        const data     = await pdfParse(buf);
-        text           = data.text.trim();
+        const parsed   = await pdfParse(buf);
+        text           = parsed.text.trim();
       } else if (ext === '.docx') {
         const mammoth = require('mammoth');
         const result  = await mammoth.extractRawText({ buffer: buf });
@@ -93,9 +94,10 @@ function init() {
       } else {
         throw new Error(`Unsupported file type: ${ext}`);
       }
+      if (!text) throw new Error('No text could be extracted from this file.');
       return { ok: true, text };
     } catch (err) {
-      console.error('[resume:parse]', err.message);
+      console.error('[resume:parse]', err.message, err.stack);
       return { ok: false, error: err.message };
     }
   });

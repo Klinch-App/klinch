@@ -70,11 +70,13 @@ window.ResumePage = (() => {
   }
 
   function _buildDropZone() {
+    // No "for" on the label — the drop zone click handler opens the picker;
+    // a "for" attribute would open it a second time and discard the first selection.
     return `
       <div class="rs-dropzone" id="rs-dropzone">
         <div class="rs-dz-icon">📄</div>
         <div class="rs-dz-title">Drop your resume here</div>
-        <div class="rs-dz-sub">PDF or DOCX &nbsp;·&nbsp; or <label class="rs-dz-browse" for="rs-file-input">browse files</label></div>
+        <div class="rs-dz-sub">PDF or DOCX &nbsp;·&nbsp; or <span class="rs-dz-browse">browse files</span></div>
       </div>
       <input type="file" id="rs-file-input" accept=".pdf,.docx" style="display:none">`;
   }
@@ -315,10 +317,12 @@ window.ResumePage = (() => {
       uploadBody.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Parsing ${_esc(file.name)}…</div>`;
     }
 
-    // Read as ArrayBuffer — avoids file.path (removed in Electron 32+)
-    let arrayBuffer;
+    // Read file bytes — convert to plain number array so Electron IPC serializes
+    // it reliably across all versions (raw ArrayBuffer transfer is unreliable).
+    let data;
     try {
-      arrayBuffer = await file.arrayBuffer();
+      const ab = await file.arrayBuffer();
+      data = Array.from(new Uint8Array(ab));
     } catch (e) {
       alert('Could not read the file. Please try again.');
       render();
@@ -327,11 +331,19 @@ window.ResumePage = (() => {
 
     const result = await window.klinch.invoke('resume:parse', {
       file_name: file.name,
-      buffer:    arrayBuffer,
+      data,
     });
     if (!result.ok) {
-      alert('Failed to parse resume: ' + result.error);
-      render();
+      const uploadBody = _el('rs-upload-body');
+      if (uploadBody) {
+        uploadBody.innerHTML = `
+          <div class="ivdp-ai-error" style="padding:4px 0">
+            Could not parse "${_esc(file.name)}": ${_esc(result.error || 'unknown error')}<br>
+            <small>Make sure the file is a valid, non-password-protected PDF or DOCX.</small>
+          </div>
+          ${_buildDropZone()}`;
+        _wireEvents(null);
+      }
       return;
     }
 
