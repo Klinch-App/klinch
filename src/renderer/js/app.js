@@ -9,8 +9,9 @@ function navigateTo(page) {
     p.style.display = p.id === `page-${page}` ? '' : 'none';
   });
 
-  if (page === 'interviews' && window.InterviewsPage) window.InterviewsPage.refresh();
-  if (page === 'companies' && window.CompaniesPage)  window.CompaniesPage.refresh();
+  if (page === 'interviews'   && window.InterviewsPage)   window.InterviewsPage.reset();
+  if (page === 'companies'    && window.CompaniesPage)    window.CompaniesPage.reset();
+  if (page === 'applications' && window.ApplicationsPage) window.ApplicationsPage.reset();
 }
 window.navigateTo = navigateTo;
 

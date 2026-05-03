@@ -21,6 +21,10 @@ window.CompaniesPage = (() => {
     return JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   }
 
+  function _getApplications() {
+    return JSON.parse(localStorage.getItem('klinch_applications') || '[]');
+  }
+
   function _getCache() {
     return JSON.parse(localStorage.getItem('klinch_company_cache') || '{}');
   }
@@ -36,22 +40,31 @@ window.CompaniesPage = (() => {
   // ── Company list ──────────────────────────────────────────────────────────────
 
   function _getCompanies() {
-    const ivs = _getInterviews();
     const map = new Map();
-    ivs.forEach(iv => {
-      const key = _companyKey(iv.company);
+
+    function _upsert(co) {
+      const key = _companyKey(co);
       if (!key) return;
       if (!map.has(key)) {
-        map.set(key, {
-          key,
-          name:       iv.company.name     || key,
-          domain:     iv.company.domain   || '',
-          logo_url:   iv.company.logo_url || null,
-          interviews: [],
-        });
+        map.set(key, { key, name: co.name || key, domain: co.domain || '', logo_url: co.logo_url || null, interviews: [], applications: [] });
       }
-      map.get(key).interviews.push(iv);
+      const e = map.get(key);
+      if (!e.domain   && co.domain)   e.domain   = co.domain;
+      if (!e.logo_url && co.logo_url) e.logo_url = co.logo_url;
+    }
+
+    _getInterviews().forEach(iv => {
+      if (!iv.company) return;
+      _upsert(iv.company);
+      map.get(_companyKey(iv.company))?.interviews.push(iv);
     });
+
+    _getApplications().forEach(app => {
+      if (!app.company) return;
+      _upsert(app.company);
+      map.get(_companyKey(app.company))?.applications.push(app);
+    });
+
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
@@ -90,14 +103,44 @@ window.CompaniesPage = (() => {
     }
     empty.style.display = 'none';
 
+    const STATUS_CLASS = {
+      'Applied':      'ap-status-applied',
+      'Interviewing': 'ap-status-interviewing',
+      'Offer':        'ap-status-offer',
+      'Withdrawn':    'ap-status-withdrawn',
+      'Rejected':     'ap-status-rejected',
+    };
+
     grid.innerHTML = companies.map(c => {
       const logoHtml = c.logo_url
         ? `<img src="${_esc(c.logo_url)}" class="co-card-logo-img" alt="" data-fb="co-logo-${_esc(c.key)}">
            <div class="icard-logo-fb" data-fb-id="co-logo-${_esc(c.key)}" style="display:none">${(c.name || '?')[0].toUpperCase()}</div>`
         : `<div class="icard-logo-fb">${(c.name || '?')[0].toUpperCase()}</div>`;
 
-      const total    = c.interviews.length;
-      const upcoming = c.interviews.filter(iv => !_isCompleted(iv)).length;
+      const ivCount  = c.interviews.length;
+      const appCount = c.applications.length;
+
+      // Most recently updated application drives the status badge
+      const latestApp = [...c.applications].sort((a, b) =>
+        new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)
+      )[0];
+      const status      = latestApp?.status || '';
+      const statusClass = STATUS_CLASS[status] || '';
+
+      // Most recent activity across all interviews and applications
+      const allDates = [
+        ...c.interviews.map(iv => iv.scheduled_at || iv.created_at),
+        ...c.applications.map(ap => ap.updated_at  || ap.created_at),
+      ].filter(Boolean).map(d => new Date(d));
+      const lastDate = allDates.length ? new Date(Math.max(...allDates)) : null;
+      const lastStr  = lastDate
+        ? lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : null;
+
+      const countParts = [
+        ivCount  ? `${ivCount} interview${ivCount  !== 1 ? 's' : ''}` : '',
+        appCount ? `${appCount} application${appCount !== 1 ? 's' : ''}` : '',
+      ].filter(Boolean);
 
       return `
         <div class="co-card" data-key="${_esc(c.key)}">
@@ -107,8 +150,11 @@ window.CompaniesPage = (() => {
             ${c.domain ? `<div class="co-card-domain">${_esc(c.domain)}</div>` : ''}
           </div>
           <div class="co-card-footer">
-            <span class="co-card-count">${total} interview${total !== 1 ? 's' : ''}</span>
-            ${upcoming > 0 ? `<span class="co-card-upcoming">${upcoming} upcoming</span>` : ''}
+            <span class="co-card-count">${_esc(countParts.join(' · '))}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${status ? `<span class="icard-stage-badge ${_esc(statusClass)}" style="font-size:9px;padding:2px 6px">${_esc(status)}</span>` : ''}
+              ${lastStr ? `<span class="co-card-upcoming">${_esc(lastStr)}</span>` : ''}
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -157,17 +203,16 @@ window.CompaniesPage = (() => {
     domainEl.style.cursor = company.domain ? 'pointer' : '';
     if (window.wireImgFallbacks) window.wireImgFallbacks(logoEl);
 
-    // Research links
-    const slug = _slug(company.name);
+    // Research links — all homepage links, user searches manually on each platform
     const links = [
-      { label: 'Crunchbase', domain: 'crunchbase.com',  url: 'https://www.crunchbase.com/organization/' + slug },
-      { label: 'G2',         domain: 'g2.com',          url: 'https://www.g2.com/products/' + slug + '/reviews' },
-      { label: 'Capterra',   domain: 'capterra.com',    url: 'https://www.capterra.com/p/' + slug },
-      { label: 'Glassdoor',  domain: 'glassdoor.com',   url: 'https://www.glassdoor.com/Overview/Working-at-' + slug + '-EI_IE.htm' },
-      { label: 'RepVue',     domain: 'repvue.com',      url: 'https://www.repvue.com/company/' + slug },
+      { label: 'Crunchbase', domain: 'crunchbase.com', url: 'https://www.crunchbase.com' },
+      { label: 'G2',         domain: 'g2.com',         url: 'https://www.g2.com' },
+      { label: 'Capterra',   domain: 'capterra.com',   url: 'https://www.capterra.com' },
+      { label: 'Glassdoor',  domain: 'glassdoor.com',  url: 'https://www.glassdoor.com' },
+      { label: 'RepVue',     domain: 'repvue.com',     url: 'https://www.repvue.com' },
     ];
     _el('co-hero-links').innerHTML = links.map(l => `
-      <button class="icard-stage-badge co-hero-link" data-url="${_esc(l.url)}" title="${_esc(l.label)}">
+      <button class="icard-stage-badge co-hero-link" data-url="${_esc(l.url)}" title="${_esc('Search for ' + company.name + ' on ' + l.label)}">
         <img src="https://www.google.com/s2/favicons?domain=${_esc(l.domain)}&sz=16" width="12" height="12" alt="" style="display:block;flex-shrink:0">
         ${_esc(l.label)}
       </button>`).join('');
@@ -176,6 +221,7 @@ window.CompaniesPage = (() => {
     });
 
     // Static sections
+    _renderSectionApplications(company);
     _renderSectionInterviews(company);
     _renderSectionInterviewers(company, key, cache);
     _renderSectionRoles(company);
@@ -199,6 +245,66 @@ window.CompaniesPage = (() => {
     _loadSectionOverview(key, company.domain, cache);
     _loadSectionPeople(key, company.name, cache);
     _loadSectionNews(key, company.name, cache);
+  }
+
+  // ── Section: My Applications ──────────────────────────────────────────────────
+
+  const _APP_STATUS_CLASS = {
+    'Applied':      'ap-status-applied',
+    'Interviewing': 'ap-status-interviewing',
+    'Offer':        'ap-status-offer',
+    'Withdrawn':    'ap-status-withdrawn',
+    'Rejected':     'ap-status-rejected',
+  };
+
+  function _renderSectionApplications(company) {
+    const section = _el('co-sec-applications');
+    const el      = _el('co-sec-applications-body');
+
+    if (!company.applications.length) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+
+    const sorted = [...company.applications].sort((a, b) =>
+      new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)
+    );
+
+    el.innerHTML = sorted.map(app => {
+      const dateApplied = app.date_applied
+        ? new Date(app.date_applied + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : null;
+
+      let days = null;
+      if (app.date_applied && app.date_first_interview) {
+        days = Math.max(0, Math.round(
+          (new Date(app.date_first_interview + 'T00:00:00') - new Date(app.date_applied + 'T00:00:00')) / 86400000
+        ));
+      }
+      const hot         = days !== null && days <= 7;
+      const statusClass = _APP_STATUS_CLASS[app.status] || 'ap-status-applied';
+
+      return `
+        <div class="co-iv-row" data-app-id="${_esc(app.id)}">
+          <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(app.role_title || 'Role TBD')}</span>
+            ${days !== null ? `<span class="co-iv-date">${days}d response</span>` : ''}
+            ${hot ? `<span class="ap-hot" style="font-size:13px">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying.</span></span>` : ''}
+          </div>
+          <div class="co-iv-meta">
+            ${dateApplied ? `<span class="co-iv-date">Applied ${_esc(dateApplied)}</span>` : ''}
+            <span class="icard-stage-badge ${_esc(statusClass)}" style="font-size:9px;padding:2px 6px">${_esc(app.status)}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    el.querySelectorAll('[data-app-id]').forEach(row => {
+      row.addEventListener('click', () => {
+        if (window.navigateTo)                    window.navigateTo('applications');
+        if (window.ApplicationsPage?.openDetail)  window.ApplicationsPage.openDetail(row.dataset.appId);
+      });
+    });
   }
 
   // ── Section: My Interviews ────────────────────────────────────────────────────
@@ -581,6 +687,14 @@ window.CompaniesPage = (() => {
     else { _layer = 'grid'; _renderGrid(); }
   }
 
+  function reset() {
+    _layer     = 'grid';
+    _activeKey = null;
+    _el('co-detail-layer').style.display = 'none';
+    _el('co-grid-layer').style.display   = '';
+    _renderGrid();
+  }
+
   init();
-  return { refresh, openDetail: _openDetail };
+  return { refresh, reset, openDetail: _openDetail };
 })();
