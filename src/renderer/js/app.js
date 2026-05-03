@@ -12,6 +12,7 @@ function navigateTo(page) {
   if (page === 'interviews'   && window.InterviewsPage)   window.InterviewsPage.reset();
   if (page === 'companies'    && window.CompaniesPage)    window.CompaniesPage.reset();
   if (page === 'applications' && window.ApplicationsPage) window.ApplicationsPage.reset();
+  if (page === 'calendar'     && window.CalendarPage)     window.CalendarPage.reset();
 }
 window.navigateTo = navigateTo;
 

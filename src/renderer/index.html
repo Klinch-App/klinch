@@ -467,6 +467,34 @@
 
         </div><!-- /page-applications -->
 
+        <!-- Calendar page -->
+        <div id="page-calendar" style="display:none;height:100%">
+          <div class="cal-layout">
+            <div class="cal-main">
+              <div class="cal-header">
+                <div class="cal-nav-l">
+                  <button class="cal-nav-btn" id="cal-prev">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2L4 6l4 4"/></svg>
+                  </button>
+                  <button class="cal-nav-btn" id="cal-next">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2l4 4-4 4"/></svg>
+                  </button>
+                  <button class="cal-today-btn" id="cal-today">Today</button>
+                  <span id="cal-title" class="cal-title"></span>
+                </div>
+                <div class="cal-toggle">
+                  <button class="cal-toggle-btn" id="cal-toggle-day">Day</button>
+                  <button class="cal-toggle-btn" id="cal-toggle-week">Week</button>
+                  <button class="cal-toggle-btn cal-tog-on" id="cal-toggle-month">Month</button>
+                </div>
+              </div>
+              <div id="cal-body"></div>
+            </div>
+            <div class="cal-sb" id="cal-sb"></div>
+          </div>
+          <div id="cal-popover" class="cal-popover" style="display:none"></div>
+        </div><!-- /page-calendar -->
+
       </main>
     </div>
   </div>
@@ -867,5 +895,6 @@
   <script src="js/pages/interviews.js"></script>
   <script src="js/pages/companies.js"></script>
   <script src="js/pages/applications.js"></script>
+  <script src="js/pages/calendar.js"></script>
 </body>
 </html>
