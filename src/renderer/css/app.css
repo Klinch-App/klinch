@@ -2902,6 +2902,16 @@ html, body {
   color: var(--text-secondary);
 }
 .ivdp-fit-lock-icon { font-size: 14px; }
+.ivdp-fit-link { color: var(--primary-light); text-decoration: underline; cursor: pointer; }
+.ivdp-fit-analyzing-note { margin-top: 10px; font-size: 11px; color: var(--text-muted); font-style: italic; }
+.ivdp-fit-summary {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 10px;
+}
 
 /* Interviewer panel cards */
 .ivdp-iw-card {
