@@ -474,6 +474,8 @@ async function _completeInterview() {
   all.push(record);
   localStorage.setItem('klinch_interviews', JSON.stringify(all));
 
+  if (window.ApplicationsPage) window.ApplicationsPage.onInterviewSaved(record);
+
   closeModal();
   renderInterviews();
 }

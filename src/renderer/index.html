@@ -48,12 +48,12 @@
           Companies
         </div>
 
-        <div class="nav-item" data-page="jobs">
+        <div class="nav-item" data-page="applications">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="1.5" y="4.5" width="13" height="10" rx="1.5"/>
             <path d="M5 4.5V3a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/>
           </svg>
-          Jobs
+          Applications
         </div>
 
         <div class="nav-item" data-page="calendar">
@@ -313,6 +313,12 @@
               </div>
             </div>
 
+            <!-- My Applications (hidden when empty) -->
+            <div class="co-section" id="co-sec-applications" style="display:none">
+              <div class="co-section-title">My Applications</div>
+              <div id="co-sec-applications-body"></div>
+            </div>
+
             <!-- My Interviews -->
             <div class="co-section">
               <div class="co-section-title">My Interviews</div>
@@ -358,6 +364,108 @@
 
           </div>
         </div><!-- /page-companies -->
+
+        <!-- Applications page -->
+        <div id="page-applications" style="display:none">
+
+          <!-- Layer 1: Grid -->
+          <div id="ap-grid-layer">
+
+            <div class="iv-page-header">
+              <div class="iv-page-title">Applications</div>
+              <button class="hero-cta" id="ap-add-btn" style="margin-top:0;padding:9px 18px;font-size:13px">
+                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 1v12M1 7h12"/>
+                </svg>
+                Add Application
+              </button>
+            </div>
+
+            <!-- Summary stats -->
+            <div class="ap-stat-grid">
+              <div class="ap-stat-card">
+                <div class="ap-stat-label">Total Applications</div>
+                <div class="ap-stat-value" id="ap-stat-total">0</div>
+              </div>
+              <div class="ap-stat-card">
+                <div class="ap-stat-label">Active</div>
+                <div class="ap-stat-value" id="ap-stat-active">0</div>
+                <div class="ap-stat-sub">currently interviewing</div>
+              </div>
+              <div class="ap-stat-card">
+                <div class="ap-stat-label">Offers</div>
+                <div class="ap-stat-value" id="ap-stat-offers">0</div>
+              </div>
+              <div class="ap-stat-card">
+                <div class="ap-stat-label">Avg Response</div>
+                <div class="ap-stat-value" id="ap-stat-response">—</div>
+                <div class="ap-stat-sub">days to first interview</div>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="ap-filter-bar">
+              <select id="ap-filter-status" class="iv-filter-select">
+                <option value="">All Statuses</option>
+                <option value="Applied">Applied</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Offer">Offer</option>
+                <option value="Withdrawn">Withdrawn</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+              <select id="ap-filter-stage" class="iv-filter-select">
+                <option value="">All Stages</option>
+                <option value="Recruiter Screen">Recruiter Screen</option>
+                <option value="Hiring Manager">Hiring Manager</option>
+                <option value="Executive">Executive</option>
+                <option value="Peer">Peer</option>
+                <option value="Culture Fit">Culture Fit</option>
+                <option value="Technical Screen">Technical Screen</option>
+                <option value="Case Study / Presentation">Case Study / Presentation</option>
+                <option value="Panel">Panel</option>
+                <option value="Group">Group</option>
+                <option value="Final Round">Final Round</option>
+              </select>
+              <div class="iv-search-wrap">
+                <svg class="iv-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="6.5" cy="6.5" r="5"/>
+                  <path d="M10.5 10.5l3.5 3.5"/>
+                </svg>
+                <input id="ap-search" class="iv-search" type="search" placeholder="Search company or role…">
+              </div>
+              <select id="ap-sort" class="iv-filter-select">
+                <option value="date_applied">Date Applied</option>
+                <option value="response_time">Response Time</option>
+                <option value="activity">Most Recent Activity</option>
+              </select>
+            </div>
+
+            <!-- Application cards -->
+            <div id="ap-feed" class="interview-cards-grid"></div>
+            <div id="ap-empty" class="empty-state" style="display:none">
+              <div class="empty-state-icon">📬</div>
+              <div class="empty-state-text">No applications yet</div>
+              <div class="empty-state-sub">Track your job pursuits here — add an application to get started</div>
+            </div>
+
+          </div><!-- /ap-grid-layer -->
+
+          <!-- Layer 2: Detail -->
+          <div id="ap-detail-layer" style="display:none">
+
+            <button id="ap-back-btn" class="co-back-btn">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M7.5 1.5L3 6l4.5 4.5"/>
+              </svg>
+              Applications
+            </button>
+
+            <div class="co-hero" id="ap-detail-hero"></div>
+            <div id="ap-detail-body"></div>
+
+          </div><!-- /ap-detail-layer -->
+
+        </div><!-- /page-applications -->
 
       </main>
     </div>
@@ -614,6 +722,118 @@
     </div>
   </div>
 
+  <!-- Add Application Modal -->
+  <div id="add-app-modal" class="ai-modal-backdrop" style="display:none">
+    <div class="ai-modal-card">
+
+      <div class="ai-modal-header">
+        <button class="ai-back-btn" id="aa-back" style="visibility:hidden">← Back</button>
+        <div class="ai-step-dots">
+          <span class="ai-step-dot active" data-step="1"></span>
+          <span class="ai-step-dot" data-step="2"></span>
+        </div>
+        <button class="ai-close-btn" id="aa-close">✕</button>
+      </div>
+
+      <div class="ai-modal-body" style="position:relative">
+
+        <!-- Step 1: Company + Role -->
+        <div id="aa-step-1">
+          <h2 class="ai-step-title">Which company did you apply to?</h2>
+          <p class="ai-step-sub">Search for the company, then add the role details.</p>
+          <div class="ai-search-wrap">
+            <input type="text" id="aa-company-input" class="ai-modal-input" placeholder="Type company name…" autocomplete="off">
+            <div id="aa-company-results" class="ai-search-dropdown" style="display:none"></div>
+          </div>
+          <div id="aa-selected-company" class="ai-selected-entity" style="display:none">
+            <div class="ai-entity-logo">
+              <img id="aa-sel-logo-img" src="" alt="">
+              <div id="aa-sel-logo-fb" class="ai-logo-fallback" style="display:none"></div>
+            </div>
+            <div class="ai-entity-main">
+              <div class="ai-entity-name" id="aa-sel-company-name"></div>
+              <div class="ai-entity-sub" id="aa-sel-company-domain"></div>
+            </div>
+            <button class="ai-entity-change" id="aa-company-change">Change</button>
+          </div>
+          <div class="ai-field-group" style="margin-top:16px">
+            <label class="ai-field-label">Role Title</label>
+            <input type="text" id="aa-role" class="ai-modal-input" placeholder="e.g. Sales Development Representative">
+          </div>
+          <div class="ai-field-row" style="margin-top:16px">
+            <div class="ai-field-group" style="flex:1">
+              <label class="ai-field-label">Date Applied</label>
+              <input type="date" id="aa-date-applied" class="ai-modal-input">
+            </div>
+            <div class="ai-field-group" style="flex:1">
+              <label class="ai-field-label">Status</label>
+              <select id="aa-status" class="ai-modal-select">
+                <option value="Applied">Applied</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Offer">Offer</option>
+                <option value="Withdrawn">Withdrawn</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Job Description -->
+        <div id="aa-step-2" style="display:none">
+          <h2 class="ai-step-title">Add the job description <span style="color:var(--text-muted);font-size:14px;font-weight:400">(optional)</span></h2>
+          <p class="ai-step-sub">Paste the full JD and Claude will structure it for easy reference. Or skip to save now.</p>
+          <textarea id="aa-jd-textarea" class="ai-modal-textarea" placeholder="Paste the full job description here, or leave empty to skip…"></textarea>
+          <div id="aa-jd-structured" class="ai-jd-structured" style="display:none">
+            <div class="ai-jd-role-title" id="aa-jd-role-title"></div>
+            <div class="ai-jd-section">
+              <div class="ai-jd-section-label">Key Responsibilities</div>
+              <ul id="aa-jd-resp" class="ai-jd-list"></ul>
+            </div>
+            <div class="ai-jd-section">
+              <div class="ai-jd-section-label">Must-Have</div>
+              <ul id="aa-jd-must" class="ai-jd-list"></ul>
+            </div>
+            <button class="ai-entity-change" id="aa-jd-edit" style="margin-top:10px">Edit JD</button>
+          </div>
+        </div>
+
+        <div id="aa-toast" class="ai-toast" style="display:none"></div>
+      </div>
+
+      <div class="ai-modal-footer">
+        <span id="aa-step-label" class="ai-step-label">Step 1 of 2 — Company & Role</span>
+        <button class="ai-btn-primary" id="aa-next">Continue →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Link-to-Applications prompt (shown after adding an interview with no matching app) -->
+  <div id="ap-link-prompt" class="delete-confirm-backdrop" style="display:none">
+    <div class="delete-confirm-card">
+      <div class="delete-confirm-title">Add to your <strong>Applications tracker?</strong></div>
+      <p style="font-size:13px;color:var(--text-secondary);line-height:1.55">
+        You added an interview with <strong id="ap-link-company-name"></strong>. Would you like to track this in your Applications tab?
+      </p>
+      <div class="delete-confirm-actions">
+        <button class="ai-btn-primary" id="ap-link-yes" style="flex:1;padding:10px 0">Yes, add it</button>
+        <button class="btn-keep" id="ap-link-no">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Application confirm -->
+  <div id="ap-delete-confirm" class="delete-confirm-backdrop" style="display:none">
+    <div class="delete-confirm-card">
+      <div class="delete-confirm-title">Delete your <strong id="ap-delete-company-name"></strong> application?</div>
+      <p style="font-size:13px;color:var(--text-secondary);line-height:1.55">This will remove the application from your tracker. Linked interviews won't be deleted.</p>
+      <div class="delete-confirm-actions">
+        <button class="btn-delete-confirm" id="ap-delete-go">Delete</button>
+        <button class="btn-keep" id="ap-delete-cancel">Keep it</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add Interviewer to Company modal -->
   <div id="co-add-iw-modal" class="co-modal-backdrop" style="display:none">
     <div class="co-modal-card">
@@ -652,5 +872,6 @@
   <script src="js/add-interview.js"></script>
   <script src="js/pages/interviews.js"></script>
   <script src="js/pages/companies.js"></script>
+  <script src="js/pages/applications.js"></script>
 </body>
 </html>

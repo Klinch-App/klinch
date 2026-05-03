@@ -408,6 +408,11 @@ window.InterviewsPage = (() => {
     renderFeed();
   }
 
+  function reset() {
+    closeDetail();
+    refresh();
+  }
+
   init();
-  return { refresh, openDetail };
+  return { refresh, reset, openDetail };
 })();
