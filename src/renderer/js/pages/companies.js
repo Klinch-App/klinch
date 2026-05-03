@@ -11,6 +11,9 @@ window.CompaniesPage = (() => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+  function _slug(name) {
+    return String(name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
 
   // ── Storage ───────────────────────────────────────────────────────────────────
 
@@ -153,6 +156,24 @@ window.CompaniesPage = (() => {
       : null;
     domainEl.style.cursor = company.domain ? 'pointer' : '';
     if (window.wireImgFallbacks) window.wireImgFallbacks(logoEl);
+
+    // Research links
+    const slug = _slug(company.name);
+    const links = [
+      { label: 'Crunchbase', domain: 'crunchbase.com',  url: 'https://www.crunchbase.com/organization/' + slug },
+      { label: 'G2',         domain: 'g2.com',          url: 'https://www.g2.com/products/' + slug + '/reviews' },
+      { label: 'Capterra',   domain: 'capterra.com',    url: 'https://www.capterra.com/p/' + slug },
+      { label: 'Glassdoor',  domain: 'glassdoor.com',   url: 'https://www.glassdoor.com/Overview/Working-at-' + slug + '-EI_IE.htm' },
+      { label: 'RepVue',     domain: 'repvue.com',      url: 'https://www.repvue.com/company/' + slug },
+    ];
+    _el('co-hero-links').innerHTML = links.map(l => `
+      <button class="icard-stage-badge co-hero-link" data-url="${_esc(l.url)}" title="${_esc(l.label)}">
+        <img src="https://www.google.com/s2/favicons?domain=${_esc(l.domain)}&sz=16" width="12" height="12" alt="" style="display:block;flex-shrink:0">
+        ${_esc(l.label)}
+      </button>`).join('');
+    _el('co-hero-links').querySelectorAll('.co-hero-link').forEach(btn => {
+      btn.onclick = () => window.klinch.invoke('shell:open-external', { url: btn.dataset.url });
+    });
 
     // Static sections
     _renderSectionInterviews(company);

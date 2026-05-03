@@ -2122,6 +2122,27 @@ html, body {
   margin-top: 3px;
 }
 .co-hero-domain:hover { color: var(--accent); }
+.co-hero-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: auto;
+}
+.co-hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: none;
+  transition: color 0.15s, background 0.15s;
+}
+.co-hero-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
 
 /* Detail sections */
 .co-section {
