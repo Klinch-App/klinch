@@ -373,7 +373,12 @@ window.ApplicationsPage = (() => {
   function openAddModal(prefill = null) {
     _aa.step    = 1;
     _aa.company = prefill?.company || null;
-    _aa.jd      = prefill?.jd || null;
+    const _ivFallback = (!prefill?.jd && prefill?.company)
+      ? getInterviews().find(iv =>
+          (iv.company?.name || '').toLowerCase() === (prefill.company.name || '').toLowerCase() &&
+          iv.jd?.structured)
+      : null;
+    _aa.jd = prefill?.jd || _ivFallback?.jd || null;
 
     if (_aa.company) {
       _el('aa-company-input').style.display = 'none';
@@ -391,12 +396,21 @@ window.ApplicationsPage = (() => {
       _el('aa-selected-company').style.display = 'none';
     }
 
-    _el('aa-role').value         = prefill?.role_title || '';
+    _el('aa-role').value = prefill?.role_title || _aa.jd?.structured?.role_title || '';
     _el('aa-date-applied').value = prefill?.date_applied || new Date().toISOString().slice(0, 10);
     _el('aa-status').value       = 'Applied';
-    _el('aa-jd-textarea').value  = '';
-    _el('aa-jd-structured').style.display = 'none';
-    _el('aa-jd-textarea').style.display   = '';
+    _el('aa-jd-textarea').value  = _aa.jd?.raw || '';
+    if (_aa.jd?.structured) {
+      const s = _aa.jd.structured;
+      _el('aa-jd-role-title').textContent = s.role_title || '';
+      _el('aa-jd-resp').innerHTML = (s.responsibilities || []).map(x => `<li>${x}</li>`).join('');
+      _el('aa-jd-must').innerHTML = (s.must_have || []).map(x => `<li>${x}</li>`).join('');
+      _el('aa-jd-structured').style.display = '';
+      _el('aa-jd-textarea').style.display   = 'none';
+    } else {
+      _el('aa-jd-structured').style.display = 'none';
+      _el('aa-jd-textarea').style.display   = '';
+    }
     _el('aa-toast').style.display = 'none';
 
     if (prefill?.company && prefill?.role_title && prefill?.jd) {
@@ -512,6 +526,23 @@ window.ApplicationsPage = (() => {
             _el('aa-sel-company-domain').textContent = org.primary_domain || '';
             _el('aa-selected-company').style.display = '';
             if (window.wireImgFallbacks) window.wireImgFallbacks(_el('aa-selected-company'));
+            const ivMatch = getInterviews().find(iv =>
+              (iv.company?.name || '').toLowerCase() === (org.name || '').toLowerCase() &&
+              iv.jd?.structured
+            );
+            if (ivMatch) {
+              if (!_el('aa-role').value.trim()) _el('aa-role').value = ivMatch.jd.structured.role_title || '';
+              if (!_aa.jd) {
+                _aa.jd = ivMatch.jd;
+                _el('aa-jd-textarea').value = ivMatch.jd.raw || '';
+                const s = ivMatch.jd.structured;
+                _el('aa-jd-role-title').textContent = s.role_title || '';
+                _el('aa-jd-resp').innerHTML = (s.responsibilities || []).map(x => `<li>${x}</li>`).join('');
+                _el('aa-jd-must').innerHTML = (s.must_have || []).map(x => `<li>${x}</li>`).join('');
+                _el('aa-jd-structured').style.display = '';
+                _el('aa-jd-textarea').style.display   = 'none';
+              }
+            }
           });
         });
       } catch (_) {}
