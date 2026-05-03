@@ -308,11 +308,6 @@ window.ResumePage = (() => {
       alert('Please upload a PDF or DOCX file.');
       return;
     }
-    const filePath = file.path;
-    if (!filePath) {
-      alert('Could not read the file path. Try dragging from Finder.');
-      return;
-    }
 
     // Show parsing indicator inline
     const uploadBody = _el('rs-upload-body');
@@ -320,7 +315,20 @@ window.ResumePage = (() => {
       uploadBody.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Parsing ${_esc(file.name)}…</div>`;
     }
 
-    const result = await window.klinch.invoke('resume:parse', { file_path: filePath });
+    // Read as ArrayBuffer — avoids file.path (removed in Electron 32+)
+    let arrayBuffer;
+    try {
+      arrayBuffer = await file.arrayBuffer();
+    } catch (e) {
+      alert('Could not read the file. Please try again.');
+      render();
+      return;
+    }
+
+    const result = await window.klinch.invoke('resume:parse', {
+      file_name: file.name,
+      buffer:    arrayBuffer,
+    });
     if (!result.ok) {
       alert('Failed to parse resume: ' + result.error);
       render();
@@ -329,7 +337,6 @@ window.ResumePage = (() => {
 
     const r = {
       file_name:   file.name,
-      file_path:   filePath,
       uploaded_at: new Date().toISOString(),
       raw_text:    result.text,
       analysis:    null,
@@ -471,6 +478,10 @@ window.ResumePage = (() => {
 
   function refresh() { render(); }
   function reset()   { render(); }
+
+  // Prevent Electron window from navigating when files are dragged over non-dropzone areas
+  document.addEventListener('dragover', e => e.preventDefault(), false);
+  document.addEventListener('drop',     e => e.preventDefault(), false);
 
   return { refresh, reset };
 })();
