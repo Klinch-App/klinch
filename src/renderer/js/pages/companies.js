@@ -562,65 +562,21 @@ window.CompaniesPage = (() => {
 
   // ── Add Interviewer Modal ─────────────────────────────────────────────────────
 
-  const _iwState = { name: '', title: '', linkedin_url: '', photo_url: null };
+  const _iwState = { name: '', title: '', linkedin_url: '' };
 
   function _openAddIwModal() {
-    _iwState.name = ''; _iwState.title = ''; _iwState.linkedin_url = ''; _iwState.photo_url = null;
+    _iwState.name = ''; _iwState.title = ''; _iwState.linkedin_url = '';
     _el('co-add-iw-name').value  = '';
     _el('co-add-iw-title').value = '';
     _el('co-add-iw-url').value   = '';
     _el('co-add-iw-status').textContent  = '';
     _el('co-add-iw-status').style.color  = '';
-    _el('co-add-iw-photo-preview').style.display = 'none';
     _el('co-add-iw-modal').style.display = 'flex';
     _el('co-add-iw-name').focus();
   }
 
   function _closeAddIwModal() {
     _el('co-add-iw-modal').style.display = 'none';
-  }
-
-  async function _fetchAddIwPhoto() {
-    const url = _el('co-add-iw-url').value.trim();
-    if (!url) return;
-
-    const btn      = _el('co-add-iw-fetch-btn');
-    const statusEl = _el('co-add-iw-status');
-    btn.disabled = true;
-    btn.textContent = 'Fetching…';
-    statusEl.textContent = 'Looking up profile…';
-    statusEl.style.color = 'var(--text-muted)';
-
-    const res = await window.klinch.invoke('proxycurl:fetch', { linkedin_url: url });
-    btn.disabled = false;
-    btn.textContent = 'Fetch';
-
-    if (!res.ok || !res.data?.first_name) {
-      statusEl.textContent = 'Could not fetch — enter details manually';
-      statusEl.style.color = '#EF4444';
-      return;
-    }
-
-    const p = res.data;
-    _iwState.photo_url = p.profile_pic_url || null;
-
-    if (!_el('co-add-iw-name').value.trim()) {
-      const full = `${p.first_name || ''} ${p.last_name || ''}`.trim();
-      _el('co-add-iw-name').value = full;
-      _iwState.name = full;
-    }
-    if (!_el('co-add-iw-title').value.trim()) {
-      _el('co-add-iw-title').value = p.occupation || '';
-      _iwState.title = _el('co-add-iw-title').value;
-    }
-
-    statusEl.textContent = 'Profile fetched ✓';
-    statusEl.style.color = '#22C55E';
-
-    if (p.profile_pic_url) {
-      _el('co-add-iw-photo-img').src           = p.profile_pic_url;
-      _el('co-add-iw-photo-preview').style.display = 'flex';
-    }
   }
 
   function _saveAddIw() {
@@ -635,7 +591,6 @@ window.CompaniesPage = (() => {
       name,
       title:        _el('co-add-iw-title').value.trim(),
       linkedin_url: _el('co-add-iw-url').value.trim() || null,
-      photo_url:    _iwState.photo_url,
     };
 
     const key = _activeKey;
@@ -667,13 +622,11 @@ window.CompaniesPage = (() => {
     _el('co-add-iw-modal').addEventListener('click', e => {
       if (e.target === _el('co-add-iw-modal')) _closeAddIwModal();
     });
-    _el('co-add-iw-fetch-btn').addEventListener('click', _fetchAddIwPhoto);
     _el('co-add-iw-save-btn').addEventListener('click', _saveAddIw);
 
     _el('co-add-iw-name').addEventListener('input',  e => { _iwState.name         = e.target.value; });
     _el('co-add-iw-title').addEventListener('input', e => { _iwState.title        = e.target.value; });
     _el('co-add-iw-url').addEventListener('input',   e => { _iwState.linkedin_url = e.target.value; });
-    _el('co-add-iw-url').addEventListener('keydown', e => { if (e.key === 'Enter') _fetchAddIwPhoto(); });
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && _el('co-add-iw-modal')?.style.display !== 'none') _closeAddIwModal();

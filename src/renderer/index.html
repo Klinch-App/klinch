@@ -99,7 +99,7 @@
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M7 1v12M1 7h12"/>
                 </svg>
-                Add Your First Interview
+                Add Interview
               </button>
               <button class="hero-cta" id="btn-launch-overlay" style="margin-top:0;background:rgba(124,58,255,0.15);border:1px solid rgba(124,58,255,0.4);">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -671,6 +671,7 @@
                   <path d="M8 4.5V8l2.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
               </div>
+              <input type="time" id="ai-time-custom" class="ai-modal-input" style="display:none;margin-top:6px">
             </div>
           </div>
           <div class="ai-field-group">
@@ -849,16 +850,9 @@
       </div>
       <div class="ai-field-group">
         <label class="ai-field-label">LinkedIn URL <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-        <div style="display:flex;gap:10px">
-          <input type="url" id="co-add-iw-url" class="ai-modal-input" placeholder="https://linkedin.com/in/…" style="flex:1">
-          <button class="ai-btn-secondary" id="co-add-iw-fetch-btn">Fetch</button>
-        </div>
+        <input type="url" id="co-add-iw-url" class="ai-modal-input" placeholder="https://linkedin.com/in/…">
       </div>
       <div id="co-add-iw-status" style="font-size:12px;margin-top:-10px;margin-bottom:14px;min-height:16px"></div>
-      <div id="co-add-iw-photo-preview" style="display:none;align-items:center;gap:8px;margin-bottom:16px;font-size:12px;color:#22C55E">
-        <img id="co-add-iw-photo-img" class="ai-iw-photo-thumb" alt="">
-        Photo fetched ✓
-      </div>
       <div style="display:flex;gap:10px">
         <button class="ai-btn-primary" id="co-add-iw-save-btn" style="flex:1">Save Interviewer</button>
         <button class="setup-btn-secondary" id="co-add-iw-cancel">Cancel</button>

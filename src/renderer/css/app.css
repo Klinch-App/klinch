@@ -2580,3 +2580,41 @@ html, body {
 .ap-iv-row:hover { opacity: 0.75; }
 
 /* Link prompt & delete confirm reuse delete-confirm-backdrop styles */
+
+/* ── Inline info tooltip (used in modal field labels) ────────────────────── */
+.ai-info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  cursor: default;
+  line-height: 1;
+}
+.ai-info-tip-body {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  width: 290px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 400;
+  white-space: normal;
+  text-align: left;
+}
+.ai-info-tip:hover .ai-info-tip-body { opacity: 1; }
