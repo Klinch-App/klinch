@@ -32,6 +32,14 @@
           Dashboard
         </div>
 
+        <div class="nav-item" data-page="resume">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2.5" y="1" width="10" height="14" rx="1.5"/>
+            <path d="M5 5h6M5 8h6M5 11h4"/>
+          </svg>
+          Resume
+        </div>
+
         <div class="nav-item" data-page="interviews">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="8" cy="8" r="6.5"/>
@@ -168,6 +176,11 @@
             <div class="empty-state-text">No upcoming interviews</div>
             <div class="empty-state-sub">Add an interview to see it here</div>
           </div>
+        </div>
+
+        <!-- Resume page -->
+        <div id="page-resume" style="display:none">
+          <div id="rs-content"></div>
         </div>
 
         <!-- Interviews page -->
@@ -872,5 +885,6 @@
   <script src="js/pages/companies.js"></script>
   <script src="js/pages/applications.js"></script>
   <script src="js/pages/calendar.js"></script>
+  <script src="js/pages/resume.js"></script>
 </body>
 </html>
