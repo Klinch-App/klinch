@@ -135,8 +135,8 @@
             </div>
           </div>
 
-          <div class="section-title" style="margin-top:28px">Klinch Ear</div>
-          <div class="interview-panel">
+          <div class="section-title ear-section-title" style="margin-top:28px">Klinch Ear</div>
+          <div class="interview-panel ear-panel">
             <div class="interview-controls">
               <div class="device-status">
                 <span class="device-dot" id="device-dot"></span>
@@ -437,11 +437,13 @@
         <div class="setup-step" id="step-bh">
           <div class="setup-step-num" id="bh-num">1</div>
           <div class="setup-step-body">
-            <div class="setup-step-title">Install BlackHole audio driver</div>
+            <div class="setup-step-header">
+              <div class="setup-step-title">Install BlackHole audio driver</div>
+              <button class="setup-btn-info" id="bh-info-btn" title="Why do I need this?">ⓘ</button>
+            </div>
             <div class="setup-step-desc">BlackHole is a free virtual audio device that routes your interview audio into Klinch without affecting anything else.</div>
             <div class="setup-step-actions">
               <button class="setup-btn-primary" id="bh-download-btn">Download BlackHole →</button>
-              <button class="setup-btn-info" id="bh-info-btn" title="Why do I need this?">ⓘ</button>
               <button class="setup-btn-secondary" id="bh-check-btn" style="display:none">I've installed it — check again</button>
             </div>
           </div>
