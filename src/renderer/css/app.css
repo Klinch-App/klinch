@@ -354,6 +354,19 @@ html, body {
   white-space: pre-wrap;
 }
 
+/* ── Klinch Ear section highlight ───────────────────────────────────────── */
+
+.ear-section-title {
+  color: var(--primary-light);
+  letter-spacing: 1.4px;
+}
+
+.ear-panel {
+  background: linear-gradient(135deg, rgba(124,58,255,0.14) 0%, rgba(220,60,160,0.07) 100%);
+  border-color: rgba(124, 58, 255, 0.38);
+  box-shadow: 0 0 0 1px rgba(124, 58, 255, 0.08), 0 4px 24px rgba(124, 58, 255, 0.10);
+}
+
 /* ── Setup modal ─────────────────────────────────────────────────────────── */
 
 .setup-modal {
@@ -474,11 +487,17 @@ html, body {
   min-width: 0;
 }
 
+.setup-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
 .setup-step-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 6px;
 }
 
 .setup-step-desc {
@@ -563,7 +582,6 @@ html, body {
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
   flex-shrink: 0;
-  align-self: center;
 }
 
 .setup-btn-info:hover {
