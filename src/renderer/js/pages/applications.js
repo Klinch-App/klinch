@@ -668,7 +668,8 @@ window.ApplicationsPage = (() => {
     _el('ap-detail-body').addEventListener('click', e => {
       const row = e.target.closest('.ap-iv-row[data-iv-id]');
       if (row && window.InterviewsPage) {
-        window.InterviewsPage.openDetail(row.dataset.ivId);
+        window.navigateTo?.('interviews');
+        setTimeout(() => window.InterviewsPage.openDetail(row.dataset.ivId), 0);
       }
     });
 

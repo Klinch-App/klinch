@@ -348,8 +348,8 @@ window.CompaniesPage = (() => {
       row.addEventListener('click', () => {
         const id = row.dataset.ivId;
         if (!id) return;
-        if (window.navigateTo)              window.navigateTo('interviews');
-        if (window.InterviewsPage?.openDetail) window.InterviewsPage.openDetail(id);
+        if (window.navigateTo) window.navigateTo('interviews');
+        if (window.InterviewsPage?.openDetail) setTimeout(() => window.InterviewsPage.openDetail(id), 0);
       });
     });
   }
