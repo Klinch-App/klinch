@@ -80,13 +80,15 @@ function init() {
   ipcMain.handle('resume:parse', async (_e, { file_name, data }) => {
     try {
       const ext = path.extname(file_name).toLowerCase();
-      // data arrives as a plain number array; rebuild a Node Buffer from it
-      const buf = Buffer.from(data);
+      const buf = Buffer.from(data);   // data is a plain number array from renderer
       let text;
+
       if (ext === '.pdf') {
-        const pdfParse = require('pdf-parse/lib/pdf-parse.js');
-        const parsed   = await pdfParse(buf);
-        text           = parsed.text.trim();
+        // pdf-parse v2 API: new PDFParse({ data: Buffer }).getText()
+        const { PDFParse } = require('pdf-parse');
+        const parser = new PDFParse({ data: buf });
+        const result = await parser.getText();
+        text = result.text.trim();
       } else if (ext === '.docx') {
         const mammoth = require('mammoth');
         const result  = await mammoth.extractRawText({ buffer: buf });
@@ -94,10 +96,12 @@ function init() {
       } else {
         throw new Error(`Unsupported file type: ${ext}`);
       }
-      if (!text) throw new Error('No text could be extracted from this file.');
+
+      if (!text) throw new Error('No text could be extracted — the file may be image-based or password protected.');
+      console.log(`[resume:parse] success — ${text.length} chars from ${file_name}`);
       return { ok: true, text };
     } catch (err) {
-      console.error('[resume:parse]', err.message, err.stack);
+      console.error('[resume:parse] ERROR:', err.message);
       return { ok: false, error: err.message };
     }
   });

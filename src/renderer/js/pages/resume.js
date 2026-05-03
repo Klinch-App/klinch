@@ -329,16 +329,19 @@ window.ResumePage = (() => {
       return;
     }
 
-    const result = await window.klinch.invoke('resume:parse', {
-      file_name: file.name,
-      data,
-    });
-    if (!result.ok) {
+    let result;
+    try {
+      result = await window.klinch.invoke('resume:parse', { file_name: file.name, data });
+    } catch (err) {
+      result = { ok: false, error: err.message || 'IPC error' };
+    }
+
+    if (!result?.ok) {
       const uploadBody = _el('rs-upload-body');
       if (uploadBody) {
         uploadBody.innerHTML = `
           <div class="ivdp-ai-error" style="padding:4px 0">
-            Could not parse "${_esc(file.name)}": ${_esc(result.error || 'unknown error')}<br>
+            Could not parse "${_esc(file.name)}": ${_esc(result?.error || 'unknown error')}<br>
             <small>Make sure the file is a valid, non-password-protected PDF or DOCX.</small>
           </div>
           ${_buildDropZone()}`;
