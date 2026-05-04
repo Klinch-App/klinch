@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session } = require('electron');
+const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification } = require('electron');
 const path = require('path');
 const interview      = require('./src/main/ipc/interview');
 const audio          = require('./src/main/ipc/audio');
@@ -163,6 +163,58 @@ ipcMain.on('overlay:update-settings', (_event, settings) => {
   overlayWindow?.webContents.send('overlay:settings', settings);
 });
 
+// ─── Interview reminder scheduler ────────────────────────────────────────────
+
+const firedReminders = new Set();
+
+function _fireMainNotification(title, body) {
+  if (Notification.isSupported()) new Notification({ title, body }).show();
+}
+
+function startReminderScheduler() {
+  setInterval(async () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    try {
+      const [interviewsJson, settingsJson] = await Promise.all([
+        mainWindow.webContents.executeJavaScript('localStorage.getItem("klinch_interviews")'),
+        mainWindow.webContents.executeJavaScript('localStorage.getItem("klinch_settings")'),
+      ]);
+
+      const settings = settingsJson ? JSON.parse(settingsJson) : {};
+      if (settings.notifications_enabled === false) return;
+
+      const interviews = interviewsJson ? JSON.parse(interviewsJson) : [];
+      const now = Date.now();
+
+      for (const iv of interviews) {
+        if (iv.status !== 'pending' || !iv.scheduled_at) continue;
+
+        const t       = new Date(iv.scheduled_at).getTime();
+        const diff    = t - now;
+        const company = iv.company?.name || 'your interview';
+        const timeStr = new Date(iv.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        const checks = [
+          { key: '24h', target: 86400000, body: `Interview tomorrow — ${company} at ${timeStr}` },
+          { key: '1h',  target:  3600000, body: `Interview in 1 hour — ${company}. You've got this.` },
+          { key: '5m',  target:   300000, body: `Your ${company} interview starts in 5 minutes.` },
+        ];
+
+        for (const { key, target, body } of checks) {
+          const id = `${iv.id}-${key}`;
+          if (!firedReminders.has(id) && diff > target - 90000 && diff <= target + 90000) {
+            firedReminders.add(id);
+            _fireMainNotification('Klinch', body);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[scheduler]', err.message);
+    }
+  }, 60000);
+}
+
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
@@ -172,6 +224,7 @@ app.whenReady().then(() => {
   });
 
   createMainWindow();
+  startReminderScheduler();
 
   audio.init();
   interviewsData.init();
