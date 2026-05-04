@@ -3587,7 +3587,22 @@ html, body {
 }
 
 .dr-waveform {
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 56px;
+}
+.dr-waveform span {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--primary);
+  animation: dr-bar-bounce var(--dur, 0.6s) ease-in-out infinite alternate;
+  animation-delay: var(--dl, 0s);
+  transform-origin: bottom;
+}
+@keyframes dr-bar-bounce {
+  from { transform: scaleY(0.12); opacity: 0.35; }
+  to   { transform: scaleY(1);    opacity: 1; }
 }
 
 .dr-start-btn {
