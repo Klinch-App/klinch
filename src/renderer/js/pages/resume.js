@@ -19,6 +19,7 @@ window.ResumePage = (() => {
 
   function saveResume(r) {
     localStorage.setItem('klinch_resume', JSON.stringify(r));
+    window.refreshDashboardStats?.();
   }
 
   function getInterviews() {

@@ -728,6 +728,7 @@ window.ApplicationsPage = (() => {
   function refresh() {
     renderStats();
     renderFeed();
+    window.refreshDashboardStats?.();
   }
 
   function reset() {

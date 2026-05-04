@@ -437,18 +437,43 @@ async function _completeInterview() {
 
 // ── Render interviews on dashboard ────────────────────────────────────────────
 
-function renderInterviews() {
-  const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-  const grid = _el('upcoming-interviews-grid');
-  const empty = _el('upcoming-empty-state');
-  const countEl = document.querySelector('.card-value[data-stat="interviews"]');
-  const companyCountEl = document.querySelector('.card-value[data-stat="companies"]');
+function refreshDashboardStats() {
+  const all  = JSON.parse(localStorage.getItem('klinch_interviews')  || '[]');
+  const apps = JSON.parse(localStorage.getItem('klinch_applications') || '[]');
+  const resume = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
+
+  const countEl    = document.querySelector('.card-value[data-stat="interviews"]');
+  const companyEl  = document.querySelector('.card-value[data-stat="companies"]');
+  const appValEl   = document.querySelector('.card-value[data-stat="applications"]');
+  const appSubEl   = document.querySelector('[data-stat-sub="applications"]');
+  const resValEl   = document.querySelector('.card-value[data-stat="resume"]');
+  const resSubEl   = document.querySelector('[data-stat-sub="resume"]');
 
   if (countEl) countEl.textContent = all.length;
-  if (companyCountEl) {
+  if (companyEl) {
     const uniqueCompanies = new Set(all.map(iv => iv.company?.name).filter(Boolean));
-    companyCountEl.textContent = uniqueCompanies.size;
+    companyEl.textContent = uniqueCompanies.size;
   }
+
+  if (appValEl) appValEl.textContent = apps.length;
+  if (appSubEl) {
+    const active = apps.filter(a => a.status === 'Interviewing').length;
+    appSubEl.textContent = apps.length === 0
+      ? 'No applications yet'
+      : active > 0 ? `${active} active` : 'None active';
+  }
+
+  if (resValEl) resValEl.textContent = resume ? '✓' : '—';
+  if (resSubEl) resSubEl.textContent = resume ? 'Resume uploaded' : 'Upload your resume';
+}
+window.refreshDashboardStats = refreshDashboardStats;
+
+function renderInterviews() {
+  const all  = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+  const grid  = _el('upcoming-interviews-grid');
+  const empty = _el('upcoming-empty-state');
+
+  refreshDashboardStats();
 
   if (!grid) return;
 
