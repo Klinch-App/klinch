@@ -345,37 +345,51 @@ window.DryRunPage = (() => {
         return;
       }
 
-      _recognition = new SR();
-      _recognition.continuous     = true;
-      _recognition.interimResults = true;
-      _recognition.lang           = 'en-US';
+      function _startSR() {
+        _recognition = new SR();
+        _recognition.continuous     = true;
+        _recognition.interimResults = true;
+        _recognition.lang           = 'en-US';
 
-      _recognition.onresult = e => {
-        let interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            finalTranscript += e.results[i][0].transcript + ' ';
-          } else {
-            interim += e.results[i][0].transcript;
+        _recognition.onresult = e => {
+          let interim = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              finalTranscript += e.results[i][0].transcript + ' ';
+            } else {
+              interim += e.results[i][0].transcript;
+            }
           }
-        }
-        const transcriptEl = _el('dr-transcript-live');
-        if (transcriptEl) transcriptEl.textContent = (finalTranscript + interim).trim();
-      };
+          const transcriptEl = _el('dr-transcript-live');
+          if (transcriptEl) transcriptEl.textContent = (finalTranscript + interim).trim();
+        };
 
-      _recognition.onerror = () => {
-        _isRecording = false;
-        const wvEl = _el('dr-waveform');
-        if (wvEl) wvEl.style.display = 'none';
-        const startBtn = _el('dr-start-btn');
-        const stopBtn  = _el('dr-stop-btn');
-        if (startBtn) startBtn.style.display = '';
-        if (stopBtn)  stopBtn.style.display  = 'none';
-        const micLabel = _el('dr-mic-label');
-        if (micLabel) micLabel.textContent = 'Tap Start Answer to respond';
-      };
+        _recognition.onerror = e => {
+          console.warn('[DryRun] SpeechRecognition error:', e.error);
+          if (e.error === 'no-speech' || e.error === 'network') return; // onend will restart
+          // Fatal error — reset UI
+          _isRecording = false;
+          const wvEl = _el('dr-waveform');
+          if (wvEl) wvEl.style.display = 'none';
+          const startBtn = _el('dr-start-btn');
+          const stopBtn  = _el('dr-stop-btn');
+          if (startBtn) startBtn.style.display = '';
+          if (stopBtn)  stopBtn.style.display  = 'none';
+          const micLabel = _el('dr-mic-label');
+          if (micLabel) micLabel.textContent = 'Tap Start Answer to respond';
+        };
 
-      _recognition.start();
+        _recognition.onend = () => {
+          if (_isRecording) {
+            // Restart automatically — recognition ended but session is still active
+            try { _startSR(); } catch (_) {}
+          }
+        };
+
+        _recognition.start();
+      }
+
+      _startSR();
     }
 
     function _stopRecording() {
