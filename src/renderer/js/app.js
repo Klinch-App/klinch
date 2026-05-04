@@ -14,6 +14,7 @@ function navigateTo(page) {
   if (page === 'companies'    && window.CompaniesPage)    window.CompaniesPage.reset();
   if (page === 'applications' && window.ApplicationsPage) window.ApplicationsPage.reset();
   if (page === 'calendar'     && window.CalendarPage)     window.CalendarPage.reset();
+  if (page === 'dry-run'      && window.DryRunPage)       window.DryRunPage.reset();
 }
 window.navigateTo = navigateTo;
 

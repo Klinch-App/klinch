@@ -82,6 +82,14 @@
           Coach
         </div>
 
+        <div class="nav-item" data-page="dry-run">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="6.5"/>
+            <path d="M6.5 5.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/>
+          </svg>
+          Dry Run
+        </div>
+
         <div class="sidebar-spacer"></div>
 
         <div class="nav-item" data-page="settings">
@@ -498,6 +506,19 @@
 
         </div><!-- /page-applications -->
 
+        <!-- Coach page -->
+        <div id="page-coach" style="display:none">
+          <div class="dr-placeholder">
+            <h1 class="dr-placeholder-heading">Coach</h1>
+            <p class="dr-placeholder-sub">Cross-interview insights coming soon.</p>
+          </div>
+        </div>
+
+        <!-- Dry Run page -->
+        <div id="page-dry-run" style="display:none">
+          <div id="dr-root"></div>
+        </div>
+
         <!-- Calendar page -->
         <div id="page-calendar" style="display:none;height:100%">
           <div class="cal-layout">
@@ -889,6 +910,7 @@
 
   <script src="js/stt.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/pages/dry-run.js"></script>
   <script src="js/setup.js"></script>
   <script src="js/add-interview.js"></script>
   <script src="js/pages/interviews.js"></script>
