@@ -35,14 +35,7 @@ function _klinchSettings() {
 
 window.klinchNotify = function(title, body) {
   if (_klinchSettings().notifications_enabled === false) return;
-  if (typeof Notification === 'undefined') return;
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body });
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') new Notification(title, { body });
-    });
-  }
+  window.klinch.send('notify', { title, body });
 };
 
 const _notifToggle = document.getElementById('st-notif-toggle');
