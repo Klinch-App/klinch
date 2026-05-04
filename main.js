@@ -1,4 +1,5 @@
 require('dotenv').config();
+process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
 const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification } = require('electron');
 const path = require('path');
 const interview      = require('./src/main/ipc/interview');
