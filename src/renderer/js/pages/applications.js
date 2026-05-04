@@ -163,7 +163,7 @@ window.ApplicationsPage = (() => {
         <div class="ap-card-footer">
           <div class="ap-card-meta">
             <span class="icard-date">Applied ${_esc(dateApplied)}</span>
-            ${firstIvDate ? `<span class="ap-meta-dot">·</span><span class="icard-date">1st iw ${_esc(firstIvDate)}</span>` : ''}
+            ${firstIvDate ? `<span class="ap-meta-dot">·</span><span class="icard-date">1st interview ${_esc(firstIvDate)}</span>` : ''}
             ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days}d response</span>` : ''}
             ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
           </div>
