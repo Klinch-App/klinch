@@ -438,8 +438,7 @@ async function _completeInterview() {
 // ── Render interviews on dashboard ────────────────────────────────────────────
 
 function refreshDashboardStats() {
-  const all  = JSON.parse(localStorage.getItem('klinch_interviews')  || '[]');
-  const apps = JSON.parse(localStorage.getItem('klinch_applications') || '[]');
+  const all    = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   const resume = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
 
   const countEl    = document.querySelector('.card-value[data-stat="interviews"]');
@@ -455,12 +454,12 @@ function refreshDashboardStats() {
     companyEl.textContent = uniqueCompanies.size;
   }
 
-  if (appValEl) appValEl.textContent = apps.length;
+  const appStats = window.ApplicationsPage?.getStats() ?? { total: apps.length, active: 0 };
+  if (appValEl) appValEl.textContent = appStats.total;
   if (appSubEl) {
-    const active = apps.filter(a => a.status === 'Interviewing').length;
-    appSubEl.textContent = apps.length === 0
+    appSubEl.textContent = appStats.total === 0
       ? 'No applications yet'
-      : active > 0 ? `${active} active` : 'None active';
+      : appStats.active > 0 ? `${appStats.active} active` : 'None active';
   }
 
   if (resValEl) resValEl.textContent = resume ? '✓' : '—';

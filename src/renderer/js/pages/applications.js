@@ -737,6 +737,14 @@ window.ApplicationsPage = (() => {
     refresh();
   }
 
+  function getStats() {
+    const all = _getMergedApps();
+    return {
+      total:  all.length,
+      active: all.filter(a => a.status === 'Interviewing').length,
+    };
+  }
+
   init();
-  return { refresh, reset, openDetail, onInterviewSaved, openAddModal };
+  return { refresh, reset, openDetail, onInterviewSaved, openAddModal, getStats };
 })();
