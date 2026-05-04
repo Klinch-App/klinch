@@ -47,25 +47,32 @@
     const DR_ID   = _uuid();
 
     // ── Company objects ────────────────────────────────────────────────────────
+    const _logoKey = window.klinch?.logoDevKey || '';
+    const _logo = (domain) => `https://img.logo.dev/${domain}?token=${_logoKey}`;
+
     const SALESFORCE = {
       name: 'Salesforce',
+      domain: 'salesforce.com',
       primary_domain: 'salesforce.com',
-      logo_url: 'https://logo.clearbit.com/salesforce.com',
+      logo_url: _logo('salesforce.com'),
     };
     const HUBSPOT = {
       name: 'HubSpot',
+      domain: 'hubspot.com',
       primary_domain: 'hubspot.com',
-      logo_url: 'https://logo.clearbit.com/hubspot.com',
+      logo_url: _logo('hubspot.com'),
     };
     const OUTREACH = {
       name: 'Outreach',
+      domain: 'outreach.io',
       primary_domain: 'outreach.io',
-      logo_url: 'https://logo.clearbit.com/outreach.io',
+      logo_url: _logo('outreach.io'),
     };
     const GONG = {
       name: 'Gong',
+      domain: 'gong.io',
       primary_domain: 'gong.io',
-      logo_url: 'https://logo.clearbit.com/gong.io',
+      logo_url: _logo('gong.io'),
     };
 
     // ── Interviews ─────────────────────────────────────────────────────────────
