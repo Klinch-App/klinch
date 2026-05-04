@@ -93,11 +93,11 @@ window.CalendarPage = (() => {
     const name = iv.company?.name || '?';
     const logo = iv.company?.logo_url || '';
     const init = (name[0] || '?').toUpperCase();
-    const fb   = `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px">${_esc(init)}</span>`;
+    const fb   = `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px;display:none">${_esc(init)}</span>`;
     return logo
       ? `<img src="${_esc(logo)}" class="cal-logo" width="${size}" height="${size}" alt=""
              onerror="this.style.display='none';this.nextSibling.style.display='flex'">${fb}`
-      : fb;
+      : `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px">${_esc(init)}</span>`;
   }
 
   // ── Month view ────────────────────────────────────────────────────────────
@@ -136,13 +136,14 @@ window.CalendarPage = (() => {
             const inMonth = cell.getMonth() === month;
             const isToday = _sameDay(cell, today);
             const dayIvs  = byDate.get(ds) || [];
+            const iconSz  = dayIvs.length === 1 ? 52 : dayIvs.length <= 3 ? 32 : 22;
             return `
               <div class="cal-day${inMonth ? '' : ' cal-day-out'}${dayIvs.length ? ' cal-day-lit' : ''}">
                 <div class="cal-day-num${isToday ? ' cal-day-today' : ''}">${cell.getDate()}</div>
                 <div class="cal-day-logos">
                   ${dayIvs.map(iv => `
-                  <div class="cal-logo-dot" data-iv="${_esc(iv.id)}" title="${_esc(iv.company?.name || 'Interview')}">
-                    ${_rdot(iv)}${_logoHtml(iv, 22)}
+                  <div class="cal-logo-dot" data-iv="${_esc(iv.id)}" title="${_esc(iv.company?.name || 'Interview')}" style="width:${iconSz}px;height:${iconSz}px">
+                    ${_rdot(iv)}${_logoHtml(iv, iconSz)}
                   </div>`).join('')}
                 </div>
               </div>`;
