@@ -380,6 +380,7 @@ window.ResumePage = (() => {
 
     fresh.analysis = result.data;
     saveResume(fresh);
+    if (window.klinchNotify) window.klinchNotify('Klinch', 'Your resume coach report is ready.');
 
     if (coachBody) {
       coachBody.innerHTML = _buildCoachResults(fresh.analysis);

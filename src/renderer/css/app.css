@@ -3932,3 +3932,82 @@ html, body {
   max-width: 640px;
   line-height: 1.5;
 }
+
+/* ── Settings — notifications toggle ───────────────────────────────────────── */
+
+.st-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 640px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+
+.st-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.st-toggle-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.st-toggle-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  max-width: 420px;
+}
+
+.st-toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.st-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.st-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.st-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.st-toggle-switch input:checked + .st-toggle-track {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.st-toggle-switch input:checked + .st-toggle-track::after {
+  transform: translateX(16px);
+  background: #fff;
+}

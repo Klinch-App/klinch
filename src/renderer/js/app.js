@@ -27,6 +27,34 @@ document.querySelectorAll('.card[data-nav]').forEach(card => {
   card.addEventListener('click', () => navigateTo(card.dataset.nav));
 });
 
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+function _klinchSettings() {
+  return JSON.parse(localStorage.getItem('klinch_settings') || '{}');
+}
+
+window.klinchNotify = function(title, body) {
+  if (_klinchSettings().notifications_enabled === false) return;
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') new Notification(title, { body });
+    });
+  }
+};
+
+const _notifToggle = document.getElementById('st-notif-toggle');
+if (_notifToggle) {
+  _notifToggle.checked = _klinchSettings().notifications_enabled !== false;
+  _notifToggle.addEventListener('change', () => {
+    const s = _klinchSettings();
+    s.notifications_enabled = _notifToggle.checked;
+    localStorage.setItem('klinch_settings', JSON.stringify(s));
+  });
+}
+
 // ── Settings — plan upgrade buttons ──────────────────────────────────────────
 document.getElementById('page-settings').addEventListener('click', e => {
   const btn = e.target.closest('.plan-upgrade-btn');

@@ -471,6 +471,7 @@ window.DryRunPage = (() => {
     const runs = _getDryRuns();
     const run  = runs.find(r => r.id === _sessionRunId);
     if (run) { run.report = report; _saveDryRuns(runs); }
+    if (report && window.klinchNotify) window.klinchNotify('Klinch', 'Your Dry Run coaching report is ready.');
 
     _renderReport(report);
   }
