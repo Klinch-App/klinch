@@ -11,6 +11,10 @@ window.DryRunPage = (() => {
   let _sessionRunId    = null;
   let _questionNum     = 0;
   let _currentQuestion = null;
+  let _audioCtx        = null;
+  let _analyser        = null;
+  let _micStream       = null;
+  let _waveAnimId      = null;
 
   const MAX_QUESTIONS = 10;
   const STAGES = ['Recruiter Screen', 'Hiring Manager', 'Final Round', 'Panel'];
@@ -263,7 +267,11 @@ window.DryRunPage = (() => {
       <div class="dr-session">
         <div class="dr-session-topbar">
           <div class="dr-timer" id="dr-timer">0:00</div>
-          <div class="dr-progress" id="dr-progress">Question 1 of ${MAX_QUESTIONS}</div>
+          <div class="dr-progress" id="dr-progress">
+            <div class="dr-q-label">Question</div>
+            <div class="dr-q-nums"><span id="dr-q-current">1</span><span class="dr-q-sep"> / ${MAX_QUESTIONS}</span></div>
+          </div>
+          <div class="dr-topbar-spacer"></div>
         </div>
 
         <div class="dr-question-area">
@@ -278,11 +286,19 @@ window.DryRunPage = (() => {
 
         <div class="dr-controls">
           <div class="dr-transcript-live" id="dr-transcript-live"></div>
-          <button class="dr-mic-btn" id="dr-mic-btn" disabled title="Hold to answer">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <canvas class="dr-waveform" id="dr-waveform" width="320" height="56" style="display:none"></canvas>
+          <button class="dr-start-btn" id="dr-start-btn" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="2" width="6" height="12" rx="3"/>
               <path d="M5 10a7 7 0 0 0 14 0M12 19v3M9 22h6"/>
             </svg>
+            Start Answer
+          </button>
+          <button class="dr-stop-btn" id="dr-stop-btn" style="display:none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+            </svg>
+            Stop & Submit
           </button>
           <div class="dr-mic-label" id="dr-mic-label">Generating question…</div>
         </div>
@@ -294,25 +310,78 @@ window.DryRunPage = (() => {
     `;
   }
 
+  async function _startWaveform() {
+    const canvas = _el('dr-waveform');
+    if (!canvas) return;
+    try {
+      _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      _audioCtx  = new AudioContext();
+      _analyser  = _audioCtx.createAnalyser();
+      _analyser.fftSize = 64;
+      _audioCtx.createMediaStreamSource(_micStream).connect(_analyser);
+
+      const data = new Uint8Array(_analyser.frequencyBinCount);
+      const ctx  = canvas.getContext('2d');
+      const W    = canvas.width;
+      const H    = canvas.height;
+      const bars = _analyser.frequencyBinCount;
+      const bw   = Math.floor((W - (bars - 1) * 2) / bars);
+
+      canvas.style.display = '';
+
+      function draw() {
+        _waveAnimId = requestAnimationFrame(draw);
+        _analyser.getByteFrequencyData(data);
+        ctx.clearRect(0, 0, W, H);
+        for (let i = 0; i < bars; i++) {
+          const ratio  = data[i] / 255;
+          const bh     = Math.max(3, ratio * H);
+          const alpha  = 0.4 + ratio * 0.6;
+          ctx.fillStyle = `rgba(124,58,255,${alpha})`;
+          ctx.beginPath();
+          ctx.roundRect(i * (bw + 2), H - bh, bw, bh, 2);
+          ctx.fill();
+        }
+      }
+      draw();
+    } catch (_) {
+      // getUserMedia unavailable — canvas stays hidden, recording still works
+    }
+  }
+
+  function _stopWaveform() {
+    if (_waveAnimId)  { cancelAnimationFrame(_waveAnimId); _waveAnimId = null; }
+    if (_micStream)   { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    if (_audioCtx)    { _audioCtx.close(); _audioCtx = null; }
+    _analyser = null;
+    const canvas = _el('dr-waveform');
+    if (canvas) canvas.style.display = 'none';
+  }
+
   function _setupMicListeners() {
     const root = _root();
     let finalTranscript = '';
 
     function _startRecording() {
       if (_isRecording) return;
-      const micBtn = _el('dr-mic-btn');
-      if (!micBtn || micBtn.disabled) return;
+      const startBtn = _el('dr-start-btn');
+      if (!startBtn || startBtn.disabled) return;
 
-      _isRecording     = true;
-      finalTranscript  = '';
-      micBtn.classList.add('active');
+      _isRecording    = true;
+      finalTranscript = '';
+
+      startBtn.style.display = 'none';
+      const stopBtn = _el('dr-stop-btn');
+      if (stopBtn) stopBtn.style.display = '';
 
       const micLabel    = _el('dr-mic-label');
       const transcriptEl = _el('dr-transcript-live');
-      if (micLabel)     micLabel.textContent = 'Recording… release to submit';
+      if (micLabel)     micLabel.textContent = 'Listening…';
       if (transcriptEl) transcriptEl.textContent = '';
 
       if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+      _startWaveform();
 
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
@@ -340,10 +409,13 @@ window.DryRunPage = (() => {
 
       _recognition.onerror = () => {
         _isRecording = false;
-        const micBtn = _el('dr-mic-btn');
-        if (micBtn) micBtn.classList.remove('active');
+        _stopWaveform();
+        const startBtn = _el('dr-start-btn');
+        const stopBtn  = _el('dr-stop-btn');
+        if (startBtn) startBtn.style.display = '';
+        if (stopBtn)  stopBtn.style.display  = 'none';
         const micLabel = _el('dr-mic-label');
-        if (micLabel) micLabel.textContent = 'Hold to answer';
+        if (micLabel) micLabel.textContent = 'Tap Start Answer to respond';
       };
 
       _recognition.start();
@@ -353,8 +425,12 @@ window.DryRunPage = (() => {
       if (!_isRecording) return;
       _isRecording = false;
 
-      const micBtn = _el('dr-mic-btn');
-      if (micBtn) micBtn.classList.remove('active');
+      _stopWaveform();
+
+      const startBtn = _el('dr-start-btn');
+      const stopBtn  = _el('dr-stop-btn');
+      if (startBtn) startBtn.style.display = 'none';
+      if (stopBtn)  stopBtn.style.display  = 'none';
 
       const micLabel = _el('dr-mic-label');
       if (micLabel) micLabel.textContent = 'Processing…';
@@ -372,24 +448,17 @@ window.DryRunPage = (() => {
       }, 500);
     }
 
-    root.addEventListener('mousedown', e => {
-      if (e.target.closest('#dr-mic-btn')) _startRecording();
-    });
-    root.addEventListener('mouseup', e => {
-      if (_isRecording) _stopRecording();
-    });
-    root.addEventListener('mouseleave', () => {
-      if (_isRecording) _stopRecording();
-    });
     root.addEventListener('click', e => {
-      if (e.target.closest('#dr-end-btn')) _endSession();
+      if (e.target.closest('#dr-start-btn')) _startRecording();
+      if (e.target.closest('#dr-stop-btn'))  _stopRecording();
+      if (e.target.closest('#dr-end-btn'))   _endSession();
     });
   }
 
   async function _nextQuestion() {
     _questionNum++;
-    const progressEl = _el('dr-progress');
-    if (progressEl) progressEl.textContent = `Question ${_questionNum} of ${MAX_QUESTIONS}`;
+    const qNumEl = _el('dr-q-current');
+    if (qNumEl) qNumEl.textContent = _questionNum;
 
     const interviews = _getInterviews();
     const jd = _config.interview_id
@@ -409,26 +478,26 @@ window.DryRunPage = (() => {
 
     _currentQuestion = question;
 
-    const loadingEl = _el('dr-question-loading');
-    const textEl    = _el('dr-question-text');
-    const micBtn    = _el('dr-mic-btn');
-    const micLabel  = _el('dr-mic-label');
+    const loadingEl  = _el('dr-question-loading');
+    const textEl     = _el('dr-question-text');
+    const startBtn   = _el('dr-start-btn');
+    const micLabel   = _el('dr-mic-label');
 
-    if (loadingEl) loadingEl.style.display = 'none';
-    if (textEl)  { textEl.textContent = question; textEl.style.display = ''; }
-    if (micBtn)    micBtn.disabled = false;
-    if (micLabel)  micLabel.textContent = 'Hold to answer';
+    if (loadingEl)  loadingEl.style.display = 'none';
+    if (textEl)   { textEl.textContent = question; textEl.style.display = ''; }
+    if (startBtn) { startBtn.disabled = false; startBtn.style.display = ''; }
+    if (micLabel)   micLabel.textContent = 'Tap Start Answer when ready';
 
     _speak(question);
   }
 
   async function _submitAnswer(question, answer) {
-    const micBtn    = _el('dr-mic-btn');
+    const startBtn  = _el('dr-start-btn');
     const loadingEl = _el('dr-question-loading');
     const textEl    = _el('dr-question-text');
     const micLabel  = _el('dr-mic-label');
 
-    if (micBtn) micBtn.disabled = true;
+    if (startBtn) { startBtn.disabled = true; startBtn.style.display = ''; }
 
     _history.push({ question, answer });
     _currentQuestion = null;
