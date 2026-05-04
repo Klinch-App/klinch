@@ -144,7 +144,7 @@
               <div class="card-value">—</div>
               <div class="card-sub">Complete an interview to see score</div>
             </div>
-            <div class="card">
+            <div class="card" data-nav="settings">
               <div class="card-label">Credits</div>
               <div class="card-value">3</div>
               <div class="card-sub">Free trial</div>
@@ -517,6 +517,67 @@
         <!-- Dry Run page -->
         <div id="page-dry-run" style="display:none">
           <div id="dr-root"></div>
+        </div>
+
+        <!-- Settings page -->
+        <div id="page-settings" style="display:none">
+          <div class="iv-page-header">
+            <div class="iv-page-title">Settings</div>
+          </div>
+
+          <div class="st-section-label">Plan</div>
+
+          <div class="plan-grid">
+
+            <div class="plan-card plan-card-current">
+              <div class="plan-current-badge">Current Plan</div>
+              <div class="plan-name">Free Trial</div>
+              <div class="plan-price">Free</div>
+              <div class="plan-features">
+                <div class="plan-feature">3 interviews included</div>
+                <div class="plan-feature">No credit card required</div>
+              </div>
+            </div>
+
+            <div class="plan-card">
+              <div class="plan-name">Starter</div>
+              <div class="plan-price">$9.99<span class="plan-price-period">/month</span></div>
+              <div class="plan-features">
+                <div class="plan-feature">10 interviews per month</div>
+                <div class="plan-feature">Unlimited Dry Runs</div>
+              </div>
+              <button class="plan-upgrade-btn" data-plan="Starter">Upgrade →</button>
+            </div>
+
+            <div class="plan-card">
+              <div class="plan-name">Unlimited</div>
+              <div class="plan-price">$19.99<span class="plan-price-period">/month</span></div>
+              <div class="plan-features">
+                <div class="plan-feature">Unlimited interviews</div>
+                <div class="plan-feature">Unlimited Dry Runs</div>
+              </div>
+              <button class="plan-upgrade-btn" data-plan="Unlimited">Upgrade →</button>
+            </div>
+
+            <div class="plan-card">
+              <div class="plan-name">Pay-per-use</div>
+              <div class="plan-price">$1.99<span class="plan-price-period"> per 5 interviews</span></div>
+              <div class="plan-features">
+                <div class="plan-feature">Buy credits as you need them</div>
+                <div class="plan-feature">Unlimited Dry Runs</div>
+              </div>
+              <button class="plan-upgrade-btn" data-plan="Pay-per-use">Buy Credits →</button>
+            </div>
+
+          </div>
+
+          <div class="plan-note">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px">
+              <circle cx="6.5" cy="6.5" r="5.5"/>
+              <path d="M4.5 6.5l1.5 1.5 2.5-3"/>
+            </svg>
+            Dry Run is unlimited on all paid plans and doesn't consume interview credits.
+          </div>
         </div>
 
         <!-- Calendar page -->
