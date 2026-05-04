@@ -139,12 +139,12 @@ window.CalendarPage = (() => {
             return `
               <div class="cal-day${inMonth ? '' : ' cal-day-out'}${dayIvs.length ? ' cal-day-lit' : ''}">
                 <div class="cal-day-num${isToday ? ' cal-day-today' : ''}">${cell.getDate()}</div>
-                ${dayIvs.map(iv => `
-                  <div class="cal-pill" data-iv="${_esc(iv.id)}">
-                    ${_rdot(iv)}${_logoHtml(iv, 14)}
-                    <span class="cal-pill-name">${_esc(iv.company?.name || 'Interview')}</span>
-                    <span class="icard-stage-badge ${STAGE_BADGE[iv.stage]||'badge-recruiter'} cal-pill-badge">${_esc(iv.stage||'')}</span>
+                <div class="cal-day-logos">
+                  ${dayIvs.map(iv => `
+                  <div class="cal-logo-dot" data-iv="${_esc(iv.id)}" title="${_esc(iv.company?.name || 'Interview')}">
+                    ${_rdot(iv)}${_logoHtml(iv, 22)}
                   </div>`).join('')}
+                </div>
               </div>`;
           }).join('')}
         </div>
