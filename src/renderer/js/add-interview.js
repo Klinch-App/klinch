@@ -454,12 +454,23 @@ function refreshDashboardStats() {
     companyEl.textContent = uniqueCompanies.size;
   }
 
-  const appStats = window.ApplicationsPage?.getStats() ?? { total: apps.length, active: 0 };
-  if (appValEl) appValEl.textContent = appStats.total;
+  // Mirror the same merged-app logic as _getMergedApps() in applications.js:
+  // interviews not linked to a real application become synthetic "Interviewing" records.
+  const realApps = JSON.parse(localStorage.getItem('klinch_applications') || '[]');
+  const covered  = new Set(realApps.flatMap(a => a.interview_ids || []));
+  const syntheticCount = new Set(
+    all.filter(iv => !covered.has(iv.id))
+       .map(iv => (iv.company?.name || '').toLowerCase().trim())
+       .filter(Boolean)
+  ).size;
+  const appTotal  = realApps.length + syntheticCount;
+  const appActive = realApps.filter(a => a.status === 'Interviewing').length + syntheticCount;
+
+  if (appValEl) appValEl.textContent = appTotal;
   if (appSubEl) {
-    appSubEl.textContent = appStats.total === 0
+    appSubEl.textContent = appTotal === 0
       ? 'No applications yet'
-      : appStats.active > 0 ? `${appStats.active} active` : 'None active';
+      : appActive > 0 ? `${appActive} active` : 'None active';
   }
 
   if (resValEl) resValEl.textContent = resume ? '✓' : '—';
