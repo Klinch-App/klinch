@@ -27,6 +27,16 @@ document.querySelectorAll('.card[data-nav]').forEach(card => {
   card.addEventListener('click', () => navigateTo(card.dataset.nav));
 });
 
+// ── Settings — plan upgrade buttons ──────────────────────────────────────────
+document.getElementById('page-settings').addEventListener('click', e => {
+  const btn = e.target.closest('.plan-upgrade-btn');
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = 'Coming soon';
+  btn.disabled = true;
+  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+});
+
 // ── Overlay launch button ─────────────────────────────────────────────────────
 const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
