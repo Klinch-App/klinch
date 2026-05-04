@@ -244,7 +244,7 @@ window.CompaniesPage = (() => {
 
     _loadSectionOverview(key, company.domain, cache);
     _loadSectionPeople(key, company.name, cache);
-    _loadSectionNews(key, company.name, cache);
+    _loadSectionNews(key, company.name);
   }
 
   // ── Section: My Applications ──────────────────────────────────────────────────
@@ -513,27 +513,14 @@ window.CompaniesPage = (() => {
 
   // ── Lazy: Recent News (NewsAPI) ───────────────────────────────────────────────
 
-  async function _loadSectionNews(key, companyName, cache) {
+  async function _loadSectionNews(key, companyName) {
     const el = _el('co-sec-news-body');
-
-    if (cache.news && cache.news_cached_at && cache.news_search_v2) {
-      const age = Date.now() - new Date(cache.news_cached_at).getTime();
-      if (age < 86400000) { _renderNews(cache.news); return; }
-    }
-
     const res = await window.klinch.invoke('news:fetch', { query: companyName });
 
     if (!res.ok) { el.innerHTML = '<div class="co-empty-hint">Could not load news</div>'; return; }
 
     const articles = res.data || [];
     if (!articles.length) { el.innerHTML = '<div class="co-empty-hint">No recent news found</div>'; return; }
-
-    const c = _getCache();
-    if (!c[key]) c[key] = {};
-    c[key].news             = articles;
-    c[key].news_cached_at   = new Date().toISOString();
-    c[key].news_search_v2   = true;
-    _saveCache(c);
 
     _renderNews(articles);
   }
