@@ -50,22 +50,22 @@
     const SALESFORCE = {
       name: 'Salesforce',
       primary_domain: 'salesforce.com',
-      logo_url: 'https://img.logo.dev/salesforce.com?token=',
+      logo_url: 'https://logo.clearbit.com/salesforce.com',
     };
     const HUBSPOT = {
       name: 'HubSpot',
       primary_domain: 'hubspot.com',
-      logo_url: 'https://img.logo.dev/hubspot.com?token=',
+      logo_url: 'https://logo.clearbit.com/hubspot.com',
     };
     const OUTREACH = {
       name: 'Outreach',
       primary_domain: 'outreach.io',
-      logo_url: 'https://img.logo.dev/outreach.io?token=',
+      logo_url: 'https://logo.clearbit.com/outreach.io',
     };
     const GONG = {
       name: 'Gong',
       primary_domain: 'gong.io',
-      logo_url: 'https://img.logo.dev/gong.io?token=',
+      logo_url: 'https://logo.clearbit.com/gong.io',
     };
 
     // ── Interviews ─────────────────────────────────────────────────────────────
