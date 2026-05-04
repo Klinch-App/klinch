@@ -127,6 +127,11 @@ function unregisterOverlayShortcuts() {
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
 
+// Renderer → fire a native notification via main process
+ipcMain.on('notify', (_event, { title, body }) => {
+  _fireMainNotification(title, body);
+});
+
 // Renderer → launch / close overlay
 ipcMain.handle('overlay:launch', () => createOverlayWindow());
 ipcMain.handle('overlay:close',  () => closeOverlayWindow());
