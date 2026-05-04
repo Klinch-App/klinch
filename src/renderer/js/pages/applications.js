@@ -638,6 +638,19 @@ window.ApplicationsPage = (() => {
   // ── Init ──────────────────────────────────────────────────────────────────────
 
   function init() {
+    // Stat card click-throughs
+    const _setStatusFilter = (status, sort) => {
+      _filter.status = status;
+      if (sort) _filter.sort = sort;
+      _el('ap-filter-status').value = status;
+      if (sort) _el('ap-sort').value = sort;
+      renderFeed();
+    };
+    _el('ap-stat-total').closest('.ap-stat-card').addEventListener('click', () => _setStatusFilter('', null));
+    _el('ap-stat-active').closest('.ap-stat-card').addEventListener('click', () => _setStatusFilter('Interviewing', null));
+    _el('ap-stat-offers').closest('.ap-stat-card').addEventListener('click', () => _setStatusFilter('Offer', null));
+    _el('ap-stat-response').closest('.ap-stat-card').addEventListener('click', () => _setStatusFilter('', 'response_time'));
+
     // Status filter select
     _el('ap-filter-status').addEventListener('change', e => { _filter.status = e.target.value; renderFeed(); });
     _el('ap-filter-stage').addEventListener('change',  e => { _filter.stage  = e.target.value; renderFeed(); });
