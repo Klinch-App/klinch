@@ -24,6 +24,7 @@ window.ApplicationsPage = (() => {
   let _filter = { status: '', stage: '', search: '', sort: 'date_applied' };
   let _pendingLinkRecord = null;
   let _deleteTargetId    = null;
+  let _detailApp         = null;
 
   function _el(id) { return document.getElementById(id); }
   function _esc(s) {
@@ -222,6 +223,7 @@ window.ApplicationsPage = (() => {
   function openDetail(id) {
     const app = _getMergedApps().find(a => a.id === id);
     if (!app) return;
+    _detailApp = app;
     _el('ap-grid-layer').style.display  = 'none';
     _el('ap-detail-layer').style.display = '';
     _renderDetailHero(app);
@@ -250,6 +252,7 @@ window.ApplicationsPage = (() => {
         <span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>
         ${app.current_stage ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
         ${hot ? `<span class="ap-hot" style="font-size:16px" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
+        <button class="ap-add-iv-btn">+ Add Interview</button>
       </div>`;
 
     if (window.wireImgFallbacks) window.wireImgFallbacks(el);
@@ -688,6 +691,13 @@ window.ApplicationsPage = (() => {
       _el('ap-detail-layer').style.display = 'none';
       _el('ap-grid-layer').style.display   = '';
       refresh();
+    });
+
+    // Detail hero: add interview button
+    _el('ap-detail-hero').addEventListener('click', e => {
+      if (e.target.closest('.ap-add-iv-btn') && _detailApp) {
+        window.AddInterview?.openWithCompany(_detailApp.company, _detailApp.jd || null);
+      }
     });
 
     // Detail: iv-row click opens interview detail
