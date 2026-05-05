@@ -6,11 +6,12 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Claude helpers ─────────────────────────────────────────────────────────────
 
-async function analyzeResume(rawText) {
+async function analyzeResume(rawText, profileCtx) {
+  const baseSystem = 'You are an expert SDR resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.';
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2500,
-    system: 'You are an expert SDR resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.',
+    system: profileCtx ? profileCtx + '\n\n' + baseSystem : baseSystem,
     messages: [{
       role: 'user',
       content: `Analyze this resume for an SDR (Sales Development Representative) role.
@@ -33,11 +34,12 @@ ${rawText}`,
   return JSON.parse(text);
 }
 
-async function rewriteHighlight(original, reason, rawText) {
+async function rewriteHighlight(original, reason, rawText, profileCtx) {
+  const baseSystem = 'You are an expert SDR resume coach. Return only the rewritten resume line — no explanation, no quotes, no preamble.';
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 200,
-    system: 'You are an expert SDR resume coach. Return only the rewritten resume line — no explanation, no quotes, no preamble.',
+    system: profileCtx ? profileCtx + '\n\n' + baseSystem : baseSystem,
     messages: [{
       role: 'user',
       content: `Rewrite this resume line to be stronger for an SDR role.
@@ -49,11 +51,12 @@ Resume context: ${rawText.slice(0, 800)}`,
   return msg.content[0].text.trim();
 }
 
-async function roleFitAnalysis(rawText, jdRaw, roleTitle) {
+async function roleFitAnalysis(rawText, jdRaw, roleTitle, profileCtx) {
+  const baseSystem = 'You are an expert recruiter and ATS specialist. Return ONLY valid JSON — no markdown, no code fences.';
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1000,
-    system: 'You are an expert recruiter and ATS specialist. Return ONLY valid JSON — no markdown, no code fences.',
+    system: profileCtx ? profileCtx + '\n\n' + baseSystem : baseSystem,
     messages: [{
       role: 'user',
       content: `Analyze how well this resume fits the job description.
@@ -117,9 +120,9 @@ function init() {
     }
   });
 
-  ipcMain.handle('claude:resume-analyze', async (_e, { raw_text }) => {
+  ipcMain.handle('claude:resume-analyze', async (_e, { raw_text, profile_context }) => {
     try {
-      const data = await analyzeResume(raw_text);
+      const data = await analyzeResume(raw_text, profile_context || '');
       return { ok: true, data };
     } catch (err) {
       console.error('[claude:resume-analyze]', err.message);
@@ -127,9 +130,9 @@ function init() {
     }
   });
 
-  ipcMain.handle('claude:resume-rewrite', async (_e, { original, reason, raw_text }) => {
+  ipcMain.handle('claude:resume-rewrite', async (_e, { original, reason, raw_text, profile_context }) => {
     try {
-      const text = await rewriteHighlight(original, reason, raw_text);
+      const text = await rewriteHighlight(original, reason, raw_text, profile_context || '');
       return { ok: true, text };
     } catch (err) {
       console.error('[claude:resume-rewrite]', err.message);
@@ -137,9 +140,9 @@ function init() {
     }
   });
 
-  ipcMain.handle('claude:role-fit', async (_e, { raw_text, jd_raw, role_title }) => {
+  ipcMain.handle('claude:role-fit', async (_e, { raw_text, jd_raw, role_title, profile_context }) => {
     try {
-      const data = await roleFitAnalysis(raw_text, jd_raw, role_title);
+      const data = await roleFitAnalysis(raw_text, jd_raw, role_title, profile_context || '');
       return { ok: true, data };
     } catch (err) {
       console.error('[claude:role-fit]', err.message);
