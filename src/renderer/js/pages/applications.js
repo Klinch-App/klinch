@@ -168,11 +168,9 @@ window.ApplicationsPage = (() => {
             ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days}d response</span>` : ''}
             ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
-            <button class="ap-add-iv-btn">+ Add Interview</button>
-          </div>
+          ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
         </div>
+        <button class="ap-add-iv-btn">+ Add Interview</button>
       </div>`;
   }
 
