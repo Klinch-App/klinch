@@ -1,5 +1,7 @@
 window.InterviewsPage = (() => {
 
+  const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+
   const STAGE_BADGE = {
     'Recruiter Screen':          'badge-recruiter',
     'Hiring Manager':            'badge-hiring',
@@ -734,8 +736,9 @@ window.InterviewsPage = (() => {
     const mustHave    = (iv.jd?.structured?.must_have || []).join(', ') || 'not specified';
     const niceHave    = (iv.jd?.structured?.nice_to_have || []).join(', ') || 'not specified';
     const interviewers= (iv.interviewers || []).map(iw => `${iw.name || 'Unknown'} (${iw.title || 'Unknown title'})`).join(', ') || 'unknown';
+    const profileCtx  = window.profileContext ? window.profileContext(profile) : '';
 
-    const coachPrompt = `You are an expert interview coach. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
+    const coachPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview coach. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
 
 Must-have qualifications: ${mustHave}
 Nice-to-have qualifications: ${niceHave}
@@ -748,7 +751,7 @@ Provide concise, actionable coaching advice for this interview. Include:
 
 Keep it practical and specific to this stage and company. Be direct and confident in your guidance.`;
 
-    const contextPrompt = `You are an expert interview researcher. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
+    const contextPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview researcher. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
 
 Interviewers: ${interviewers}
 
@@ -839,9 +842,10 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
 
     try {
       const res = await window.klinch.invoke('claude:role-fit', {
-        raw_text:   resume.raw_text,
-        jd_raw:     iv.jd.raw,
-        role_title: iv.jd?.structured?.role_title || 'this role',
+        raw_text:        resume.raw_text,
+        jd_raw:          iv.jd.raw,
+        role_title:      iv.jd?.structured?.role_title || 'this role',
+        profile_context: window.profileContext ? window.profileContext(profile) : '',
       });
 
       const fitSkel    = _el('ivdp-fit-skeleton');

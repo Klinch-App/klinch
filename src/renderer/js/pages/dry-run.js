@@ -1,5 +1,7 @@
 window.DryRunPage = (() => {
 
+  const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+
   // ── In-memory session state ────────────────────────────────────────────────
   let _config          = null;   // { mode, stage, interview_id }
   let _history         = [];     // [{ question, answer }]
@@ -144,7 +146,7 @@ window.DryRunPage = (() => {
               <div class="dr-history-meta">
                 <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
                 <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic SDR' : 'Company-Specific'}</span>
+                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
               </div>
               <div class="dr-history-score">${r.report.overall_score}/10</div>
             </div>
@@ -164,7 +166,7 @@ window.DryRunPage = (() => {
           <div class="dr-setup-section">
             <div class="dr-field-label">Mode</div>
             <div class="dr-mode-toggle" id="dr-mode-toggle">
-              <button class="dr-mode-opt active" data-mode="generic">Generic SDR</button>
+              <button class="dr-mode-opt active" data-mode="generic">Generic</button>
               <button class="dr-mode-opt" data-mode="company">Company-Specific <span class="ai-info-tip" style="margin-left:3px;vertical-align:middle">ⓘ<span class="ai-info-tip-body">Questions are tailored to the job description you added for this interview — including the role, responsibilities, and required skills. For example, if the JD lists Salesforce as a must-have, Claude may ask how you&apos;ve used it. General company info like recent news is not included.</span></span></button>
             </div>
           </div>
@@ -457,8 +459,9 @@ window.DryRunPage = (() => {
 
     let question;
     try {
+      const profileCtx = window.profileContext ? window.profileContext(profile) : '';
       question = await _claude(
-        INTERVIEW_SYSTEM,
+        profileCtx ? profileCtx + '\n\n' + INTERVIEW_SYSTEM : INTERVIEW_SYSTEM,
         JSON.stringify({ stage: _config.stage, mode: _config.mode, jd, history: _history }),
         300
       );
@@ -520,7 +523,12 @@ window.DryRunPage = (() => {
 
     let report = null;
     try {
-      const raw     = await _claude(REPORT_SYSTEM, JSON.stringify({ stage: _config.stage, history: _history }), 1500);
+      const profileCtx = window.profileContext ? window.profileContext(profile) : '';
+      const raw     = await _claude(
+        profileCtx ? profileCtx + '\n\n' + REPORT_SYSTEM : REPORT_SYSTEM,
+        JSON.stringify({ stage: _config.stage, history: _history }),
+        1500
+      );
       const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
       report = JSON.parse(cleaned);
     } catch (_) {
@@ -638,7 +646,7 @@ window.DryRunPage = (() => {
               <div class="dr-history-meta">
                 <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
                 <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic SDR' : 'Company-Specific'}</span>
+                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
               </div>
               <div class="dr-history-score">${r.report.overall_score}/10</div>
             </div>

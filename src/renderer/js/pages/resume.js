@@ -1,5 +1,7 @@
 window.ResumePage = (() => {
 
+  const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+
   let _selectedIvId = '';
 
   function _el(id) { return document.getElementById(id); }
@@ -511,7 +513,10 @@ window.ResumePage = (() => {
   // ── Claude: full analysis ─────────────────────────────────────────────────────
 
   async function _triggerAnalysis(r) {
-    const result = await window.klinch.invoke('claude:resume-analyze', { raw_text: r.raw_text });
+    const result = await window.klinch.invoke('claude:resume-analyze', {
+      raw_text:        r.raw_text,
+      profile_context: window.profileContext ? window.profileContext(profile) : '',
+    });
 
     const fresh = getResume();
     if (!fresh) return;
@@ -571,9 +576,10 @@ window.ResumePage = (() => {
     btn.disabled    = true;
 
     const result = await window.klinch.invoke('claude:resume-rewrite', {
-      original: ann.quote,
-      reason:   ann.comment,
-      raw_text: r.raw_text,
+      original:        ann.quote,
+      reason:          ann.comment,
+      raw_text:        r.raw_text,
+      profile_context: window.profileContext ? window.profileContext(profile) : '',
     });
 
     btn.disabled    = false;
@@ -620,9 +626,10 @@ window.ResumePage = (() => {
       </div>`;
 
     const result = await window.klinch.invoke('claude:role-fit', {
-      raw_text:   r.raw_text,
-      jd_raw:     iv.jd.raw,
-      role_title: iv.jd?.structured?.role_title || '',
+      raw_text:        r.raw_text,
+      jd_raw:          iv.jd.raw,
+      role_title:      iv.jd?.structured?.role_title || '',
+      profile_context: window.profileContext ? window.profileContext(profile) : '',
     });
 
     if (!result.ok) {

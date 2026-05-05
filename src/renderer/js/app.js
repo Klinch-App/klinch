@@ -1,3 +1,244 @@
+// ── Onboarding ────────────────────────────────────────────────────────────────
+
+const OB_STEPS = [
+  {
+    key: 'role_type',
+    q: 'What type of role are you looking for?',
+    type: 'text',
+    placeholder: 'e.g. Account Executive, Customer Success Manager, SDR',
+  },
+  {
+    key: 'experience_years',
+    q: 'How many years of experience do you have in this field?',
+    type: 'choice',
+    options: ['Less than 1 year', '1–3 years', '3–5 years', '5+ years'],
+  },
+  {
+    key: 'company_size',
+    q: 'What size of company are you targeting?',
+    type: 'choice',
+    multi: true,
+    options: ['Startup (1–50)', 'Scale-up (51–500)', 'Mid-market (501–2000)', 'Enterprise (2000+)'],
+  },
+  {
+    key: 'challenge',
+    q: "What's your biggest interview challenge?",
+    type: 'choice',
+    multi: true,
+    options: ['Nerves & confidence', 'Structuring my answers', 'Knowledge gaps', 'Negotiating compensation'],
+  },
+  {
+    key: 'job_search_status',
+    q: 'Where are you in your job search?',
+    type: 'choice',
+    options: ['Just starting out', 'Actively interviewing', 'Have offers, deciding', 'Passively exploring'],
+  },
+  {
+    key: 'strongest_asset',
+    q: "What's your strongest asset as a candidate?",
+    type: 'text',
+    placeholder: 'e.g. Consistent quota attainment, strong relationship builder',
+  },
+  {
+    key: 'improvement_area',
+    q: "What's one area you know you need to improve?",
+    type: 'text',
+    placeholder: 'e.g. Talking too much, weak on compensation conversations',
+  },
+  {
+    key: 'tools',
+    q: 'What tools and platforms are you most experienced with?',
+    type: 'text',
+    placeholder: 'e.g. Salesforce, Outreach, HubSpot, Gong',
+  },
+  {
+    key: 'salary_range',
+    q: "What's your target base salary range?",
+    type: 'salary',
+  },
+  {
+    key: 'additional_context',
+    q: 'Anything else you want Klinch to know about you?',
+    type: 'textarea',
+    placeholder: 'Optional — any context that would help us personalise your experience',
+    optional: true,
+  },
+];
+
+function showOnboarding() {
+  const overlay    = document.getElementById('onboarding-overlay');
+  const fill       = overlay.querySelector('.ob-progress-fill');
+  const stepCount  = overlay.querySelector('.ob-step-count');
+  const cardBody   = overlay.querySelector('.ob-card-body');
+  const questionEl = overlay.querySelector('.ob-question');
+  const inputWrap  = overlay.querySelector('.ob-input-wrap');
+  const backBtn    = document.getElementById('ob-back-btn');
+  const nextBtn    = document.getElementById('ob-next-btn');
+
+  overlay.style.display = 'flex';
+
+  document.getElementById('ob-dev-skip')?.addEventListener('click', () => {
+    localStorage.setItem('klinch_profile', JSON.stringify({ completed: true }));
+    overlay.classList.add('ob-fade-out');
+    setTimeout(() => location.reload(), 400);
+  });
+
+  let step = 0;
+  const answers = {};
+
+  function renderInput(s) {
+    if (s.type === 'choice') {
+      inputWrap.style.cssText = 'flex-direction:row;flex-wrap:wrap;gap:8px';
+      const sel = s.multi ? (Array.isArray(answers[s.key]) ? answers[s.key] : []) : answers[s.key];
+      inputWrap.innerHTML = s.options.map(opt =>
+        `<button class="ob-choice${(s.multi ? sel.includes(opt) : sel === opt) ? ' ob-selected' : ''}" data-value="${opt}">${opt}</button>`
+      ).join('');
+      inputWrap.querySelectorAll('.ob-choice').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (s.multi) {
+            const arr = Array.isArray(answers[s.key]) ? [...answers[s.key]] : [];
+            const i = arr.indexOf(btn.dataset.value);
+            if (i === -1) arr.push(btn.dataset.value); else arr.splice(i, 1);
+            answers[s.key] = arr;
+            btn.classList.toggle('ob-selected', arr.includes(btn.dataset.value));
+          } else {
+            inputWrap.querySelectorAll('.ob-choice').forEach(b => b.classList.remove('ob-selected'));
+            btn.classList.add('ob-selected');
+            answers[s.key] = btn.dataset.value;
+          }
+          updateNext();
+        });
+      });
+    } else if (s.type === 'salary') {
+      inputWrap.style.cssText = 'flex-direction:column;gap:8px';
+      let existMin = '', existMax = '';
+      const existing = answers[s.key] || '';
+      if (existing) {
+        const m = existing.match(/\$?([\d,]+)\s*[–-]\s*\$?([\d,]+)/);
+        if (m) { existMin = m[1].replace(/,/g, ''); existMax = m[2].replace(/,/g, ''); }
+      }
+      inputWrap.innerHTML = `
+        <div class="ob-salary-row">
+          <div class="ob-salary-field">
+            <span class="ob-salary-prefix">$</span>
+            <input class="ob-salary-input ob-sal-min" type="number" placeholder="70000" min="0" step="1000" value="${existMin}">
+          </div>
+          <span class="ob-salary-sep">–</span>
+          <div class="ob-salary-field">
+            <span class="ob-salary-prefix">$</span>
+            <input class="ob-salary-input ob-sal-max" type="number" placeholder="90000" min="0" step="1000" value="${existMax}">
+          </div>
+        </div>
+        <div class="ob-salary-hint">Numbers only — no $ or commas needed</div>`;
+      const minInp = inputWrap.querySelector('.ob-sal-min');
+      const maxInp = inputWrap.querySelector('.ob-sal-max');
+      function _syncSalary() {
+        const min = minInp.value, max = maxInp.value;
+        answers[s.key] = (min && max) ? `$${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
+                       : min          ? `$${Number(min).toLocaleString()}+`
+                       : '';
+        updateNext();
+      }
+      minInp.addEventListener('input', _syncSalary);
+      maxInp.addEventListener('input', _syncSalary);
+      minInp.addEventListener('keydown', e => { if (e.key === 'Enter') maxInp.focus(); });
+      maxInp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
+      if (existMin) _syncSalary();
+      setTimeout(() => minInp.focus(), 250);
+    } else if (s.type === 'textarea') {
+      inputWrap.style.cssText = 'flex-direction:column;gap:0';
+      inputWrap.innerHTML = `<textarea class="ob-textarea" placeholder="${s.placeholder}">${answers[s.key] || ''}</textarea>`;
+      inputWrap.querySelector('textarea').addEventListener('input', e => {
+        answers[s.key] = e.target.value;
+      });
+    } else {
+      inputWrap.style.cssText = 'flex-direction:column;gap:0';
+      inputWrap.innerHTML = `<input class="ob-input" type="text" placeholder="${s.placeholder}" value="${answers[s.key] || ''}">`;
+      const inp = inputWrap.querySelector('input');
+      inp.addEventListener('input', e => { answers[s.key] = e.target.value; updateNext(); });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
+      setTimeout(() => inp.focus(), 250);
+    }
+  }
+
+  function updateNext() {
+    const s   = OB_STEPS[step];
+    const val = answers[s.key] || '';
+    nextBtn.disabled  = s.optional ? false : (s.type === 'choice'
+      ? (s.multi ? !(answers[s.key]?.length > 0) : !val)
+      : !(val + '').trim());
+    nextBtn.textContent = step === OB_STEPS.length - 1 ? "Let's go →" : 'Continue →';
+  }
+
+  function goTo(idx, dir) {
+    fill.style.width        = ((idx + 1) / OB_STEPS.length * 100) + '%';
+    stepCount.textContent   = `${idx + 1} of ${OB_STEPS.length}`;
+    backBtn.style.visibility = idx === 0 ? 'hidden' : '';
+
+    if (dir === null) {
+      questionEl.textContent = OB_STEPS[idx].q;
+      renderInput(OB_STEPS[idx]);
+      updateNext();
+      return;
+    }
+
+    cardBody.classList.add(dir === 'fwd' ? 'ob-exit-left' : 'ob-exit-right');
+
+    setTimeout(() => {
+      cardBody.classList.remove('ob-exit-left', 'ob-exit-right');
+      questionEl.textContent = OB_STEPS[idx].q;
+      renderInput(OB_STEPS[idx]);
+      updateNext();
+      cardBody.classList.add(dir === 'fwd' ? 'ob-enter-right' : 'ob-enter-left');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        cardBody.classList.remove('ob-enter-right', 'ob-enter-left');
+      }));
+    }, 180);
+  }
+
+  backBtn.addEventListener('click', () => {
+    if (step > 0) { step--; goTo(step, 'back'); }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    const s = OB_STEPS[step];
+    if (s.type === 'text')     answers[s.key] = (inputWrap.querySelector('input')?.value    || '').trim();
+    if (s.type === 'textarea') answers[s.key] = (inputWrap.querySelector('textarea')?.value || '').trim();
+
+    if (step < OB_STEPS.length - 1) {
+      step++;
+      goTo(step, 'fwd');
+    } else {
+      localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
+      overlay.classList.add('ob-fade-out');
+      setTimeout(() => location.reload(), 400);
+    }
+  });
+
+  goTo(0, null);
+}
+
+// Gate: show onboarding if profile not yet completed
+(function() {
+  const p = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+  if (!p.completed) showOnboarding();
+})();
+
+// ── Profile context helper ─────────────────────────────────────────────────────
+window.profileContext = (profile) => `
+Candidate profile:
+- Role seeking: ${profile.role_type}
+- Experience: ${profile.experience_years}
+- Target company size: ${Array.isArray(profile.company_size) ? profile.company_size.join(', ') : profile.company_size}
+- Biggest challenge: ${Array.isArray(profile.challenge) ? profile.challenge.join(', ') : profile.challenge}
+- Job search status: ${profile.job_search_status}
+- Strongest asset: ${profile.strongest_asset}
+- Area to improve: ${profile.improvement_area}
+- Tools: ${profile.tools}
+- Target salary: ${profile.salary_range}
+${profile.additional_context ? `- Additional context: ${profile.additional_context}` : ''}
+`.trim();
+
 // ── Sidebar navigation ────────────────────────────────────────────────────────
 function navigateTo(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -73,6 +314,23 @@ document.getElementById('page-settings').addEventListener('click', e => {
     Object.keys(localStorage)
       .filter(k => k.startsWith('klinch'))
       .forEach(k => localStorage.removeItem(k));
+    location.reload();
+  });
+})();
+
+// ── Settings — reset onboarding ───────────────────────────────────────────────
+(function() {
+  const backdrop   = document.getElementById('ob-reset-confirm-backdrop');
+  const openBtn    = document.getElementById('st-ob-reset-btn');
+  const cancelBtn  = document.getElementById('ob-reset-cancel-btn');
+  const confirmBtn = document.getElementById('ob-reset-confirm-btn');
+
+  openBtn?.addEventListener('click', () => backdrop?.classList.add('visible'));
+  cancelBtn?.addEventListener('click', () => backdrop?.classList.remove('visible'));
+  backdrop?.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('visible'); });
+
+  confirmBtn?.addEventListener('click', () => {
+    localStorage.removeItem('klinch_profile');
     location.reload();
   });
 })();

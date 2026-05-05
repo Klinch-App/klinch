@@ -610,6 +610,14 @@
             </div>
             <button id="st-reset-btn" class="st-reset-trigger">Reset Everything</button>
           </div>
+
+          <div class="st-toggle-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle)">
+            <div class="st-toggle-info">
+              <div class="st-toggle-label" style="color:var(--text-muted)">Reset Onboarding</div>
+              <div class="st-toggle-sub">Re-run the profile setup and update your preferences.</div>
+            </div>
+            <button id="st-ob-reset-btn" class="st-ob-reset-trigger">Reset Profile</button>
+          </div>
         </div>
 
         <!-- Reset confirmation modal -->
@@ -625,6 +633,22 @@
             <div class="delete-confirm-actions">
               <button class="btn-keep" id="reset-cancel-btn">Cancel</button>
               <button class="btn-delete-confirm" id="reset-confirm-btn">Yes, Reset Everything</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onboarding reset confirmation modal -->
+        <div id="ob-reset-confirm-backdrop" class="delete-confirm-backdrop">
+          <div class="delete-confirm-card">
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:10px">Reset your onboarding profile?</div>
+              <div class="delete-confirm-title">
+                This will clear your saved profile and restart the onboarding flow. Your interviews, companies, applications, resume, and Dry Run history won't be affected.
+              </div>
+            </div>
+            <div class="delete-confirm-actions">
+              <button class="btn-keep" id="ob-reset-cancel-btn">Cancel</button>
+              <button class="btn-delete-confirm" id="ob-reset-confirm-btn">Yes, Reset Profile</button>
             </div>
           </div>
         </div>
@@ -1014,6 +1038,29 @@
       <div style="display:flex;gap:10px">
         <button class="ai-btn-primary" id="co-add-iw-save-btn" style="flex:1">Save Interviewer</button>
         <button class="setup-btn-secondary" id="co-add-iw-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding overlay — shown on first launch until profile is complete -->
+  <div id="onboarding-overlay" style="display:none">
+    <div class="ob-card">
+      <button class="ob-dev-skip" id="ob-dev-skip">Skip</button>
+      <div class="ob-logo">
+        <div class="ob-logo-mark">K</div>
+        <span class="ob-logo-text">Klinch</span>
+      </div>
+      <div class="ob-progress-wrap">
+        <div class="ob-progress-fill"></div>
+      </div>
+      <div class="ob-step-count"></div>
+      <div class="ob-card-body">
+        <div class="ob-question"></div>
+        <div class="ob-input-wrap"></div>
+      </div>
+      <div class="ob-nav">
+        <button class="ob-back-btn" id="ob-back-btn">← Back</button>
+        <button class="ob-next-btn" id="ob-next-btn" disabled>Continue →</button>
       </div>
     </div>
   </div>
