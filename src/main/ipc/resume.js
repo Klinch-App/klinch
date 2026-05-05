@@ -9,18 +9,18 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 async function analyzeResume(rawText) {
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2000,
+    max_tokens: 2500,
     system: 'You are an expert SDR resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.',
     messages: [{
       role: 'user',
       content: `Analyze this resume for an SDR (Sales Development Representative) role.
 Return ONLY valid JSON matching this schema exactly:
-{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"sdr_relevance":<0-100>},"highlights":[{"id":"h1","original":"<exact quote from resume>","reason":"<why it's weak>"}],"ats_tips":["<specific actionable tip>"]}
+{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"sdr_relevance":<0-100>},"annotations":[{"id":"h1","quote":"<exact verbatim substring>","comment":"<specific feedback>"}],"ats_tips":["<specific actionable tip>"]}
 
 Rules:
-- Include 3-6 highlights. Each must quote an actual line from the resume.
-- Include 3-6 ATS tips. Must be specific, not generic ("Use % figures" not "Add metrics").
-- Reasons must explain concretely why the line is weak for SDR roles.
+- Include 5-8 annotations. Each "quote" must be copied character-for-character from the resume text below — it will be used to find and highlight the exact phrase. Do not paraphrase or summarise.
+- Comments must be specific and actionable for SDR roles, not generic.
+- Include 3-5 ATS tips specific to this resume, not generic advice.
 
 Resume:
 ${rawText}`,
