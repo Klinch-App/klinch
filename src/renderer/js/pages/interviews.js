@@ -17,6 +17,7 @@ window.InterviewsPage = (() => {
 
   let _filter = { view: 'upcoming', company: '', stage: '', format: '', search: '' };
   let _layer  = 'list'; // 'list' | 'detail'
+  let _completionListener = null;
 
   function _el(id) { return document.getElementById(id); }
   function _esc(s) {
@@ -283,6 +284,10 @@ window.InterviewsPage = (() => {
     _el('iv-detail-page').style.display = 'none';
     _el('iv-list-view').style.display   = '';
     _el('iv-detail-page').innerHTML     = '';
+    if (_completionListener) {
+      document.removeEventListener('interview:completed', _completionListener);
+      _completionListener = null;
+    }
   }
 
   function _renderDetail(iv) {
@@ -453,6 +458,7 @@ window.InterviewsPage = (() => {
             </svg>
             ${_esc(timeStr ? `${dateStr} · ${timeStr}` : dateStr)}
           </div>
+          ${iv.status === 'pending' ? '<button class="ivdp-complete-btn" id="ivdp-complete-btn">✓ Mark as Complete</button>' : ''}
         </div>
       </div>
 
@@ -587,6 +593,29 @@ window.InterviewsPage = (() => {
     // Breadcrumb back
     const backBtn = _el('ivdp-back');
     if (backBtn) backBtn.addEventListener('click', hideDetail);
+
+    // Mark as Complete
+    const completeBtn = _el('ivdp-complete-btn');
+    if (completeBtn) {
+      completeBtn.addEventListener('click', () => {
+        if (confirm('Mark this interview as complete?')) {
+          window._completeInterview?.(ivId);
+        }
+      });
+    }
+
+    // React to completion (manual or auto-scheduler)
+    if (_completionListener) {
+      document.removeEventListener('interview:completed', _completionListener);
+    }
+    _completionListener = (e) => {
+      if (e.detail.id !== ivId) return;
+      document.removeEventListener('interview:completed', _completionListener);
+      _completionListener = null;
+      const iv = getAll().find(x => x.id === ivId);
+      if (iv) _renderDetail(iv);
+    };
+    document.addEventListener('interview:completed', _completionListener);
 
     // Escape key
     document.addEventListener('keydown', _onDetailEscape);
@@ -896,6 +925,13 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
     _el('iv-filter-stage'  ).addEventListener('change', e => { _filter.stage   = e.target.value; renderFeed(); });
     _el('iv-filter-format' ).addEventListener('change', e => { _filter.format  = e.target.value; renderFeed(); });
     _el('iv-search').addEventListener('input', e => { _filter.search = e.target.value.trim(); renderFeed(); });
+
+    document.addEventListener('interview:completed', () => {
+      renderStats();
+      renderCalendar();
+      renderFeed();
+      window.refreshDashboardStats?.();
+    });
 
     _el('iv-feed').addEventListener('click', e => {
       const deleteBtn = e.target.closest('.icard-delete-btn');

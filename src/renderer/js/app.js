@@ -279,6 +279,18 @@ window.klinchNotify = function(title, body) {
   window.klinch.send('notify', { title, body });
 };
 
+window._completeInterview = function(id) {
+  const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+  const idx = all.findIndex(x => x.id === id);
+  if (idx < 0 || all[idx].status === 'completed') return;
+  all[idx].status     = 'completed';
+  all[idx].updated_at = new Date().toISOString();
+  localStorage.setItem('klinch_interviews', JSON.stringify(all));
+  const company = all[idx].company?.name || 'your interview';
+  window.klinchNotify('Klinch', `How did your ${company} interview go? Your follow-up prompts are ready.`);
+  document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id } }));
+};
+
 const _notifToggle = document.getElementById('st-notif-toggle');
 if (_notifToggle) {
   _notifToggle.checked = _klinchSettings().notifications_enabled !== false;

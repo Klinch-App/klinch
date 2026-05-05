@@ -171,7 +171,8 @@ ipcMain.on('overlay:update-settings', (_event, settings) => {
 
 // ─── Interview reminder scheduler ────────────────────────────────────────────
 
-const firedReminders = new Set();
+const firedReminders    = new Set();
+const firedCompletions  = new Set();
 
 function _fireMainNotification(title, body) {
   if (Notification.isSupported()) new Notification({ title, body }).show();
@@ -213,6 +214,15 @@ function startReminderScheduler() {
             firedReminders.add(id);
             _fireMainNotification('Klinch', body);
           }
+        }
+
+        // Auto-complete: interview is still pending but ended > 30 min ago
+        const completionKey = `${iv.id}-complete`;
+        if (!firedCompletions.has(completionKey) && diff < -1800000) {
+          firedCompletions.add(completionKey);
+          mainWindow.webContents.executeJavaScript(
+            `window._completeInterview && window._completeInterview(${JSON.stringify(iv.id)})`
+          ).catch(() => {});
         }
       }
     } catch (err) {

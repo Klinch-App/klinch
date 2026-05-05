@@ -2738,6 +2738,25 @@ html, body {
   color: var(--text-secondary);
 }
 
+.ivdp-complete-btn {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
+  font-family: var(--font-sans);
+  transition: background 0.15s, border-color 0.15s;
+  width: fit-content;
+}
+.ivdp-complete-btn:hover {
+  background: rgba(52, 211, 153, 0.18);
+  border-color: rgba(52, 211, 153, 0.55);
+}
+
 /* Sections */
 .ivdp-section {
   background: var(--bg-surface);
