@@ -58,6 +58,25 @@ document.getElementById('page-settings').addEventListener('click', e => {
   setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
 });
 
+// ── Settings — reset app data ─────────────────────────────────────────────────
+(function() {
+  const backdrop   = document.getElementById('reset-confirm-backdrop');
+  const openBtn    = document.getElementById('st-reset-btn');
+  const cancelBtn  = document.getElementById('reset-cancel-btn');
+  const confirmBtn = document.getElementById('reset-confirm-btn');
+
+  openBtn?.addEventListener('click', () => backdrop.classList.add('visible'));
+  cancelBtn?.addEventListener('click', () => backdrop.classList.remove('visible'));
+  backdrop?.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('visible'); });
+
+  confirmBtn?.addEventListener('click', () => {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('klinch'))
+      .forEach(k => localStorage.removeItem(k));
+    location.reload();
+  });
+})();
+
 // ── Overlay launch button ─────────────────────────────────────────────────────
 const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {

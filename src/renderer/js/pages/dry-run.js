@@ -15,7 +15,12 @@ window.DryRunPage = (() => {
   let _micStream       = null;
 
   const MAX_QUESTIONS = 10;
-  const STAGES = ['Recruiter Screen', 'Hiring Manager', 'Final Round', 'Panel'];
+  const STAGES = [
+    { name: 'Recruiter Screen', tip: 'High-level fit questions — your background, motivation for SDR, comp expectations, and availability. Light on process detail.' },
+    { name: 'Hiring Manager',   tip: 'Focused on your sales process, past quota attainment, how you handle objections, and day-to-day methodology.' },
+    { name: 'Final Round',      tip: 'Deeper behavioral and situational questions — expect role-play scenarios, career goals, and culture fit.' },
+    { name: 'Panel',            tip: 'A mix of styles from multiple interviewers — recruiter, manager, and peer. Expect cross-functional and interpersonal questions.' },
+  ];
 
   const INTERVIEW_SYSTEM =
     'You are conducting a realistic SDR job interview. Ask one question at a time based on ' +
@@ -160,7 +165,7 @@ window.DryRunPage = (() => {
             <div class="dr-field-label">Mode</div>
             <div class="dr-mode-toggle" id="dr-mode-toggle">
               <button class="dr-mode-opt active" data-mode="generic">Generic SDR</button>
-              <button class="dr-mode-opt" data-mode="company">Company-Specific</button>
+              <button class="dr-mode-opt" data-mode="company">Company-Specific <span class="ai-info-tip" style="margin-left:3px;vertical-align:middle">ⓘ<span class="ai-info-tip-body">Questions are tailored to the job description you added for this interview — including the role, responsibilities, and required skills. For example, if the JD lists Salesforce as a must-have, Claude may ask how you&apos;ve used it. General company info like recent news is not included.</span></span></button>
             </div>
           </div>
 
@@ -178,7 +183,11 @@ window.DryRunPage = (() => {
           <div class="dr-setup-section">
             <div class="dr-field-label">Stage</div>
             <div class="dr-stage-grid" id="dr-stage-grid">
-              ${STAGES.map(s => `<button class="dr-stage-opt" data-stage="${_esc(s)}">${_esc(s)}</button>`).join('')}
+              ${STAGES.map(s => `
+                <button class="dr-stage-opt" data-stage="${_esc(s.name)}">
+                  <span class="dr-stage-opt-label">${_esc(s.name)}</span>
+                  <span class="ai-info-tip dr-stage-tip">ⓘ<span class="ai-info-tip-body">${_esc(s.tip)}</span></span>
+                </button>`).join('')}
             </div>
           </div>
 
