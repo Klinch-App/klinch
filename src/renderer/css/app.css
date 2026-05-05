@@ -2414,6 +2414,9 @@ html, body {
   background: rgba(108, 99, 255, 0.18);
   border-color: rgba(108, 99, 255, 0.5);
 }
+.co-iv-meta .ap-add-iv-btn {
+  position: static;
+}
 
 /* Hot job indicator */
 .ap-hot {
