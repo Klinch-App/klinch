@@ -6,11 +6,13 @@ window.DryRunPage = (() => {
   let _view            = 'setup';
   let _timerInterval   = null;
   let _timerSeconds    = 0;
-  let _recognition     = null;
   let _isRecording     = false;
   let _sessionRunId    = null;
   let _questionNum     = 0;
   let _currentQuestion = null;
+  let _mediaRecorder   = null;
+  let _dgSocket        = null;
+  let _micStream       = null;
 
   const MAX_QUESTIONS = 10;
   const STAGES = ['Recruiter Screen', 'Hiring Manager', 'Final Round', 'Panel'];
@@ -317,7 +319,23 @@ window.DryRunPage = (() => {
     const root = _root();
     let finalTranscript = '';
 
-    function _startRecording() {
+    function _resetMicUI(msg) {
+      _isRecording = false;
+      if (_mediaRecorder && _mediaRecorder.state !== 'inactive') { try { _mediaRecorder.stop(); } catch (_) {} }
+      _mediaRecorder = null;
+      if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+      if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
+      const wvEl = _el('dr-waveform');
+      if (wvEl) wvEl.style.display = 'none';
+      const startBtn = _el('dr-start-btn');
+      const stopBtn  = _el('dr-stop-btn');
+      if (startBtn) { startBtn.style.display = ''; startBtn.disabled = false; }
+      if (stopBtn)  stopBtn.style.display = 'none';
+      const micLabel = _el('dr-mic-label');
+      if (micLabel) micLabel.textContent = msg || 'Tap Start Answer to respond';
+    }
+
+    async function _startRecording() {
       if (_isRecording) return;
       const startBtn = _el('dr-start-btn');
       if (!startBtn || startBtn.disabled) return;
@@ -329,67 +347,59 @@ window.DryRunPage = (() => {
       const stopBtn = _el('dr-stop-btn');
       if (stopBtn) stopBtn.style.display = '';
 
-      const micLabel    = _el('dr-mic-label');
+      const micLabel     = _el('dr-mic-label');
       const transcriptEl = _el('dr-transcript-live');
-      if (micLabel)     micLabel.textContent = 'Listening…';
+      if (micLabel)     micLabel.textContent = 'Connecting…';
       if (transcriptEl) transcriptEl.textContent = '';
 
       if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-      const waveform = _el('dr-waveform');
-      if (waveform) waveform.style.display = '';
-
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        if (transcriptEl) transcriptEl.textContent = 'Speech recognition not available in this environment.';
+      try {
+        _micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      } catch (_) {
+        _resetMicUI('Microphone access denied.');
         return;
       }
 
-      function _startSR() {
-        _recognition = new SR();
-        _recognition.continuous     = true;
-        _recognition.interimResults = true;
-        _recognition.lang           = 'en-US';
-
-        _recognition.onresult = e => {
-          let interim = '';
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) {
-              finalTranscript += e.results[i][0].transcript + ' ';
-            } else {
-              interim += e.results[i][0].transcript;
-            }
-          }
-          const transcriptEl = _el('dr-transcript-live');
-          if (transcriptEl) transcriptEl.textContent = (finalTranscript + interim).trim();
-        };
-
-        _recognition.onerror = e => {
-          console.warn('[DryRun] SpeechRecognition error:', e.error);
-          if (e.error === 'no-speech' || e.error === 'network') return; // onend will restart
-          // Fatal error — reset UI
-          _isRecording = false;
-          const wvEl = _el('dr-waveform');
-          if (wvEl) wvEl.style.display = 'none';
-          const startBtn = _el('dr-start-btn');
-          const stopBtn  = _el('dr-stop-btn');
-          if (startBtn) startBtn.style.display = '';
-          if (stopBtn)  stopBtn.style.display  = 'none';
-          const micLabel = _el('dr-mic-label');
-          if (micLabel) micLabel.textContent = 'Tap Start Answer to respond';
-        };
-
-        _recognition.onend = () => {
-          if (_isRecording) {
-            // Restart automatically — recognition ended but session is still active
-            try { _startSR(); } catch (_) {}
-          }
-        };
-
-        _recognition.start();
+      const dgKey = window.klinch?.deepgramKey;
+      if (!dgKey) {
+        _resetMicUI('No API key — check your .env file.');
+        return;
       }
 
-      _startSR();
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus' : 'audio/webm';
+
+      _dgSocket = new WebSocket(
+        'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true',
+        ['token', dgKey]
+      );
+
+      _dgSocket.onopen = () => {
+        const waveform = _el('dr-waveform');
+        if (waveform) waveform.style.display = '';
+        if (micLabel) micLabel.textContent = 'Listening…';
+
+        _mediaRecorder = new MediaRecorder(_micStream, { mimeType });
+        _mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0 && _dgSocket?.readyState === WebSocket.OPEN) _dgSocket.send(e.data);
+        };
+        _mediaRecorder.start(200);
+      };
+
+      _dgSocket.onmessage = e => {
+        try {
+          const data = JSON.parse(e.data);
+          const alt  = data?.channel?.alternatives?.[0];
+          if (!alt?.transcript) return;
+          if (data.is_final) finalTranscript += alt.transcript + ' ';
+          const el = _el('dr-transcript-live');
+          if (el) el.textContent = (finalTranscript + (!data.is_final ? alt.transcript : '')).trim();
+        } catch (_) {}
+      };
+
+      _dgSocket.onerror = () => _resetMicUI('Connection error — try again.');
+      _dgSocket.onclose = () => { if (_isRecording) _resetMicUI('Connection lost — try again.'); };
     }
 
     function _stopRecording() {
@@ -398,26 +408,25 @@ window.DryRunPage = (() => {
 
       const wvEl = _el('dr-waveform');
       if (wvEl) wvEl.style.display = 'none';
-
       const startBtn = _el('dr-start-btn');
       const stopBtn  = _el('dr-stop-btn');
       if (startBtn) startBtn.style.display = 'none';
       if (stopBtn)  stopBtn.style.display  = 'none';
-
       const micLabel = _el('dr-mic-label');
       if (micLabel) micLabel.textContent = 'Processing…';
 
-      if (_recognition) {
-        _recognition.stop();
-        _recognition = null;
-      }
+      if (_mediaRecorder && _mediaRecorder.state !== 'inactive') _mediaRecorder.stop();
+      _mediaRecorder = null;
+      if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
 
+      // Small delay so Deepgram flushes its last result before closing
       setTimeout(() => {
+        if (_dgSocket) { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
         const answer = finalTranscript.trim() || '[No answer recorded]';
-        const transcriptEl = _el('dr-transcript-live');
-        if (transcriptEl) transcriptEl.textContent = '';
+        const el = _el('dr-transcript-live');
+        if (el) el.textContent = '';
         if (_currentQuestion) _submitAnswer(_currentQuestion, answer);
-      }, 500);
+      }, 600);
     }
 
     root.addEventListener('click', e => {
