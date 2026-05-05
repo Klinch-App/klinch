@@ -32,6 +32,136 @@ window.ResumePage = (() => {
     if (idx >= 0) { Object.assign(all[idx], patch); localStorage.setItem('klinch_interviews', JSON.stringify(all)); }
   }
 
+  // ── Annotation helpers ────────────────────────────────────────────────────────
+
+  // Normalises both old schema (highlights/original/reason) and new (annotations/quote/comment)
+  function _normalizeAnnotations(analysis) {
+    if (!analysis) return [];
+    if (analysis.annotations) return analysis.annotations;
+    return (analysis.highlights || []).map(h => ({
+      id:      h.id,
+      quote:   h.original || '',
+      comment: h.reason   || '',
+      rewrite: h.rewrite,
+    }));
+  }
+
+  // Finds each annotation's quote in raw text, wraps in a mark span.
+  // Returns { html, matched } — matched is the subset of annotations that were found.
+  function _buildAnnotatedText(rawText, annotations) {
+    const positions = [];
+    for (const ann of annotations) {
+      const quote = ann.quote || '';
+      if (!quote) continue;
+      const idx = rawText.indexOf(quote);
+      if (idx !== -1) positions.push({ idx, len: quote.length, id: ann.id });
+    }
+    positions.sort((a, b) => a.idx - b.idx);
+
+    // Remove overlapping spans — keep the first occurrence
+    const clean = [];
+    let end = 0;
+    for (const p of positions) {
+      if (p.idx >= end) { clean.push(p); end = p.idx + p.len; }
+    }
+
+    const matchedIds = new Set(clean.map(p => p.id));
+    const matched    = annotations.filter(a => matchedIds.has(a.id));
+
+    // Build numbered marks in document order
+    const numMap = {};
+    clean.forEach((p, i) => { numMap[p.id] = i + 1; });
+
+    let html   = '';
+    let cursor = 0;
+    for (const pos of clean) {
+      html += _esc(rawText.slice(cursor, pos.idx));
+      html += `<span class="rs-ann-mark" data-id="${_esc(pos.id)}">` +
+              `<span class="rs-ann-mark-num">${numMap[pos.id]}</span>` +
+              `${_esc(rawText.slice(pos.idx, pos.idx + pos.len))}</span>`;
+      cursor = pos.idx + pos.len;
+    }
+    html += _esc(rawText.slice(cursor));
+
+    return { html, matched, numMap };
+  }
+
+  function _buildBubbles(matched, numMap) {
+    return matched.map(ann => `
+      <div class="rs-ann-bubble" data-id="${_esc(ann.id)}">
+        <div class="rs-ann-bubble-top">
+          <span class="rs-ann-num">${numMap[ann.id]}</span>
+          <span class="rs-ann-comment">${_esc(ann.comment)}</span>
+        </div>
+        <button class="rs-hl-rewrite-btn" data-hid="${_esc(ann.id)}">Rewrite this →</button>
+        <div class="rs-hl-rewrite-result" id="rs-rw-${_esc(ann.id)}"${ann.rewrite ? '' : ' style="display:none"'}>${ann.rewrite ? _esc(ann.rewrite) : ''}</div>
+      </div>`).join('');
+  }
+
+  // Positions comment bubbles alongside their highlighted marks.
+  // Called via requestAnimationFrame so layout is complete.
+  function _positionAnnotations() {
+    const wrap  = _el('rs-ann-wrap');
+    const right = _el('rs-ann-right');
+    if (!wrap || !right) return;
+
+    const wrapTop  = wrap.getBoundingClientRect().top;
+    const placements = [];
+
+    _el('rs-ann-left')?.querySelectorAll('.rs-ann-mark').forEach(mark => {
+      const bubble = right.querySelector(`.rs-ann-bubble[data-id="${mark.dataset.id}"]`);
+      if (!bubble) return;
+      const top = mark.getBoundingClientRect().top - wrapTop;
+      placements.push({ bubble, top });
+    });
+
+    // Sort by natural position, then push down to prevent overlap
+    placements.sort((a, b) => a.top - b.top);
+    let minTop = 0;
+    for (const p of placements) {
+      const finalTop = Math.max(p.top, minTop);
+      p.bubble.style.top = finalTop + 'px';
+      minTop = finalTop + p.bubble.offsetHeight + 12;
+    }
+
+    // Ensure the wrap is tall enough for both columns
+    if (placements.length) {
+      const last       = placements[placements.length - 1];
+      const lastBottom = parseInt(last.bubble.style.top) + last.bubble.offsetHeight;
+      const leftHeight = _el('rs-ann-left')?.offsetHeight || 0;
+      wrap.style.minHeight = Math.max(leftHeight, lastBottom + 12) + 'px';
+    }
+  }
+
+  // Updates the Document section in-place after analysis arrives.
+  function _renderAnnotations(analysis) {
+    const wrap = _el('rs-ann-wrap');
+    const left = _el('rs-ann-left');
+    if (!wrap || !left) return;
+
+    const r = getResume();
+    if (!r?.raw_text) return;
+
+    const annotations = _normalizeAnnotations(analysis);
+    if (!annotations.length) return;
+
+    const { html, matched, numMap } = _buildAnnotatedText(r.raw_text, annotations);
+    if (!matched.length) return;
+
+    left.innerHTML = `<div class="rs-text-view" id="rs-text-view">${html}</div>`;
+
+    let right = _el('rs-ann-right');
+    if (!right) {
+      right = document.createElement('div');
+      right.className = 'rs-ann-right';
+      right.id        = 'rs-ann-right';
+      wrap.appendChild(right);
+    }
+    right.innerHTML = _buildBubbles(matched, numMap);
+
+    requestAnimationFrame(_positionAnnotations);
+  }
+
   // ── Main render ───────────────────────────────────────────────────────────────
 
   function render() {
@@ -44,13 +174,16 @@ window.ResumePage = (() => {
         <div class="iv-page-title">Resume</div>
       </div>
       ${_buildUploadSection(r)}
+      ${r ? _buildResumeViewSection(r) : ''}
       ${r ? _buildCoachSection(r) : ''}
       ${r ? _buildRoleFitSection(r) : ''}
     `;
 
     _wireEvents(r);
 
-    if (r && !r.analysis) {
+    if (r?.analysis) {
+      requestAnimationFrame(_positionAnnotations);
+    } else if (r) {
       _triggerAnalysis(r);
     }
   }
@@ -71,8 +204,6 @@ window.ResumePage = (() => {
   }
 
   function _buildDropZone() {
-    // No "for" on the label — the drop zone click handler opens the picker;
-    // a "for" attribute would open it a second time and discard the first selection.
     return `
       <div class="rs-dropzone" id="rs-dropzone">
         <div class="rs-dz-icon">📄</div>
@@ -86,12 +217,6 @@ window.ResumePage = (() => {
     const date = r.uploaded_at
       ? new Date(r.uploaded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : '';
-    const preview = r.raw_text
-      ? `<details class="ivdp-raw-jd" style="margin-top:14px">
-           <summary>Preview extracted text</summary>
-           <pre class="ivdp-raw-text">${_esc((r.raw_text || '').slice(0, 3000))}${(r.raw_text || '').length > 3000 ? '\n…' : ''}</pre>
-         </details>`
-      : '';
     return `
       <div class="rs-file-info">
         <div class="rs-file-icon">📄</div>
@@ -100,11 +225,48 @@ window.ResumePage = (() => {
           ${date ? `<div class="rs-file-date">Uploaded ${_esc(date)}</div>` : ''}
         </div>
       </div>
-      ${preview}
       <input type="file" id="rs-file-input" accept=".pdf,.docx" style="display:none">`;
   }
 
-  // ── Section 2: Coach ──────────────────────────────────────────────────────────
+  // ── Section 2: Document viewer with annotations ───────────────────────────────
+
+  function _buildResumeViewSection(r) {
+    if (!r?.raw_text) return '';
+
+    const annotations = _normalizeAnnotations(r.analysis);
+    let textHtml = _esc(r.raw_text);
+    let matched  = [];
+    let numMap   = {};
+    let rightHtml = '';
+
+    if (annotations.length) {
+      const result = _buildAnnotatedText(r.raw_text, annotations);
+      textHtml  = result.html;
+      matched   = result.matched;
+      numMap    = result.numMap;
+    }
+
+    if (matched.length) {
+      rightHtml = `<div class="rs-ann-right" id="rs-ann-right">${_buildBubbles(matched, numMap)}</div>`;
+    }
+
+    return `
+      <div class="ivdp-section">
+        <div class="ivdp-section-header">
+          <div class="ivdp-section-title">Document</div>
+        </div>
+        <div class="rs-text-body">
+          <div class="rs-ann-wrap" id="rs-ann-wrap">
+            <div class="rs-ann-left" id="rs-ann-left">
+              <div class="rs-text-view" id="rs-text-view">${textHtml}</div>
+            </div>
+            ${rightHtml}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Section 3: Coach ──────────────────────────────────────────────────────────
 
   function _buildCoachSection(r) {
     return `
@@ -132,13 +294,13 @@ window.ResumePage = (() => {
 
   function _buildCoachResults(a) {
     const DIM_LABELS = {
-      impact:           'Impact',
-      clarity:          'Clarity',
-      ats_compatibility:'ATS Compatibility',
-      sdr_relevance:    'SDR Relevance',
+      impact:            'Impact',
+      clarity:           'Clarity',
+      ats_compatibility: 'ATS Compatibility',
+      sdr_relevance:     'SDR Relevance',
     };
 
-    const score    = Math.min(100, Math.max(0, a.overall_score || 0));
+    const score      = Math.min(100, Math.max(0, a.overall_score || 0));
     const scoreClass = score >= 75 ? 'rs-score-good' : score >= 50 ? 'rs-score-mid' : 'rs-score-low';
 
     const dimBars = Object.entries(a.dimensions || {}).map(([key, val]) => {
@@ -150,14 +312,6 @@ window.ResumePage = (() => {
           <div class="rs-dim-val">${pct}</div>
         </div>`;
     }).join('');
-
-    const highlights = (a.highlights || []).map(h => `
-      <div class="rs-highlight-card" data-hid="${_esc(h.id || '')}">
-        <div class="rs-hl-original">&ldquo;${_esc(h.original || '')}&rdquo;</div>
-        <div class="rs-hl-reason">${_esc(h.reason || '')}</div>
-        <button class="rs-hl-rewrite-btn" data-hid="${_esc(h.id || '')}">Rewrite this →</button>
-        <div class="rs-hl-rewrite-result" id="rs-rw-${_esc(h.id || '')}"${h.rewrite ? '' : ' style="display:none"'}>${h.rewrite ? _esc(h.rewrite) : ''}</div>
-      </div>`).join('');
 
     const atsTips = (a.ats_tips || []).map(t => `
       <div class="rs-ats-tip">
@@ -173,19 +327,16 @@ window.ResumePage = (() => {
         </div>
         <div class="rs-dims">${dimBars}</div>
       </div>
-      ${highlights ? `
-      <div class="rs-sub-label">Improvements</div>
-      <div class="rs-highlights">${highlights}</div>` : ''}
       ${atsTips ? `
       <div class="rs-sub-label" style="margin-top:22px">ATS Tips</div>
       <div class="rs-ats-tips">${atsTips}</div>` : ''}`;
   }
 
-  // ── Section 3: Role Fit ───────────────────────────────────────────────────────
+  // ── Section 4: Role Fit ───────────────────────────────────────────────────────
 
   function _buildRoleFitSection(r) {
-    const ivs     = getInterviews().filter(iv => iv.jd?.raw);
-    const hasIvs  = ivs.length > 0;
+    const ivs    = getInterviews().filter(iv => iv.jd?.raw);
+    const hasIvs = ivs.length > 0;
     const options = hasIvs
       ? ivs.map(iv => `<option value="${_esc(iv.id)}">${_esc(iv.company?.name || 'Unknown')} — ${_esc(iv.jd?.structured?.role_title || 'Unknown Role')}</option>`).join('')
       : '<option value="">No interviews with a job description yet</option>';
@@ -241,7 +392,6 @@ window.ResumePage = (() => {
   function _wireEvents(r) {
     const fileInput = _el('rs-file-input');
 
-    // Drop zone: click → browse, drag/drop
     const dropZone = _el('rs-dropzone');
     if (dropZone && fileInput) {
       dropZone.addEventListener('click', () => fileInput.click());
@@ -255,11 +405,9 @@ window.ResumePage = (() => {
       });
     }
 
-    // Replace button → click hidden file input
     const replaceBtn = _el('rs-replace-btn');
     if (replaceBtn && fileInput) replaceBtn.addEventListener('click', () => fileInput.click());
 
-    // File input change
     if (fileInput) {
       fileInput.addEventListener('change', e => {
         const f = e.target.files[0];
@@ -267,7 +415,6 @@ window.ResumePage = (() => {
       });
     }
 
-    // Refresh coach analysis
     const refreshCoach = _el('rs-refresh-coach');
     if (refreshCoach) {
       refreshCoach.addEventListener('click', () => {
@@ -281,16 +428,16 @@ window.ResumePage = (() => {
       });
     }
 
-    // Rewrite buttons in coach body (event delegation)
-    const coachBody = _el('rs-coach-body');
-    if (coachBody) {
-      coachBody.addEventListener('click', async e => {
+    // Rewrite button delegation — covers both initial render (cached analysis)
+    // and dynamically injected bubbles from _renderAnnotations.
+    const content = _el('rs-content');
+    if (content) {
+      content.addEventListener('click', async e => {
         const btn = e.target.closest('.rs-hl-rewrite-btn');
         if (btn) await _triggerRewrite(btn.dataset.hid, btn);
       });
     }
 
-    // Role fit dropdown
     const ivSelect = _el('rs-iv-select');
     if (ivSelect) {
       if (_selectedIvId) ivSelect.value = _selectedIvId;
@@ -312,14 +459,11 @@ window.ResumePage = (() => {
       return;
     }
 
-    // Show parsing indicator inline
     const uploadBody = _el('rs-upload-body');
     if (uploadBody) {
       uploadBody.innerHTML = `<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Parsing ${_esc(file.name)}…</div>`;
     }
 
-    // Read file bytes — convert to plain number array so Electron IPC serializes
-    // it reliably across all versions (raw ArrayBuffer transfer is unreliable).
     let data;
     try {
       const ab = await file.arrayBuffer();
@@ -382,15 +526,9 @@ window.ResumePage = (() => {
     saveResume(fresh);
     if (window.klinchNotify) window.klinchNotify('Klinch', 'Your resume coach report is ready.');
 
-    if (coachBody) {
-      coachBody.innerHTML = _buildCoachResults(fresh.analysis);
-      // Re-wire rewrite buttons in new HTML
-      coachBody.querySelectorAll('.rs-hl-rewrite-btn').forEach(btn => {
-        btn.addEventListener('click', async e => { await _triggerRewrite(btn.dataset.hid, btn); });
-      });
-    }
+    if (coachBody) coachBody.innerHTML = _buildCoachResults(fresh.analysis);
 
-    // Reveal Refresh button in section header
+    // Reveal Refresh button
     const header = coachBody?.closest('.ivdp-section')?.querySelector('.ivdp-section-header');
     if (header && !header.querySelector('#rs-refresh-coach')) {
       const btn = document.createElement('button');
@@ -406,21 +544,26 @@ window.ResumePage = (() => {
       });
       header.appendChild(btn);
     }
+
+    // Update Document section with annotations
+    _renderAnnotations(fresh.analysis);
   }
 
-  // ── Claude: single highlight rewrite ─────────────────────────────────────────
+  // ── Claude: single annotation rewrite ────────────────────────────────────────
 
   async function _triggerRewrite(hid, btn) {
     if (!hid) return;
     const r = getResume();
     if (!r?.analysis) return;
-    const h = r.analysis.highlights.find(x => x.id === hid);
-    if (!h) return;
+
+    const annotations = _normalizeAnnotations(r.analysis);
+    const ann = annotations.find(x => x.id === hid);
+    if (!ann) return;
 
     const resultEl = _el(`rs-rw-${hid}`);
 
-    if (h.rewrite) {
-      if (resultEl) { resultEl.textContent = h.rewrite; resultEl.style.display = ''; }
+    if (ann.rewrite) {
+      if (resultEl) { resultEl.textContent = ann.rewrite; resultEl.style.display = ''; }
       return;
     }
 
@@ -428,8 +571,8 @@ window.ResumePage = (() => {
     btn.disabled    = true;
 
     const result = await window.klinch.invoke('claude:resume-rewrite', {
-      original: h.original,
-      reason:   h.reason,
+      original: ann.quote,
+      reason:   ann.comment,
       raw_text: r.raw_text,
     });
 
@@ -438,9 +581,15 @@ window.ResumePage = (() => {
 
     if (!result.ok) return;
 
-    h.rewrite = result.text;
+    // Save rewrite back to whichever schema is stored
+    const target = (r.analysis.annotations || r.analysis.highlights || []).find(x => x.id === hid);
+    if (target) target.rewrite = result.text;
     saveResume(r);
-    if (resultEl) { resultEl.textContent = h.rewrite; resultEl.style.display = ''; }
+
+    if (resultEl) { resultEl.textContent = result.text; resultEl.style.display = ''; }
+
+    // Re-position after bubble height changes
+    requestAnimationFrame(_positionAnnotations);
   }
 
   // ── Claude: role fit ──────────────────────────────────────────────────────────
@@ -452,7 +601,6 @@ window.ResumePage = (() => {
     const resultEl = _el('rs-rolefit-result');
     if (!resultEl) return;
 
-    // Serve cache
     if (r.role_fits[ivId]) {
       resultEl.innerHTML = _buildRoleFitResult(r.role_fits[ivId]);
       return;
@@ -484,10 +632,7 @@ window.ResumePage = (() => {
 
     r.role_fits[ivId] = result.data;
     saveResume(r);
-
-    // Write score back to the interview record
     patchIv(ivId, { candidate_fit_score: result.data.keyword_match_score });
-
     resultEl.innerHTML = _buildRoleFitResult(result.data);
   }
 
@@ -496,7 +641,6 @@ window.ResumePage = (() => {
   function refresh() { render(); }
   function reset()   { render(); }
 
-  // Prevent Electron window from navigating when files are dragged over non-dropzone areas
   document.addEventListener('dragover', e => e.preventDefault(), false);
   document.addEventListener('drop',     e => e.preventDefault(), false);
 
