@@ -47,20 +47,22 @@ async function apolloEnrich(domain) {
   return data.organization || null;
 }
 
-async function apolloPeople(domain) {
+async function apolloPeople(domain, titles) {
   const apiKey = process.env.APOLLO_API_KEY;
   if (!apiKey) throw new Error('No Apollo API key');
+  const body = { organization_domains: [domain], page: 1, per_page: 6 };
+  if (titles?.length) body.person_titles = titles;
   const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
-    body: JSON.stringify({ organization_domains: [domain], page: 1, per_page: 6 }),
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   if (!res.ok) {
     console.log('[people] ERROR', res.status, JSON.stringify(data).slice(0, 300));
     throw new Error(`Apollo people ${res.status}`);
   }
-  console.log('[people] domain:', domain, '| count:', data.people?.length);
+  console.log('[people] domain:', domain, '| titles:', titles, '| count:', data.people?.length);
   return data.people || [];
 }
 
@@ -169,6 +171,11 @@ function init() {
 
   ipcMain.handle('news:fetch', async (_e, { query }) => {
     try { return { ok: true, data: await newsFetch(query) }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  });
+
+  ipcMain.handle('apollo:people', async (_e, { domain, titles }) => {
+    try { return { ok: true, data: await apolloPeople(domain, titles) }; }
     catch (err) { return { ok: false, error: err.message }; }
   });
 
