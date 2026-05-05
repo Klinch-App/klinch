@@ -658,7 +658,10 @@ window.DryRunPage = (() => {
 
   function reset() {
     _stopTimer();
-    if (_recognition) { try { _recognition.stop(); } catch (_) {} _recognition = null; }
+    if (_mediaRecorder && _mediaRecorder.state !== 'inactive') { try { _mediaRecorder.stop(); } catch (_) {} }
+    _mediaRecorder = null;
+    if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     _config          = null;
     _history         = [];
