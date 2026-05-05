@@ -295,12 +295,19 @@ window.CompaniesPage = (() => {
           <div class="co-iv-meta">
             ${dateApplied ? `<span class="co-iv-date">Applied ${_esc(dateApplied)}</span>` : ''}
             <span class="icard-stage-badge ${_esc(statusClass)}" style="font-size:9px;padding:2px 6px">${_esc(app.status)}</span>
+            <button class="ap-add-iv-btn">+ Add Interview</button>
           </div>
         </div>`;
     }).join('');
 
     el.querySelectorAll('[data-app-id]').forEach(row => {
-      row.addEventListener('click', () => {
+      row.addEventListener('click', e => {
+        if (e.target.closest('.ap-add-iv-btn')) {
+          e.stopPropagation();
+          const app = sorted.find(a => a.id === row.dataset.appId);
+          if (app) window.AddInterview?.openWithCompany(app.company, app.jd || null);
+          return;
+        }
         if (window.navigateTo)                    window.navigateTo('applications');
         if (window.ApplicationsPage?.openDetail)  window.ApplicationsPage.openDetail(row.dataset.appId);
       });
