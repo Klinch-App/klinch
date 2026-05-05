@@ -50,20 +50,33 @@ async function apolloEnrich(domain) {
 async function apolloPeople(domain, titles) {
   const apiKey = process.env.APOLLO_API_KEY;
   if (!apiKey) throw new Error('No Apollo API key');
-  const body = { organization_domains: [domain], page: 1, per_page: 6 };
-  if (titles?.length) body.person_titles = titles;
-  const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) {
-    console.log('[people] ERROR', res.status, JSON.stringify(data).slice(0, 300));
-    throw new Error(`Apollo people ${res.status}`);
+
+  async function _search(body) {
+    const res = await fetch('https://api.apollo.io/v1/mixed_people/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      console.log('[people] ERROR', res.status, JSON.stringify(data).slice(0, 300));
+      throw new Error(`Apollo people ${res.status}`);
+    }
+    return data.people || [];
   }
-  console.log('[people] domain:', domain, '| titles:', titles, '| count:', data.people?.length);
-  return data.people || [];
+
+  const base = { organization_domains: [domain], page: 1, per_page: 6 };
+
+  // First pass: filter by relevant titles
+  let people = titles?.length ? await _search({ ...base, person_titles: titles }) : [];
+
+  // Fallback: broad search by domain only if title filter returned nothing
+  if (!people.length) {
+    people = await _search(base);
+  }
+
+  console.log('[people] domain:', domain, '| titles:', titles, '| count:', people.length);
+  return people;
 }
 
 async function newsFetch(companyName) {

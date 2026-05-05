@@ -496,6 +496,31 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body">${sessHtml}</div>
       </div>
 
+      ${!completed ? `
+      <!-- Section: Before Your Interview -->
+      <div class="ivdp-section ivdp-outreach-section" id="ivdp-pre-outreach-section">
+        <div class="ivdp-section-header">
+          <div class="ivdp-section-title">Before Your Interview</div>
+          ${iv.outreach_pre?.generated_at ? `<button class="ivdp-refresh-btn" data-action="refresh-pre-outreach" data-iv-id="${iv.id}">↺ Refresh</button>` : ''}
+        </div>
+        <div class="ivdp-section-body" id="ivdp-pre-outreach-body">
+          ${_buildOutreachBoxHtml('ivdp-pre', iv.outreach_pre?.generated_at ? iv.outreach_pre : null)}
+        </div>
+      </div>` : ''}
+
+      ${completed ? `
+      <!-- Section: Follow Up Now -->
+      <div class="ivdp-section ivdp-outreach-section ivdp-post-outreach-section" id="ivdp-post-outreach-section">
+        <div class="ivdp-section-header">
+          <div class="ivdp-section-title">Follow Up Now</div>
+          ${iv.outreach_post?.generated_at ? `<button class="ivdp-refresh-btn" data-action="refresh-post-outreach" data-iv-id="${iv.id}">↺ Refresh</button>` : ''}
+        </div>
+        <div class="ivdp-outreach-urgency">Best sent within 2 hours of your interview.</div>
+        <div class="ivdp-section-body" id="ivdp-post-outreach-body">
+          ${_buildOutreachBoxHtml('ivdp-post', iv.outreach_post?.generated_at ? iv.outreach_post : null)}
+        </div>
+      </div>` : ''}
+
       <!-- Section 6: Coach -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
@@ -555,6 +580,16 @@ window.InterviewsPage = (() => {
     const _resumeForFit = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
     if (_resumeForFit?.raw_text && iv.jd?.raw && !iv.candidate_fit) {
       _fireCandidateFit(iv);
+    }
+
+    // Fire pre-interview outreach if pending and not cached
+    if (!completed && !iv.outreach_pre?.generated_at) {
+      _firePreOutreach(iv);
+    }
+
+    // Fire post-interview outreach if completed and not cached
+    if (completed && !iv.outreach_post?.generated_at) {
+      _firePostOutreach(iv);
     }
   }
 
@@ -697,15 +732,64 @@ window.InterviewsPage = (() => {
             <button class="ivdp-refresh-btn" id="ivdp-fit-refresh" data-action="refresh-fit" data-iv-id="${id}" style="display:none">↺ Refresh</button>`;
           _fireCandidateFit(iv);
         }
+        if (action === 'refresh-pre-outreach') {
+          _patchIv(id, { outreach_pre: null });
+          iv.outreach_pre = null;
+          const body = _el('ivdp-pre-outreach-body');
+          if (body) body.innerHTML = _buildOutreachBoxHtml('ivdp-pre', null);
+          _firePreOutreach(iv);
+        }
+        if (action === 'refresh-post-outreach') {
+          _patchIv(id, { outreach_post: null });
+          iv.outreach_post = null;
+          const body = _el('ivdp-post-outreach-body');
+          if (body) body.innerHTML = _buildOutreachBoxHtml('ivdp-post', null);
+          _firePostOutreach(iv);
+        }
       });
     }
 
-    // Wire resume link in fit banner
+    // Wire resume link in fit banner + outreach buttons (LinkedIn open, Gmail open, copy)
     const detailPage2 = _el('iv-detail-page');
     if (detailPage2) {
       detailPage2.addEventListener('click', e => {
         const link = e.target.closest('.ivdp-fit-link[data-nav]');
         if (link && window.navigateTo) window.navigateTo(link.dataset.nav);
+
+        // Open LinkedIn (connection or follow-up)
+        const liBtn = e.target.closest('[data-outreach-open="linkedin"]');
+        if (liBtn) {
+          const iv = getAll().find(x => x.id === ivId);
+          const url = iv?.interviewers?.[0]?.linkedin_url;
+          if (url) window.klinch?.invoke('shell:open-external', { url });
+          return;
+        }
+
+        // Open Gmail
+        const gmailBtn = e.target.closest('[data-outreach-url]');
+        if (gmailBtn) {
+          const url = gmailBtn.dataset.outreachUrl;
+          if (url) window.klinch?.invoke('shell:open-external', { url });
+          return;
+        }
+
+        // Copy outreach message/email
+        const copyBtn = e.target.closest('[data-copy-target]');
+        if (copyBtn) {
+          const mainEl = _el(copyBtn.dataset.copyTarget);
+          const alsoEl = copyBtn.dataset.copyAlso ? _el(copyBtn.dataset.copyAlso) : null;
+          let text;
+          if (alsoEl) {
+            text = `Subject: ${mainEl?.textContent?.trim() || ''}\n\n${alsoEl.textContent?.trim() || ''}`;
+          } else {
+            text = mainEl?.textContent?.trim() || '';
+          }
+          navigator.clipboard.writeText(text).then(() => {
+            const orig = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = orig; }, 1500);
+          });
+        }
       });
     }
   }
@@ -900,6 +984,52 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
     }
   }
 
+  async function _firePreOutreach(iv) {
+    try {
+      const data = await _generatePreOutreach(iv);
+      const body = _el('ivdp-pre-outreach-body');
+      if (!body) return;
+      body.innerHTML = _buildOutreachContentHtml('ivdp-pre', data);
+      const section = _el('ivdp-pre-outreach-section');
+      const hdr = section?.querySelector('.ivdp-section-header');
+      if (hdr && !hdr.querySelector('[data-action="refresh-pre-outreach"]')) {
+        const btn = document.createElement('button');
+        btn.className = 'ivdp-refresh-btn';
+        btn.dataset.action = 'refresh-pre-outreach';
+        btn.dataset.ivId   = iv.id;
+        btn.textContent    = '↺ Refresh';
+        hdr.appendChild(btn);
+      }
+    } catch (err) {
+      console.error('[pre-outreach] failed:', err);
+      const body = _el('ivdp-pre-outreach-body');
+      if (body) body.innerHTML = '<div class="ivdp-ai-error">Could not generate outreach. Try refreshing.</div>';
+    }
+  }
+
+  async function _firePostOutreach(iv) {
+    try {
+      const data = await _generatePostOutreach(iv);
+      const body = _el('ivdp-post-outreach-body');
+      if (!body) return;
+      body.innerHTML = _buildOutreachContentHtml('ivdp-post', data);
+      const section = _el('ivdp-post-outreach-section');
+      const hdr = section?.querySelector('.ivdp-section-header');
+      if (hdr && !hdr.querySelector('[data-action="refresh-post-outreach"]')) {
+        const btn = document.createElement('button');
+        btn.className = 'ivdp-refresh-btn';
+        btn.dataset.action = 'refresh-post-outreach';
+        btn.dataset.ivId   = iv.id;
+        btn.textContent    = '↺ Refresh';
+        hdr.appendChild(btn);
+      }
+    } catch (err) {
+      console.error('[post-outreach] failed:', err);
+      const body = _el('ivdp-post-outreach-body');
+      if (body) body.innerHTML = '<div class="ivdp-ai-error">Could not generate follow-up. Try refreshing.</div>';
+    }
+  }
+
   async function _callClaude(prompt) {
     const result = await window.klinch.invoke('claude:coach', {
       model:      'claude-sonnet-4-6',
@@ -908,6 +1038,135 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
     });
     return result?.content?.[0]?.text || result?.text || result || '';
   }
+
+  async function _callClaudeWith({ system, max_tokens, prompt }) {
+    const result = await window.klinch.invoke('claude:coach', {
+      model:      'claude-sonnet-4-20250514',
+      max_tokens,
+      system,
+      messages:   [{ role: 'user', content: prompt }],
+    });
+    return result?.content?.[0]?.text || result?.text || result || '';
+  }
+
+  // ── Outreach generation ───────────────────────────────────────────────────────
+
+  async function _generatePreOutreach(iv) {
+    const pre = iv.outreach_pre;
+    if (pre?.generated_at) return pre;
+
+    const ivr        = iv.interviewers?.[0] || {};
+    const interviewerName  = ivr.name  || '';
+    const interviewerTitle = ivr.title || '';
+    const company    = iv.company?.name || 'the company';
+    const role       = iv.jd?.structured?.role_title || 'the role';
+    const candidateName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'the candidate';
+    const dateStr    = iv.scheduled_at
+      ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      : 'the upcoming interview';
+
+    const payload = `Candidate: ${candidateName}\nInterviewer: ${interviewerName}${interviewerTitle ? ', ' + interviewerTitle : ''}\nCompany: ${company}\nRole applying for: ${role}\nInterview date: ${dateStr}`;
+
+    const [linkedin_message, emailRaw] = await Promise.all([
+      _callClaudeWith({
+        system:     'You are an expert career coach. Write a warm, brief LinkedIn connection request. Return the message text only, no preamble.',
+        max_tokens: 150,
+        prompt:     payload,
+      }),
+      _callClaudeWith({
+        system:     'Write a short warm pre-interview email. Subject line on first line prefixed "Subject:". Return email text only, no preamble.',
+        max_tokens: 200,
+        prompt:     payload,
+      }),
+    ]);
+
+    const emailLines  = emailRaw.split('\n');
+    const subjectLine = emailLines.find(l => l.startsWith('Subject:')) || 'Subject: Looking forward to our conversation';
+    const email_subject = subjectLine.replace(/^Subject:\s*/i, '').trim();
+    const email_body    = emailLines.filter(l => !l.startsWith('Subject:')).join('\n').trim();
+
+    const result = { linkedin_message, email_subject, email_body, generated_at: new Date().toISOString() };
+    _patchIv(iv.id, { outreach_pre: result });
+    return result;
+  }
+
+  async function _generatePostOutreach(iv) {
+    const post = iv.outreach_post;
+    if (post?.generated_at) return post;
+
+    const ivr        = iv.interviewers?.[0] || {};
+    const company    = iv.company?.name || 'the company';
+    const role       = iv.jd?.structured?.role_title || 'the role';
+    const candidateName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'the candidate';
+    const interviewerName  = ivr.name  || '';
+    const interviewerTitle = ivr.title || '';
+    const highlights = (iv.sessions || []).map(s => s.synopsis).filter(Boolean);
+
+    const payload = `Candidate: ${candidateName}\nInterviewer: ${interviewerName}${interviewerTitle ? ', ' + interviewerTitle : ''}\nCompany: ${company}\nRole: ${role}${highlights.length ? '\nHighlights from interview: ' + highlights.join('; ') : ''}`;
+
+    const [linkedin_message, emailRaw] = await Promise.all([
+      _callClaudeWith({
+        system:     'You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. Be grateful, specific, and forward-looking. Return the message text only, no preamble.',
+        max_tokens: 150,
+        prompt:     payload,
+      }),
+      _callClaudeWith({
+        system:     'Write a personalised thank-you email after a job interview. Subject line on first line prefixed "Subject:". Be warm, specific, and concise. Return email text only, no preamble.',
+        max_tokens: 300,
+        prompt:     payload,
+      }),
+    ]);
+
+    const emailLines  = emailRaw.split('\n');
+    const subjectLine = emailLines.find(l => l.startsWith('Subject:')) || 'Subject: Thank you';
+    const email_subject = subjectLine.replace(/^Subject:\s*/i, '').trim();
+    const email_body    = emailLines.filter(l => !l.startsWith('Subject:')).join('\n').trim();
+
+    const result = { linkedin_message, email_subject, email_body, generated_at: new Date().toISOString() };
+    _patchIv(iv.id, { outreach_post: result });
+    return result;
+  }
+
+  function _buildOutreachBoxHtml(sectionId, cached) {
+    if (cached) {
+      return _buildOutreachContentHtml(sectionId, cached);
+    }
+    return `
+      <div class="ivdp-outreach-skeleton" id="${sectionId}-skeleton">
+        <div class="ivdp-skel-line w70"></div>
+        <div class="ivdp-skel-line w50"></div>
+        <div class="ivdp-skel-line w80"></div>
+      </div>
+      <div id="${sectionId}-content" style="display:none"></div>`;
+  }
+
+  function _buildOutreachContentHtml(sectionId, data) {
+    const linkedinHtml = `
+      <div class="ivdp-outreach-block">
+        <div class="ivdp-outreach-label">LinkedIn Message</div>
+        <div class="ivdp-copybox" id="${sectionId}-li-box">${_esc(data.linkedin_message || '')}</div>
+        <div class="ivdp-outreach-actions">
+          <button class="ivdp-outreach-btn ivdp-outreach-open" data-outreach-open="linkedin" data-outreach-section="${sectionId}">Open LinkedIn →</button>
+          <button class="ivdp-outreach-btn ivdp-outreach-copy" data-copy-target="${sectionId}-li-box">Copy Message</button>
+        </div>
+      </div>`;
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&su=${encodeURIComponent(data.email_subject || '')}&body=${encodeURIComponent(data.email_body || '')}`;
+    const emailHtml = `
+      <div class="ivdp-outreach-block">
+        <div class="ivdp-outreach-label">Email</div>
+        <div class="ivdp-copybox ivdp-copybox-subject" id="${sectionId}-subj-box">${_esc(data.email_subject || '')}</div>
+        <div class="ivdp-copybox" id="${sectionId}-body-box">${_esc(data.email_body || '')}</div>
+        <div class="ivdp-outreach-actions">
+          <button class="ivdp-outreach-btn ivdp-outreach-open" data-outreach-url="${_esc(gmailUrl)}">Open Gmail →</button>
+          <button class="ivdp-outreach-btn ivdp-outreach-copy" data-copy-target="${sectionId}-subj-box" data-copy-also="${sectionId}-body-box">Copy Email</button>
+        </div>
+      </div>`;
+
+    return linkedinHtml + emailHtml;
+  }
+
+
 
   // ── Init ──────────────────────────────────────────────────────────────────────
 

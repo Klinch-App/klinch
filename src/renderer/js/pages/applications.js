@@ -26,6 +26,8 @@ window.ApplicationsPage = (() => {
   let _deleteTargetId    = null;
   let _detailApp         = null;
 
+  const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+
   function _el(id) { return document.getElementById(id); }
   function _esc(s) {
     return String(s == null ? '' : s)
@@ -212,7 +214,7 @@ window.ApplicationsPage = (() => {
       return;
     }
     empty.style.display = 'none';
-    feed.innerHTML = apps.map(buildCardHTML).join('');
+    feed.innerHTML = apps.map(app => buildCardHTML(app)).join('');
     if (window.wireImgFallbacks) window.wireImgFallbacks(feed);
   }
 
@@ -661,7 +663,7 @@ window.ApplicationsPage = (() => {
     _el('ap-sort').addEventListener('change',          e => { _filter.sort   = e.target.value; renderFeed(); });
     _el('ap-search').addEventListener('input',         e => { _filter.search = e.target.value.trim(); renderFeed(); });
 
-    // Feed: delete / add-interview / card detail
+    // Feed: delete / add-interview / outreach / card detail
     _el('ap-feed').addEventListener('click', e => {
       const del = e.target.closest('.icard-delete-btn');
       if (del) {

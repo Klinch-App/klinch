@@ -3125,9 +3125,10 @@ html, body {
   border-radius: 4px;
 }
 .ivdp-skel-line.w80 { width: 80%; }
-.ivdp-skel-line.w60 { width: 60%; }
 .ivdp-skel-line.w70 { width: 70%; }
+.ivdp-skel-line.w60 { width: 60%; }
 .ivdp-skel-line.w50 { width: 50%; }
+.ivdp-skel-line.w40 { width: 40%; }
 @keyframes ivdp-shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -4549,3 +4550,93 @@ html, body {
 }
 
 .ob-dev-skip:hover { opacity: 1; }
+
+/* ── Applications — Outreach card ───────────────────────────────────────────── */
+
+
+/* ── Interview Detail — Outreach sections ───────────────────────────────────── */
+
+.ivdp-outreach-urgency {
+  padding: 8px 20px 0;
+  font-size: 12px;
+  color: var(--accent-amber, #f59e0b);
+  font-weight: 500;
+}
+
+.ivdp-outreach-skeleton {
+  padding: 12px 0;
+}
+
+.ivdp-outreach-block {
+  margin-bottom: 20px;
+}
+.ivdp-outreach-block:last-child {
+  margin-bottom: 0;
+}
+
+.ivdp-outreach-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.ivdp-copybox {
+  background: var(--bg-deep, #0c0a1e);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+  font-family: var(--font-sans);
+}
+
+.ivdp-copybox-subject {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 14px;
+  margin-bottom: 4px;
+}
+
+.ivdp-outreach-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ivdp-outreach-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ivdp-outreach-open {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.ivdp-outreach-open:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.ivdp-outreach-copy {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: var(--primary);
+}
+.ivdp-outreach-copy:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(139, 92, 246, 0.55);
+}
