@@ -30,6 +30,7 @@ function openModal() {
   _state.step = 1;
   _state.company = null;
   _state.jd = null;
+  _state.skipJdStep = false;
 
   // Reset step 1
   _el('ai-company-input').value = '';
@@ -61,6 +62,70 @@ function openModal() {
 
 function closeModal() {
   _modal.style.display = 'none';
+}
+
+function openModalWithCompany(company, jd) {
+  _state.step = 1;
+  _state.company = company;
+  _state.jd = jd || null;
+  _state.skipJdStep = !!jd;
+
+  // Pre-fill company UI — hide search, show selected pill
+  _el('ai-company-input').value = '';
+  _el('ai-company-input').style.display = 'none';
+  _el('ai-company-results').style.display = 'none';
+  _el('ai-company-results').innerHTML = '';
+  const logoImg = _el('ai-sel-logo-img');
+  const logoFb  = _el('ai-sel-logo-fb');
+  if (company.logo_url) {
+    logoImg.src = company.logo_url;
+    logoImg.style.display = '';
+    logoFb.style.display = 'none';
+    logoImg.addEventListener('error', () => {
+      logoImg.style.display = 'none';
+      logoFb.style.display = 'flex';
+    }, { once: true });
+  } else {
+    logoImg.style.display = 'none';
+    logoFb.textContent = (company.name || '?')[0].toUpperCase();
+    logoFb.style.display = 'flex';
+  }
+  _el('ai-sel-company-name').textContent   = company.name || '';
+  _el('ai-sel-company-domain').textContent = company.domain || '';
+  _el('ai-selected-company').style.display = '';
+
+  // Reset step 2
+  _state.interviewers = [_emptyInterviewer()];
+  _state.format = 'Virtual';
+
+  // Reset step 4
+  _el('ai-time').value        = '';
+  _el('ai-time-custom').value = '';
+  _el('ai-time-custom').style.display = 'none';
+  _el('ai-stage').value = 'Recruiter Screen';
+  _el('ai-stage-other').style.display = 'none';
+  _el('ai-stage-other').value = '';
+
+  // Set up JD display
+  if (jd?.structured) {
+    _el('ai-jd-textarea').value = jd.raw || '';
+    _el('ai-jd-textarea').style.display = 'none';
+    _el('ai-jd-role-title').textContent = jd.structured.role_title || '';
+    const renderList = (id, items) => { _el(id).innerHTML = (items || []).map(x => `<li>${x}</li>`).join(''); };
+    renderList('ai-jd-resp', jd.structured.responsibilities);
+    renderList('ai-jd-must', jd.structured.must_have);
+    renderList('ai-jd-nice', jd.structured.nice_to_have);
+    const niceSection = _el('ai-jd-nice-section');
+    if (niceSection) niceSection.style.display = jd.structured.nice_to_have?.length ? '' : 'none';
+    _el('ai-jd-structured').style.display = '';
+  } else {
+    _el('ai-jd-textarea').value = '';
+    _el('ai-jd-textarea').style.display = '';
+    _el('ai-jd-structured').style.display = 'none';
+  }
+
+  _modal.style.display = 'flex';
+  _goToStep(2);
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -131,7 +196,7 @@ _nextBtn.addEventListener('click', async () => {
     _goToStep(2);
   } else if (n === 2) {
     if (!_state.interviewers[0]?.name.trim()) return _showError('Please enter the interviewer\'s name.');
-    _goToStep(3);
+    _goToStep(_state.skipJdStep ? 4 : 3);
   } else if (n === 3) {
     if (_state.jd) { _goToStep(4); return; }
     const raw = _el('ai-jd-textarea').value.trim();
@@ -142,7 +207,12 @@ _nextBtn.addEventListener('click', async () => {
   }
 });
 
-_backBtn.addEventListener('click', () => { if (_state.step > 1) _goToStep(_state.step - 1); });
+_backBtn.addEventListener('click', () => {
+  if (_state.step > 1) {
+    const prev = _state.step - 1;
+    _goToStep(_state.skipJdStep && prev === 3 ? 2 : prev);
+  }
+});
 _closeBtn.addEventListener('click', closeModal);
 _modal.addEventListener('click', (e) => { if (e.target === _modal) closeModal(); });
 
@@ -692,4 +762,4 @@ renderInterviews();
   });
 })();
 
-window.AddInterview = { open: openModal };
+window.AddInterview = { open: openModal, openWithCompany: openModalWithCompany };

@@ -2390,6 +2390,25 @@ html, body {
   font-size: 12px;
 }
 
+.ap-add-iv-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  background: rgba(108, 99, 255, 0.08);
+  color: var(--primary);
+  font-family: var(--font-sans);
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ap-add-iv-btn:hover {
+  background: rgba(108, 99, 255, 0.18);
+  border-color: rgba(108, 99, 255, 0.5);
+}
+
 /* Hot job indicator */
 .ap-hot {
   font-size: 13px;

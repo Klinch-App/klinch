@@ -167,7 +167,10 @@ window.ApplicationsPage = (() => {
             ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days}d response</span>` : ''}
             ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
           </div>
-          ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
+          <div style="display:flex;align-items:center;gap:8px">
+            ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
+            <button class="ap-add-iv-btn">+ Add Interview</button>
+          </div>
         </div>
       </div>`;
   }
@@ -657,13 +660,23 @@ window.ApplicationsPage = (() => {
     _el('ap-sort').addEventListener('change',          e => { _filter.sort   = e.target.value; renderFeed(); });
     _el('ap-search').addEventListener('input',         e => { _filter.search = e.target.value.trim(); renderFeed(); });
 
-    // Feed: delete → card detail
+    // Feed: delete / add-interview / card detail
     _el('ap-feed').addEventListener('click', e => {
       const del = e.target.closest('.icard-delete-btn');
       if (del) {
         e.stopPropagation();
         const card = del.closest('.icard');
         if (card?.dataset.id) _openDeleteConfirm(card.dataset.id);
+        return;
+      }
+      const addIv = e.target.closest('.ap-add-iv-btn');
+      if (addIv) {
+        e.stopPropagation();
+        const card = addIv.closest('.icard');
+        if (card?.dataset.id) {
+          const app = _getMergedApps().find(a => a.id === card.dataset.id);
+          if (app) window.AddInterview?.openWithCompany(app.company, app.jd || null);
+        }
         return;
       }
       const card = e.target.closest('.icard');
