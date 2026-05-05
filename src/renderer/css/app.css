@@ -2390,8 +2390,14 @@ html, body {
   font-size: 12px;
 }
 
+.icard.ap-card {
+  padding-bottom: 46px;
+}
+
 .ap-add-iv-btn {
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: 11px;
