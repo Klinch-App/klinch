@@ -525,10 +525,21 @@
 
         <!-- Coach page -->
         <div id="page-coach" style="display:none">
-          <div class="dr-placeholder">
-            <h1 class="dr-placeholder-heading">Coach</h1>
-            <p class="dr-placeholder-sub">Cross-interview insights coming soon.</p>
+          <div class="iv-page-header">
+            <div class="iv-page-title">Coach</div>
           </div>
+
+          <div class="section-title">Pipeline Health</div>
+          <div class="card-grid" id="coach-health-grid"></div>
+
+          <div class="coach-actions-header">
+            <div class="section-title" style="margin:0">Recommended Next Actions</div>
+            <button class="coach-refresh-btn" id="coach-actions-refresh">↺ Refresh</button>
+          </div>
+          <div id="coach-actions-list" class="coach-actions-list"></div>
+
+          <div class="section-title" style="margin-top:32px">Insider Tips</div>
+          <div class="coach-tips-grid" id="coach-tips-grid"></div>
         </div>
 
         <!-- Dry Run page -->
@@ -1271,5 +1282,6 @@
   <script src="js/pages/applications.js"></script>
   <script src="js/pages/calendar.js"></script>
   <script src="js/pages/resume.js"></script>
+  <script src="js/pages/coach.js"></script>
 </body>
 </html>
