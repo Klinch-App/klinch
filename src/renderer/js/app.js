@@ -347,14 +347,91 @@ document.getElementById('page-settings').addEventListener('click', e => {
   });
 })();
 
+// ── Settings — Terms of Service modal ────────────────────────────────────────
+(function() {
+  const backdrop = document.getElementById('tos-modal-backdrop');
+  const openBtn  = document.getElementById('st-tos-btn');
+  const closeBtn = document.getElementById('tos-close-btn');
+
+  openBtn?.addEventListener('click', () => backdrop?.classList.add('visible'));
+  closeBtn?.addEventListener('click', () => backdrop?.classList.remove('visible'));
+  backdrop?.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('visible'); });
+})();
+
+// ── Recording consent modal ───────────────────────────────────────────────────
+(function() {
+  const backdrop    = document.getElementById('consent-modal-backdrop');
+  const checkRec    = document.getElementById('consent-recording');
+  const checkNda    = document.getElementById('consent-nda');
+  const rowRec      = document.getElementById('consent-row-recording');
+  const rowNda      = document.getElementById('consent-row-nda');
+  const launchBtn   = document.getElementById('consent-launch-btn');
+  const cancelBtn   = document.getElementById('consent-cancel-btn');
+
+  let _onConfirm = null;
+
+  function _updateLaunchBtn() {
+    launchBtn.disabled = !(checkRec.checked && checkNda.checked);
+  }
+
+  function _logConsent() {
+    const log = JSON.parse(localStorage.getItem('klinch_consent_log') || '[]');
+    log.push({
+      session_id:        crypto.randomUUID(),
+      interview_id:      window.getEarSelectedId?.() || null,
+      timestamp:         new Date().toISOString(),
+      recording_consent: true,
+      nda_consent:       true,
+    });
+    localStorage.setItem('klinch_consent_log', JSON.stringify(log));
+  }
+
+  function _openConsentModal(onConfirm) {
+    // Reset checkboxes every session
+    checkRec.checked = false;
+    checkNda.checked = false;
+    rowRec.classList.remove('checked');
+    rowNda.classList.remove('checked');
+    _updateLaunchBtn();
+    _onConfirm = onConfirm;
+    backdrop.classList.add('visible');
+  }
+
+  checkRec.addEventListener('change', () => {
+    rowRec.classList.toggle('checked', checkRec.checked);
+    _updateLaunchBtn();
+  });
+  checkNda.addEventListener('change', () => {
+    rowNda.classList.toggle('checked', checkNda.checked);
+    _updateLaunchBtn();
+  });
+
+  launchBtn.addEventListener('click', () => {
+    _logConsent();
+    backdrop.classList.remove('visible');
+    _onConfirm?.();
+    _onConfirm = null;
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    backdrop.classList.remove('visible');
+    _onConfirm = null;
+  });
+
+  // Expose for both launch buttons below
+  window._openConsentModal = _openConsentModal;
+})();
+
 // ── Overlay launch button ─────────────────────────────────────────────────────
 const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
-  launchBtn.addEventListener('click', async () => {
-    await window.klinch.invoke('overlay:launch');
-    launchBtn.textContent = 'Klinch Ear Active';
-    launchBtn.style.opacity = '0.6';
-    launchBtn.style.cursor = 'default';
+  launchBtn.addEventListener('click', () => {
+    window._openConsentModal(async () => {
+      await window.klinch.invoke('overlay:launch');
+      launchBtn.textContent = 'Klinch Ear Active';
+      launchBtn.style.opacity = '0.6';
+      launchBtn.style.cursor = 'default';
+    });
   });
 
   window.klinch.on('overlay:closed', () => {
@@ -397,19 +474,21 @@ function renderTranscript(interimText = null, interimSpeaker = null) {
 }
 
 if (btnStart) {
-  btnStart.addEventListener('click', async () => {
-    btnStart.disabled = true;
-    btnStart.textContent = 'Starting Klinch Ear…';
+  btnStart.addEventListener('click', () => {
+    window._openConsentModal(async () => {
+      btnStart.disabled = true;
+      btnStart.textContent = 'Starting Klinch Ear…';
 
-    await window.klinch.invoke('overlay:launch');
+      await window.klinch.invoke('overlay:launch');
 
-    const ok = await window.STT.startSession();
-    if (ok) {
-      btnStart.style.display = 'none';
-      btnStop.style.display  = '';
-    }
-    btnStart.disabled = false;
-    btnStart.textContent = 'Start Klinch Ear';
+      const ok = await window.STT.startSession();
+      if (ok) {
+        btnStart.style.display = 'none';
+        btnStop.style.display  = '';
+      }
+      btnStart.disabled = false;
+      btnStart.textContent = 'Start Klinch Ear';
+    });
   });
 }
 
