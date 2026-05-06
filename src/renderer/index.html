@@ -1085,10 +1085,24 @@
   <!-- Onboarding overlay — shown on first launch until profile is complete -->
   <div id="onboarding-overlay" style="display:none">
     <div class="ob-card">
-      <button class="ob-dev-skip" id="ob-dev-skip">Skip</button>
+      <button class="ob-dev-skip" id="ob-dev-skip">[DEV] Skip</button>
+      <button class="ob-user-skip" id="ob-user-skip" style="display:none">Skip</button>
       <div class="ob-logo">
         <div class="ob-logo-mark">K</div>
         <span class="ob-logo-text">Klinch</span>
+      </div>
+      <div id="ob-intro" class="ob-intro-screen">
+        <div class="ob-intro-heading">Klinch works better when it knows you.</div>
+        <div class="ob-intro-body">Tell us about the role you're chasing, where you are in your search, and what you want to get better at. We'll use that to personalize every part of your experience.</div>
+        <div class="ob-intro-sub">10 questions. 2 minutes. Let's go.</div>
+        <button class="ob-intro-cta" id="ob-intro-cta">Get Started →</button>
+      </div>
+      <div id="ob-audio-explainer" class="ob-intro-screen" style="display:none">
+        <div class="ob-intro-heading">Your secret weapon during interviews.</div>
+        <div class="ob-intro-body">Klinch Ear captures your interview audio in real time so you always have the right answer at your fingertips — without your interviewer seeing or hearing a thing.</div>
+        <div class="ob-intro-body">We need to make one small change to your audio settings. It's reversible, takes about a minute, and Klinch resets everything automatically when your interview ends.</div>
+        <div class="ob-intro-sub">We take your privacy seriously. Your audio never leaves your device.</div>
+        <button class="ob-intro-cta" id="ob-audio-cta">Set Up Klinch Ear →</button>
       </div>
       <div class="ob-progress-wrap">
         <div class="ob-progress-fill"></div>

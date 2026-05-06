@@ -6,17 +6,11 @@ const OB_STEPS = [
     q: 'What type of role are you looking for?',
     type: 'role-select',
     options: [
-      'Sales Development Rep (SDR)',
-      'Account Executive (AE)',
-      'Customer Success (CSM)',
-      'Account Manager (AM)',
-      'Solutions / Sales Engineer',
-      'Revenue Operations (RevOps)',
-      'Marketing',
-      'Partnerships & Alliances',
-      'Sales Enablement',
-      'Engineering',
-      'HR / People Ops',
+      'SDR', 'AE',
+      'CSM', 'AM',
+      'SE',  'RevOps',
+      'Marketing', 'Partnerships',
+      'Enablement', 'People',
     ],
   },
   {
@@ -78,19 +72,72 @@ const OB_STEPS = [
 ];
 
 function showOnboarding() {
-  const overlay    = document.getElementById('onboarding-overlay');
-  const fill       = overlay.querySelector('.ob-progress-fill');
-  const stepCount  = overlay.querySelector('.ob-step-count');
-  const cardBody   = overlay.querySelector('.ob-card-body');
-  const questionEl = overlay.querySelector('.ob-question');
-  const inputWrap  = overlay.querySelector('.ob-input-wrap');
-  const backBtn    = document.getElementById('ob-back-btn');
-  const nextBtn    = document.getElementById('ob-next-btn');
+  const overlay      = document.getElementById('onboarding-overlay');
+  const fill         = overlay.querySelector('.ob-progress-fill');
+  const stepCount    = overlay.querySelector('.ob-step-count');
+  const cardBody     = overlay.querySelector('.ob-card-body');
+  const questionEl   = overlay.querySelector('.ob-question');
+  const inputWrap    = overlay.querySelector('.ob-input-wrap');
+  const backBtn      = document.getElementById('ob-back-btn');
+  const nextBtn      = document.getElementById('ob-next-btn');
+  const introEl          = document.getElementById('ob-intro');
+  const audioExplainerEl = document.getElementById('ob-audio-explainer');
+  const progressWrap     = overlay.querySelector('.ob-progress-wrap');
+  const navEl            = overlay.querySelector('.ob-nav');
+  const devSkipBtn       = document.getElementById('ob-dev-skip');
+  const userSkipBtn      = document.getElementById('ob-user-skip');
 
   overlay.style.display = 'flex';
 
-  document.getElementById('ob-dev-skip')?.addEventListener('click', () => {
-    localStorage.setItem('klinch_profile', JSON.stringify({ completed: true }));
+  devSkipBtn?.addEventListener('click', () => {
+    localStorage.setItem('klinch_profile', JSON.stringify({
+      completed: true,
+      role_type: 'SDR', experience_years: '1–3 years',
+      company_size: ['Startup (1–50)'], challenge: ['Nerves & confidence'],
+      job_search_status: 'Actively interviewing', strongest_asset: '[dev]',
+      improvement_area: '[dev]', tools: '[dev]',
+      salary_range: '$70,000 – $90,000', additional_context: '',
+    }));
+    const exitEl = introEl.style.display !== 'none' ? introEl : cardBody;
+    exitEl.classList.add('ob-exit-left');
+    setTimeout(() => {
+      exitEl.classList.remove('ob-exit-left');
+      exitEl.style.display        = 'none';
+      progressWrap.style.display  = 'none';
+      stepCount.style.display     = 'none';
+      navEl.style.display         = 'none';
+      devSkipBtn.style.display    = 'none';
+      audioExplainerEl.classList.add('ob-enter-right');
+      audioExplainerEl.style.display = '';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        audioExplainerEl.classList.remove('ob-enter-right');
+      }));
+    }, 180);
+  });
+
+  // Hide Q&A chrome while intro screen is shown
+  progressWrap.style.display = 'none';
+  stepCount.style.display    = 'none';
+  cardBody.style.display     = 'none';
+  navEl.style.display        = 'none';
+
+  document.getElementById('ob-intro-cta').addEventListener('click', () => {
+    introEl.classList.add('ob-exit-left');
+    setTimeout(() => {
+      introEl.style.display      = 'none';
+      introEl.classList.remove('ob-exit-left');
+      progressWrap.style.display = '';
+      stepCount.style.display    = '';
+      navEl.style.display        = '';
+      cardBody.classList.add('ob-enter-right');
+      cardBody.style.display = '';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        cardBody.classList.remove('ob-enter-right');
+      }));
+    }, 180);
+  });
+
+  document.getElementById('ob-audio-cta').addEventListener('click', () => {
     overlay.classList.add('ob-fade-out');
     setTimeout(() => location.reload(), 400);
   });
@@ -217,9 +264,11 @@ function showOnboarding() {
   }
 
   function goTo(idx, dir) {
-    fill.style.width        = ((idx + 1) / OB_STEPS.length * 100) + '%';
-    stepCount.textContent   = `${idx + 1} of ${OB_STEPS.length}`;
-    backBtn.style.visibility = idx === 0 ? 'hidden' : '';
+    fill.style.width          = ((idx + 1) / OB_STEPS.length * 100) + '%';
+    stepCount.textContent     = `${idx + 1} of ${OB_STEPS.length}`;
+    backBtn.style.visibility  = idx === 0 ? 'hidden' : '';
+    devSkipBtn.style.display  = idx <= 2 ? '' : 'none';
+    userSkipBtn.style.display = idx >= 3 ? '' : 'none';
 
     if (dir === null) {
       questionEl.textContent = OB_STEPS[idx].q;
@@ -242,8 +291,37 @@ function showOnboarding() {
     }, 180);
   }
 
+  function toAudioExplainer() {
+    cardBody.classList.add('ob-exit-left');
+    setTimeout(() => {
+      cardBody.classList.remove('ob-exit-left');
+      cardBody.style.display      = 'none';
+      progressWrap.style.display  = 'none';
+      stepCount.style.display     = 'none';
+      navEl.style.display         = 'none';
+      devSkipBtn.style.display    = 'none';
+      userSkipBtn.style.display   = 'none';
+      audioExplainerEl.classList.add('ob-enter-right');
+      audioExplainerEl.style.display = '';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        audioExplainerEl.classList.remove('ob-enter-right');
+      }));
+    }, 180);
+  }
+
   backBtn.addEventListener('click', () => {
     if (step > 0) { step--; goTo(step, 'back'); }
+  });
+
+  userSkipBtn.addEventListener('click', () => {
+    answers[OB_STEPS[step].key] = null;
+    if (step < OB_STEPS.length - 1) {
+      step++;
+      goTo(step, 'fwd');
+    } else {
+      localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
+      toAudioExplainer();
+    }
   });
 
   nextBtn.addEventListener('click', () => {
@@ -256,8 +334,7 @@ function showOnboarding() {
       goTo(step, 'fwd');
     } else {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
-      overlay.classList.add('ob-fade-out');
-      setTimeout(() => location.reload(), 400);
+      toAudioExplainer();
     }
   });
 

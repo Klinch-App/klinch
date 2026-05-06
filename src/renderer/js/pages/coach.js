@@ -707,14 +707,14 @@ window.CoachPage = (() => {
   function _getRoleKey(profile) {
     const r = (profile.role_type || '').toLowerCase();
     if (r.includes('account executive') || /\bae\b/.test(r))                                    return 'ae';
-    if (r.includes('customer success')  || /\bcs\b/.test(r))                                    return 'cs';
+    if (r.includes('customer success')  || /\bcsm?\b/.test(r))                                   return 'cs';
     if (r.includes('account manager')   || /\bam\b/.test(r))                                    return 'am';
     if (r.includes('solutions engineer') || r.includes('sales engineer') || /\bse\b/.test(r))   return 'se';
     if (r.includes('revenue operations') || r.includes('revops') || r.includes('rev ops'))      return 'revops';
     if (r.includes('partner') || r.includes('alliance') || r.includes('channel'))               return 'partnerships';
     if (r.includes('enablement'))                                                                return 'enablement';
     if (r.includes('engineer') || r.includes('developer') || r.includes('software'))            return 'engineering';
-    if (r.includes('hr') || r.includes('human resources') || r.includes('people ops') || r.includes('talent') || r.includes('recruit')) return 'hr';
+    if (r.includes('hr') || r.includes('human resources') || r.includes('people') || r.includes('talent') || r.includes('recruit')) return 'hr';
     if (r.includes('marketing') || r.includes('demand gen') || r.includes('growth'))            return 'marketing';
     return 'sdr';
   }
