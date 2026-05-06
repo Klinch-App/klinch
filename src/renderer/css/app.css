@@ -5212,11 +5212,26 @@ html, body {
 .coach-outreach-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border-subtle);
   gap: 12px;
+  cursor: pointer;
+  user-select: none;
 }
+.coach-outreach-card-header:hover .coach-outreach-chevron { color: var(--text-secondary); }
+
+.coach-outreach-card-collapsed .coach-outreach-card-header { border-bottom-color: transparent; }
+.coach-outreach-card-collapsed .coach-outreach-card-body { display: none; }
+
+.coach-outreach-chevron {
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: transform 0.18s;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.coach-outreach-card-collapsed .coach-outreach-chevron { transform: rotate(-90deg); }
 
 .coach-outreach-card-meta {
   display: flex;
