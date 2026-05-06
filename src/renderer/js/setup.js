@@ -134,6 +134,6 @@
     localStorage.removeItem('klinch-setup-complete');
   }
 
-  modal.style.display = 'flex';
   await checkAndCreate();
+  modal.style.display = 'flex';
 })();
