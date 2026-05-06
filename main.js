@@ -6,6 +6,7 @@ const interview      = require('./src/main/ipc/interview');
 const audio          = require('./src/main/ipc/audio');
 const interviewsData = require('./src/main/ipc/interviews-data');
 const resumeData     = require('./src/main/ipc/resume');
+const billing        = require('./src/main/ipc/billing');
 
 nativeTheme.themeSource = 'dark';
 
@@ -34,19 +35,27 @@ function createMainWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
 
-  // Show only after the renderer signals it has finished initialization.
-  // This prevents the window flashing in an intermediate state while
-  // setup.js awaits async IPC calls (audio:setup-status, etc.).
+  // Show only after the renderer signals initialization is complete,
+  // then fade the window in so the macOS window-appear animation and
+  // any first-paint artifacts are invisible.
   let _shown = false;
   const _show = () => {
-    if (!_shown && mainWindow && !mainWindow.isDestroyed()) {
-      _shown = true;
-      mainWindow.show();
-    }
+    if (_shown || !mainWindow || mainWindow.isDestroyed()) return;
+    _shown = true;
+    mainWindow.setOpacity(0);
+    mainWindow.show();
+    let step = 0;
+    const STEPS = 8;
+    const tick = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      step++;
+      mainWindow.setOpacity(step / STEPS);
+      if (step < STEPS) setTimeout(tick, 16); // ~130ms total
+    };
+    setTimeout(tick, 16);
   };
   ipcMain.once('app:initialized', _show);
-  // Safety fallback — show after 4s if the signal is never received
-  setTimeout(_show, 4000);
+  setTimeout(_show, 4000); // Safety fallback
 
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
@@ -258,6 +267,7 @@ app.whenReady().then(() => {
   audio.init();
   interviewsData.init();
   resumeData.init();
+  billing.init();
 
   // Wire interview pipeline IPC (Claude, STT relay, session management)
   interview.init({
