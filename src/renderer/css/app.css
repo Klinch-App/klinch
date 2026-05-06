@@ -604,7 +604,6 @@ html, body {
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  transition: border-color 0.2s;
 }
 
 .setup-step.is-done {
@@ -628,7 +627,6 @@ html, body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.2s, color 0.2s;
 }
 
 .setup-step.is-done .setup-step-num {
@@ -758,7 +756,6 @@ html, body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.15s;
 }
 
 .setup-cta:hover:not(:disabled) { opacity: 0.88; }

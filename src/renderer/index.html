@@ -765,9 +765,9 @@
 
       <div class="setup-steps">
 
-        <!-- Step 1: BlackHole -->
-        <div class="setup-step" id="step-bh">
-          <div class="setup-step-num" id="bh-num">1</div>
+        <!-- Step 1: BlackHole — pre-populated as done; applyState() corrects if not -->
+        <div class="setup-step is-done" id="step-bh">
+          <div class="setup-step-num" id="bh-num">✓</div>
           <div class="setup-step-body">
             <div class="setup-step-header">
               <div class="setup-step-title">Install BlackHole audio driver</div>
@@ -775,15 +775,15 @@
             </div>
             <div class="setup-step-desc">BlackHole is a free virtual audio device that routes your interview audio into Klinch without affecting anything else.</div>
             <div class="setup-step-actions">
-              <button class="setup-btn-primary" id="bh-download-btn">Download BlackHole →</button>
+              <button class="setup-btn-primary" id="bh-download-btn" style="display:none">Download BlackHole →</button>
               <button class="setup-btn-secondary" id="bh-check-btn" style="display:none">I've installed it — check again</button>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Multi-Output Device (auto-created) -->
-        <div class="setup-step" id="step-mo">
-          <div class="setup-step-num" id="mo-num">2</div>
+        <!-- Step 2: Multi-Output Device — pre-populated as done; applyState() corrects if not -->
+        <div class="setup-step is-done" id="step-mo">
+          <div class="setup-step-num" id="mo-num">✓</div>
           <div class="setup-step-body">
             <div class="setup-step-title">Configure audio device</div>
             <div class="setup-step-desc" id="mo-desc">Klinch will automatically create a virtual audio device so you can hear everything normally during interviews. When you're done, it switches everything back — you'll never notice a thing.</div>

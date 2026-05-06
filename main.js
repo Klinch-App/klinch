@@ -25,7 +25,7 @@ function createMainWindow() {
     minHeight: 600,
     backgroundColor: '#08061A',
     titleBarStyle: 'hiddenInset',
-    vibrancy: 'ultra-dark',
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -34,6 +34,7 @@ function createMainWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
+  mainWindow.once('ready-to-show', () => mainWindow.show());
 
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
