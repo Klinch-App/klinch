@@ -28,13 +28,17 @@
       <div class="content" id="content">
         <!-- Teleprompter view -->
         <div class="teleprompter-track" id="tp-track">
-          <span class="teleprompter-text" id="tp-text">
-            <span class="waiting" id="waiting-msg">Listening for question…</span>
-          </span>
+          <span class="teleprompter-text" id="tp-text"></span>
         </div>
 
         <!-- Bullet view (hidden initially) -->
         <ul class="bullets" id="bullets" style="display:none"></ul>
+
+        <!-- Listening state indicator (bottom-right corner) -->
+        <div class="listening-indicator" id="listening-indicator">
+          <span class="listening-dot"></span>
+          <span class="listening-label">Listening...</span>
+        </div>
       </div>
 
       <div class="pause-badge" id="pause-badge">Paused</div>

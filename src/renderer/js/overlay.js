@@ -13,24 +13,25 @@ const state = {
   scrollPx: 0,          // current scroll offset
   rafId: null,
   hasContent: false,
+  overlayState: 'idle', // 'idle' | 'listening' | 'responding'
 };
 
 // ─── Elements ─────────────────────────────────────────────────────────────────
 
-const controls    = document.getElementById('controls');
-const statusDot   = document.getElementById('status-dot');
-const speedLabel  = document.getElementById('speed-label');
-const btnSpeedUp  = document.getElementById('btn-speed-up');
-const btnSpeedDown = document.getElementById('btn-speed-down');
-const btnMode     = document.getElementById('btn-mode');
-const btnPause    = document.getElementById('btn-pause');
-const btnDismiss  = document.getElementById('btn-dismiss');
-const tpTrack    = document.getElementById('tp-track');
-const tpText     = document.getElementById('tp-text');
-const bulletsList = document.getElementById('bullets');
-const pauseBadge = document.getElementById('pause-badge');
-const waitingMsg  = document.getElementById('waiting-msg');
-const overlayCard = document.getElementById('overlay-card');
+const controls           = document.getElementById('controls');
+const statusDot          = document.getElementById('status-dot');
+const speedLabel         = document.getElementById('speed-label');
+const btnSpeedUp         = document.getElementById('btn-speed-up');
+const btnSpeedDown       = document.getElementById('btn-speed-down');
+const btnMode            = document.getElementById('btn-mode');
+const btnPause           = document.getElementById('btn-pause');
+const btnDismiss         = document.getElementById('btn-dismiss');
+const tpTrack            = document.getElementById('tp-track');
+const tpText             = document.getElementById('tp-text');
+const bulletsList        = document.getElementById('bullets');
+const pauseBadge         = document.getElementById('pause-badge');
+const overlayCard        = document.getElementById('overlay-card');
+const listeningIndicator = document.getElementById('listening-indicator');
 
 // ─── Click-through: enable mouse events only over the controls bar ────────────
 // mousemove fires even when ignoreMouseEvents is active (because forward:true)
@@ -76,7 +77,12 @@ window.klinch.on('overlay:set-text', ({ mode, text, bullets }) => {
 // Streaming token append (Claude response)
 window.klinch.on('overlay:append-token', (token) => {
   if (!state.hasContent) {
-    clearWaiting();
+    // First token — transition to responding state
+    tpText.innerHTML = '';
+    tpText.style.opacity = '';
+    state.fullText = '';
+    state.hasContent = true;
+    setRespondingState();
     if (!state.paused) startScroll();
   }
   state.fullText += token;
@@ -84,37 +90,88 @@ window.klinch.on('overlay:append-token', (token) => {
   if (!state.paused && state.mode === 'teleprompter') snapScrollToEnd();
 });
 
-// Clear current suggestion
+// Clear current suggestion (dismiss hotkey or new question while idle)
 window.klinch.on('overlay:clear', () => clearContent());
 
 // Settings update from side panel
 window.klinch.on('overlay:settings', (s) => applySettings(s));
 
-// Live interim transcript from STT (shown while listening, if no answer is active)
-window.klinch.on('overlay:transcript', (text) => {
-  if (state.hasContent) return; // don't clobber an active answer
-  tpText.classList.add('transcript-mode');
-  tpText.textContent = text;
+// Live interim transcript — user is speaking, show listening state only
+window.klinch.on('overlay:transcript', () => {
+  if (state.overlayState !== 'listening') setListeningState();
 });
 
-// Bullet generation in progress — show pulsing indicator
+// New question detected — if a response was showing, fade it out
 window.klinch.on('overlay:thinking', () => {
   stopScroll();
-  state.hasContent = false;
-  tpText.classList.remove('transcript-mode');
-  tpText.innerHTML = '<span class="thinking-text" id="thinking-msg"><span class="thinking-dot"></span>Generating answer…</span>';
-  tpText.style.transform = 'translateX(0)';
-  bulletsList.innerHTML = '';
-  statusDot.classList.remove('active');
+  if (state.hasContent) {
+    fadeAndClear(() => setListeningState());
+  } else {
+    setListeningState();
+  }
 });
 
-// Answer delivery complete
+// Answer delivery complete — stay in responding state
 window.klinch.on('overlay:response-done', () => {
-  tpText.classList.remove('transcript-mode');
-  const thinkingMsg = tpText.querySelector('#thinking-msg');
-  if (thinkingMsg) thinkingMsg.remove();
-  statusDot.classList.toggle('active', state.hasContent);
+  // Nothing to do; content stays visible
 });
+
+// ─── Overlay state management ─────────────────────────────────────────────────
+
+function setIdleState() {
+  state.overlayState = 'idle';
+  listeningIndicator.classList.remove('visible');
+  statusDot.classList.remove('active');
+}
+
+function setListeningState() {
+  state.overlayState = 'listening';
+  listeningIndicator.classList.add('visible');
+  statusDot.classList.remove('active');
+}
+
+function setRespondingState() {
+  state.overlayState = 'responding';
+  listeningIndicator.classList.remove('visible');
+  statusDot.classList.add('active');
+}
+
+// Fade out current content then invoke callback
+function fadeAndClear(callback) {
+  if (!state.hasContent) {
+    _resetContent();
+    callback?.();
+    return;
+  }
+  tpText.classList.add('tp-fade-out');
+  setTimeout(() => {
+    tpText.classList.remove('tp-fade-out');
+    tpText.style.opacity = '';
+    _resetContent();
+    callback?.();
+  }, 320);
+}
+
+// Reset content state without touching overlay state
+function _resetContent() {
+  stopScroll();
+  state.fullText = '';
+  state.bullets = [];
+  state.scrollPx = 0;
+  state.hasContent = false;
+
+  tpText.innerHTML = '';
+  tpText.style.transform = 'translateX(0)';
+  bulletsList.innerHTML = '';
+
+  if (state.paused) {
+    state.paused = false;
+    btnPause.textContent = '⏸';
+    pauseBadge.classList.remove('show');
+  }
+
+  window.klinch.send('overlay:resize', 110);
+}
 
 // ─── Core actions ─────────────────────────────────────────────────────────────
 
@@ -163,33 +220,12 @@ function replay() {
 }
 
 function clearContent() {
-  stopScroll();
-  state.fullText = '';
-  state.bullets = [];
-  state.scrollPx = 0;
-  state.hasContent = false;
-
-  // Reset teleprompter
-  tpText.innerHTML = '';
-  const span = document.createElement('span');
-  span.className = 'waiting';
-  span.id = 'waiting-msg';
-  span.textContent = 'Listening for question…';
-  tpText.appendChild(span);
-  tpText.style.transform = 'translateX(0)';
-
-  // Reset bullets
-  bulletsList.innerHTML = '';
-
-  // Reset controls
-  statusDot.classList.remove('active');
-  if (state.paused) {
-    state.paused = false;
-    btnPause.textContent = '⏸';
-    pauseBadge.classList.remove('show');
+  if (state.hasContent) {
+    fadeAndClear(() => setListeningState());
+  } else {
+    _resetContent();
+    setListeningState();
   }
-
-  window.klinch.send('overlay:resize', 110);
 }
 
 function adjustSpeed(delta) {
@@ -204,11 +240,13 @@ function adjustSpeed(delta) {
 // ─── Content loaders ──────────────────────────────────────────────────────────
 
 function loadText(text) {
-  clearWaiting();
   state.fullText = text;
   state.scrollPx = 0;
+  state.hasContent = true;
+  tpText.style.opacity = '';
   tpText.textContent = text;
   tpText.style.transform = 'translateX(0)';
+  setRespondingState();
   if (!state.paused) startScroll();
 }
 
@@ -222,16 +260,9 @@ function loadBullets(bullets) {
     bulletsList.appendChild(li);
   });
   state.hasContent = true;
-  statusDot.classList.add('active');
+  setRespondingState();
   resizeForBullets();
   revealBullets();
-}
-
-function clearWaiting() {
-  const w = tpText.querySelector('.waiting');
-  if (w) w.remove();
-  state.hasContent = true;
-  statusDot.classList.add('active');
 }
 
 function revealBullets() {
@@ -327,12 +358,3 @@ function applySettings(s) {
   }
   if (s.speed !== undefined) adjustSpeed(s.speed - state.speed);
 }
-
-// ─── Demo content (shows on launch so the overlay is visually testable) ───────
-
-setTimeout(() => {
-  if (!state.hasContent) {
-    const DEMO_TEXT = "Focus on a specific deal — lead with a number. Walk through your prospecting process: research, personalisation, multi-touch cadence. Then show what you learned from it. Hiring managers want coachability, not perfection.";
-    loadText(DEMO_TEXT);
-  }
-}, 1200);
