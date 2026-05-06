@@ -129,6 +129,7 @@
     const status = await window.klinch.invoke('audio:setup-status');
     if (status.blackholeInstalled && status.multiOutputReady) {
       modal.style.display = 'none';
+      window.klinch.send('app:initialized'); // Signal main: ready, no setup needed
       return;
     }
     localStorage.removeItem('klinch-setup-complete');
@@ -136,4 +137,5 @@
 
   await checkAndCreate();
   modal.style.display = 'flex';
+  window.klinch.send('app:initialized'); // Signal main: ready, show window with modal
 })();
