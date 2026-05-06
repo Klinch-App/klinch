@@ -4570,6 +4570,26 @@ html, body {
   color: var(--text-primary);
 }
 
+.ob-role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ob-role-btn {
+  white-space: normal;
+  text-align: left;
+  padding: 10px 14px;
+}
+
+.ob-role-other {
+  grid-column: 1 / -1;
+}
+
+.ob-role-other-input {
+  margin-top: 2px;
+}
+
 .ob-nav {
   display: flex;
   align-items: center;

@@ -4,8 +4,20 @@ const OB_STEPS = [
   {
     key: 'role_type',
     q: 'What type of role are you looking for?',
-    type: 'text',
-    placeholder: 'e.g. Account Executive, Customer Success Manager, SDR',
+    type: 'role-select',
+    options: [
+      'Sales Development Rep (SDR)',
+      'Account Executive (AE)',
+      'Customer Success (CSM)',
+      'Account Manager (AM)',
+      'Solutions / Sales Engineer',
+      'Revenue Operations (RevOps)',
+      'Marketing',
+      'Partnerships & Alliances',
+      'Sales Enablement',
+      'Engineering',
+      'HR / People Ops',
+    ],
   },
   {
     key: 'experience_years',
@@ -109,6 +121,40 @@ function showOnboarding() {
           updateNext();
         });
       });
+    } else if (s.type === 'role-select') {
+      inputWrap.style.cssText = 'flex-direction:column;gap:10px';
+      const current = answers[s.key] || '';
+      const isOther = current && !s.options.includes(current);
+      inputWrap.innerHTML = `
+        <div class="ob-role-grid">
+          ${s.options.map(opt => `
+            <button class="ob-choice ob-role-btn${current === opt ? ' ob-selected' : ''}" data-value="${opt}">${opt}</button>
+          `).join('')}
+          <button class="ob-choice ob-role-btn ob-role-other${isOther ? ' ob-selected' : ''}" data-value="__other__">Other…</button>
+        </div>
+        <input class="ob-input ob-role-other-input" type="text" placeholder="Type your role" value="${isOther ? current : ''}" style="display:${isOther ? 'block' : 'none'}">`;
+      const grid     = inputWrap.querySelector('.ob-role-grid');
+      const otherInp = inputWrap.querySelector('.ob-role-other-input');
+      grid.querySelectorAll('.ob-role-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          grid.querySelectorAll('.ob-role-btn').forEach(b => b.classList.remove('ob-selected'));
+          btn.classList.add('ob-selected');
+          if (btn.dataset.value === '__other__') {
+            otherInp.style.display = 'block';
+            answers[s.key] = otherInp.value.trim();
+            setTimeout(() => otherInp.focus(), 50);
+          } else {
+            otherInp.style.display = 'none';
+            answers[s.key] = btn.dataset.value;
+          }
+          updateNext();
+        });
+      });
+      otherInp.addEventListener('input', e => {
+        answers[s.key] = e.target.value.trim();
+        updateNext();
+      });
+      otherInp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
     } else if (s.type === 'salary') {
       inputWrap.style.cssText = 'flex-direction:column;gap:8px';
       let existMin = '', existMax = '';
@@ -164,7 +210,7 @@ function showOnboarding() {
   function updateNext() {
     const s   = OB_STEPS[step];
     const val = answers[s.key] || '';
-    nextBtn.disabled  = s.optional ? false : (s.type === 'choice'
+    nextBtn.disabled  = s.optional ? false : (s.type === 'choice' || s.type === 'role-select'
       ? (s.multi ? !(answers[s.key]?.length > 0) : !val)
       : !(val + '').trim());
     nextBtn.textContent = step === OB_STEPS.length - 1 ? "Let's go →" : 'Continue →';
