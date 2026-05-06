@@ -200,12 +200,53 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Waiting / empty state */
-.waiting {
-  font: italic 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
-  color: rgba(255, 255, 255, 0.22);
-  width: 100%;
-  text-align: center;
+/* ── Listening indicator (bottom-right corner of content area) ──────────── */
+
+.listening-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.listening-indicator.visible {
+  opacity: 1;
+}
+
+.listening-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3CDBA0;
+  box-shadow: 0 0 8px rgba(60, 219, 160, 0.7);
+  flex-shrink: 0;
+  animation: listening-pulse 1.4s ease-in-out infinite;
+}
+
+.listening-label {
+  font: 500 10px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  color: rgba(60, 219, 160, 0.7);
+  letter-spacing: 0.4px;
+}
+
+@keyframes listening-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.65); }
+}
+
+/* Fade out teleprompter text when transitioning back to listening */
+.tp-fade-out {
+  animation: tp-fade 0.3s ease forwards;
+}
+
+@keyframes tp-fade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 /* Paused badge */
@@ -228,40 +269,3 @@ html, body {
 
 .pause-badge.show { display: block; }
 
-/* ── Transcript (listening state) ───────────────────────────────────────── */
-
-.teleprompter-text.transcript-mode {
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.28);
-  font-size: 14px;
-  text-shadow: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── Thinking / generating state ────────────────────────────────────────── */
-
-.thinking-text {
-  font: italic 13px/1 -apple-system, BlinkMacSystemFont, sans-serif;
-  color: rgba(124, 58, 255, 0.75);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.thinking-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #7C3AFF;
-  box-shadow: 0 0 9px rgba(124, 58, 255, 0.9);
-  display: inline-block;
-  flex-shrink: 0;
-  animation: klinch-pulse 1.1s ease-in-out infinite;
-}
-
-@keyframes klinch-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.3; transform: scale(0.6); }
-}
