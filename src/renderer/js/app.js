@@ -256,6 +256,7 @@ function navigateTo(page) {
   if (page === 'applications' && window.ApplicationsPage) window.ApplicationsPage.reset();
   if (page === 'calendar'     && window.CalendarPage)     window.CalendarPage.reset();
   if (page === 'dry-run'      && window.DryRunPage)       window.DryRunPage.reset();
+  if (page === 'coach'        && window.CoachPage)        window.CoachPage.reset();
 }
 window.navigateTo = navigateTo;
 
