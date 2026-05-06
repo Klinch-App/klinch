@@ -24,6 +24,13 @@
 
   if (!modal) return;
 
+  // Show modal immediately (synchronously) if setup hasn't been completed.
+  // This prevents a flash of main app content on reload (e.g., after onboarding)
+  // while we wait for the async audio:setup-status IPC call.
+  if (localStorage.getItem('klinch-setup-complete') !== '1') {
+    modal.style.display = 'flex';
+  }
+
   let bhDone = false;
   let moDone = false;
 
@@ -133,9 +140,10 @@
       return;
     }
     localStorage.removeItem('klinch-setup-complete');
+    modal.style.display = 'flex'; // status changed since last visit, show modal
   }
 
   await checkAndCreate();
-  modal.style.display = 'flex';
+  // modal already visible (either shown synchronously above or in the previouslyComplete edge case)
   window.klinch.send('app:initialized'); // Signal main: ready, show window with modal
 })();
