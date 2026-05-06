@@ -90,7 +90,268 @@ window.CoachPage = (() => {
       </div>`).join('');
   }
 
-  // ── Section 2 — Recommended Next Actions ─────────────────────────────────
+  // ── Section 2 — Outreach Actions ─────────────────────────────────────────
+
+  const OUTREACH_CACHE_KEY = 'klinch_coach_outreach';
+
+  function _getOutreachInterviews() {
+    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const now        = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const pre = interviews.filter(iv =>
+      iv.status === 'pending' && iv.scheduled_at && new Date(iv.scheduled_at) >= now
+    ).sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+
+    const post = interviews.filter(iv => {
+      const isCompleted = iv.status === 'completed' ||
+        (iv.scheduled_at && new Date(iv.scheduled_at) < now && iv.status !== 'pending');
+      if (!isCompleted) return false;
+      const completedDate = iv.completed_at ? new Date(iv.completed_at) : (iv.scheduled_at ? new Date(iv.scheduled_at) : null);
+      if (!completedDate || completedDate < sevenDaysAgo) return false;
+      return !iv.outreach_post_sent;
+    }).sort((a, b) => {
+      const da = a.completed_at || a.scheduled_at || 0;
+      const db = b.completed_at || b.scheduled_at || 0;
+      return new Date(db) - new Date(da);
+    });
+
+    return { pre, post };
+  }
+
+  function _loadOutreachCache() {
+    try { return JSON.parse(localStorage.getItem(OUTREACH_CACHE_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+
+  function _saveOutreachCache(cache) {
+    localStorage.setItem(OUTREACH_CACHE_KEY, JSON.stringify(cache));
+  }
+
+  function _renderOutreachSection() {
+    const list = document.getElementById('coach-outreach-list');
+    if (!list) return;
+
+    const { pre, post } = _getOutreachInterviews();
+    const cache = _loadOutreachCache();
+
+    const sent = JSON.parse(localStorage.getItem('klinch_interviews') || '[]')
+      .filter(iv => iv.outreach_post_sent || iv.outreach_pre_sent);
+
+    if (!pre.length && !post.length) {
+      const hasSent = sent.length > 0;
+      list.innerHTML = `<div class="coach-outreach-empty">${hasSent ? 'All outreach sent. Great work!' : 'No outreach needed right now. Check back after your next interview is scheduled.'}</div>`;
+      return;
+    }
+
+    const cards = [
+      ...post.map(iv => _buildOutreachCard(iv, 'post', cache[iv.id + '_post'])),
+      ...pre.map(iv  => _buildOutreachCard(iv, 'pre',  cache[iv.id + '_pre'])),
+    ];
+
+    list.innerHTML = cards.join('');
+    _wireOutreachEvents(list);
+  }
+
+  function _buildOutreachCard(iv, type, cached) {
+    const company   = _esc(iv.company?.name || 'Unknown Company');
+    const role      = _esc(iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role');
+    const isPost    = type === 'post';
+    const cardId    = `coach-outreach-${iv.id}-${type}`;
+    const dateLabel = isPost
+      ? (iv.completed_at || iv.scheduled_at ? new Date(iv.completed_at || iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '')
+      : (iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '');
+
+    const typeLabel = isPost ? 'Post-Interview' : 'Pre-Interview';
+    const tagClass  = isPost ? 'coach-outreach-tag-post' : 'coach-outreach-tag-pre';
+
+    let contentHtml;
+    if (cached?.linkedin_message) {
+      contentHtml = _buildOutreachContentHtml(iv.id, type, cached);
+    } else {
+      contentHtml = `
+        <div class="coach-outreach-generate-row">
+          <button class="coach-outreach-generate-btn" data-iv-id="${_esc(iv.id)}" data-outreach-type="${type}">Generate Outreach</button>
+        </div>`;
+    }
+
+    return `
+      <div class="coach-outreach-card" id="${cardId}">
+        <div class="coach-outreach-card-header">
+          <div class="coach-outreach-card-meta">
+            <span class="coach-outreach-company">${company}</span>
+            <span class="coach-outreach-role">${role}</span>
+          </div>
+          <div class="coach-outreach-card-badges">
+            ${dateLabel ? `<span class="coach-outreach-date">${dateLabel}</span>` : ''}
+            <span class="coach-outreach-tag ${tagClass}">${typeLabel}</span>
+          </div>
+        </div>
+        <div class="coach-outreach-card-body" id="${cardId}-body">
+          ${contentHtml}
+        </div>
+      </div>`;
+  }
+
+  function _buildOutreachContentHtml(ivId, type, data) {
+    const pfx = `co-${ivId}-${type}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&su=${encodeURIComponent(data.email?.subject || '')}&body=${encodeURIComponent(data.email?.body || '')}`;
+    return `
+      <div class="coach-outreach-block">
+        <div class="coach-outreach-block-label">LinkedIn Message</div>
+        <div class="coach-outreach-copybox" id="${pfx}-li">${_esc(data.linkedin_message || '')}</div>
+        <div class="coach-outreach-actions">
+          <button class="coach-outreach-btn coach-outreach-btn-ghost" data-copy-id="${pfx}-li">Copy</button>
+        </div>
+      </div>
+      <div class="coach-outreach-block">
+        <div class="coach-outreach-block-label">Email</div>
+        <div class="coach-outreach-copybox coach-outreach-copybox-subject" id="${pfx}-subj">${_esc(data.email?.subject || '')}</div>
+        <div class="coach-outreach-copybox" id="${pfx}-body">${_esc(data.email?.body || '')}</div>
+        <div class="coach-outreach-actions">
+          <button class="coach-outreach-btn coach-outreach-btn-ghost" data-outreach-gmail="${_esc(gmailUrl)}">Open Gmail →</button>
+          <button class="coach-outreach-btn coach-outreach-btn-ghost" data-copy-email-subj="${pfx}-subj" data-copy-email-body="${pfx}-body">Copy Email</button>
+        </div>
+      </div>
+      <div class="coach-outreach-sent-row">
+        <button class="coach-outreach-btn coach-outreach-btn-sent" data-mark-sent-id="${_esc(ivId)}" data-mark-sent-type="${type}">Mark as Sent ✓</button>
+      </div>`;
+  }
+
+  function _wireOutreachEvents(list) {
+    list.addEventListener('click', async e => {
+      const genBtn = e.target.closest('[data-outreach-type]');
+      if (genBtn) {
+        const ivId = genBtn.dataset.ivId;
+        const type = genBtn.dataset.outreachType;
+        await _generateOutreach(ivId, type, genBtn);
+        return;
+      }
+
+      const copyBtn = e.target.closest('[data-copy-id]');
+      if (copyBtn) {
+        const el = document.getElementById(copyBtn.dataset.copyId);
+        if (el) _copyToClipboard(copyBtn, el.textContent.trim());
+        return;
+      }
+
+      const gmailBtn = e.target.closest('[data-outreach-gmail]');
+      if (gmailBtn) {
+        window.klinch?.invoke('shell:open-external', { url: gmailBtn.dataset.outreachGmail });
+        return;
+      }
+
+      const copyEmailBtn = e.target.closest('[data-copy-email-subj]');
+      if (copyEmailBtn) {
+        const subj = document.getElementById(copyEmailBtn.dataset.copyEmailSubj)?.textContent?.trim() || '';
+        const body = document.getElementById(copyEmailBtn.dataset.copyEmailBody)?.textContent?.trim() || '';
+        _copyToClipboard(copyEmailBtn, `Subject: ${subj}\n\n${body}`);
+        return;
+      }
+
+      const sentBtn = e.target.closest('[data-mark-sent-id]');
+      if (sentBtn) {
+        const ivId = sentBtn.dataset.markSentId;
+        const type = sentBtn.dataset.markSentType;
+        _markSent(ivId, type);
+        return;
+      }
+    });
+  }
+
+  function _copyToClipboard(btn, text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  }
+
+  async function _generateOutreach(ivId, type, btn) {
+    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const iv = interviews.find(x => x.id === ivId);
+    if (!iv) return;
+
+    const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+    const cardBody = document.getElementById(`coach-outreach-${ivId}-${type}-body`);
+    if (!cardBody) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Generating…';
+
+    const ivr          = iv.interviewers?.[0] || {};
+    const company      = iv.company?.name || 'the company';
+    const role         = iv.jd?.structured?.role_title || iv.role_title || 'the role';
+    const candidateName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'the candidate';
+    const interviewerName  = ivr.name  || '';
+    const interviewerTitle = ivr.title || '';
+    const isPost = type === 'post';
+
+    const dateStr = iv.scheduled_at
+      ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      : '';
+    const highlights = isPost ? (iv.sessions || []).map(s => s.synopsis).filter(Boolean) : [];
+
+    const payload = [
+      `Candidate: ${candidateName}`,
+      interviewerName ? `Interviewer: ${interviewerName}${interviewerTitle ? ', ' + interviewerTitle : ''}` : '',
+      `Company: ${company}`,
+      `Role: ${role}`,
+      dateStr ? `Interview date: ${dateStr}` : '',
+      highlights.length ? `Key moments: ${highlights.join('; ')}` : '',
+    ].filter(Boolean).join('\n');
+
+    const [liSystemPre, liSystemPost, emailSystemPre, emailSystemPost] = [
+      'You are an expert career coach. Write a warm, brief LinkedIn connection request before a job interview. Return the message text only, no preamble.',
+      'You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. Be grateful, specific, forward-looking. Return the message text only, no preamble.',
+      'Write a short warm pre-interview email. First line must be "Subject: <subject>". Return email text only, no preamble.',
+      'Write a personalised thank-you email after a job interview. First line must be "Subject: <subject>". Be warm, specific, concise. Return email text only, no preamble.',
+    ];
+
+    try {
+      const invoke = (system, max_tokens) => window.klinch.invoke('claude:coach', {
+        model:      'claude-sonnet-4-6',
+        max_tokens,
+        system,
+        messages:   [{ role: 'user', content: payload }],
+      }).then(r => r?.content?.[0]?.text || r?.text || '');
+
+      const [linkedin_message, emailRaw] = await Promise.all([
+        invoke(isPost ? liSystemPost : liSystemPre, 150),
+        invoke(isPost ? emailSystemPost : emailSystemPre, 300),
+      ]);
+
+      const emailLines  = emailRaw.split('\n');
+      const subjectLine = emailLines.find(l => /^Subject:/i.test(l)) || 'Subject: Following up';
+      const subject     = subjectLine.replace(/^Subject:\s*/i, '').trim();
+      const body        = emailLines.filter(l => !/^Subject:/i.test(l)).join('\n').trim();
+
+      const data = { linkedin_message, email: { subject, body }, generated_at: new Date().toISOString() };
+      const cache = _loadOutreachCache();
+      cache[ivId + '_' + type] = data;
+      _saveOutreachCache(cache);
+
+      cardBody.innerHTML = _buildOutreachContentHtml(ivId, type, data);
+    } catch (err) {
+      console.error('[coach-outreach] generate failed:', err);
+      btn.disabled = false;
+      btn.textContent = 'Generate Outreach';
+    }
+  }
+
+  function _markSent(ivId, type) {
+    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const idx = interviews.findIndex(x => x.id === ivId);
+    if (idx === -1) return;
+
+    const field = type === 'post' ? 'outreach_post_sent' : 'outreach_pre_sent';
+    interviews[idx][field] = new Date().toISOString();
+    localStorage.setItem('klinch_interviews', JSON.stringify(interviews));
+
+    _renderOutreachSection();
+  }
+
+  // ── Section 3 — Recommended Next Actions ─────────────────────────────────
 
   const TYPE_ICONS = {
     'follow-up': '↩',
@@ -337,6 +598,7 @@ window.CoachPage = (() => {
     const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
     const data    = _getPipelineData();
     _renderHealth(data);
+    _renderOutreachSection();
     _fetchActions(data);
     _renderTips(profile);
   }
