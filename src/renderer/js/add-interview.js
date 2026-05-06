@@ -548,12 +548,133 @@ function refreshDashboardStats() {
 }
 window.refreshDashboardStats = refreshDashboardStats;
 
+// ── Klinch Ear — interview context bar ───────────────────────────────────────
+
+let _earSelectedId = null;
+
+function _getUpcomingInterviews() {
+  const now = new Date();
+  return JSON.parse(localStorage.getItem('klinch_interviews') || '[]')
+    .filter(iv => iv.scheduled_at && new Date(iv.scheduled_at) > now && iv.status !== 'completed')
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+}
+
+function _formatEarTime(iv) {
+  if (!iv.scheduled_at) return 'TBD';
+  const d    = new Date(iv.scheduled_at);
+  const now  = new Date();
+  const isToday    = d.toDateString() === now.toDateString();
+  const isTomorrow = d.toDateString() === new Date(now.getTime() + 86400000).toDateString();
+  const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (isToday)    return `Today ${timeStr}`;
+  if (isTomorrow) return `Tomorrow ${timeStr}`;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' ' + timeStr;
+}
+
+function _logoHtmlForEar(iv, cls) {
+  const initial = (iv.company?.name || '?')[0].toUpperCase();
+  return iv.company?.logo_url
+    ? `<img src="${iv.company.logo_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display=''">${initial}`
+    : initial;
+}
+
+function updateEarContext() {
+  const upcoming = _getUpcomingInterviews();
+
+  const ctxEl    = _el('ear-iv-context');
+  const selEl    = _el('ear-iv-selected');
+  const noneEl   = _el('ear-iv-none');
+  if (!ctxEl) return;
+
+  if (!upcoming.length) {
+    selEl.style.display  = 'none';
+    noneEl.style.display = '';
+    _earSelectedId = null;
+    return;
+  }
+
+  // Keep previous selection if it's still upcoming; otherwise default to soonest
+  const stillValid = _earSelectedId && upcoming.find(iv => iv.id === _earSelectedId);
+  if (!stillValid) _earSelectedId = upcoming[0].id;
+
+  const iv = upcoming.find(iv => iv.id === _earSelectedId);
+
+  selEl.style.display  = '';
+  noneEl.style.display = 'none';
+
+  const logoEl    = _el('ear-iv-logo');
+  const companyEl = _el('ear-iv-company');
+  const roleEl    = _el('ear-iv-role');
+  const timeEl    = _el('ear-iv-time');
+
+  if (logoEl) {
+    if (iv.company?.logo_url) {
+      logoEl.innerHTML = `<img src="${iv.company.logo_url}" alt="" onerror="this.style.display='none'">`;
+      // show initial as fallback if img fails
+      const img = logoEl.querySelector('img');
+      if (img) img.addEventListener('error', () => { logoEl.textContent = (iv.company?.name || '?')[0].toUpperCase(); }, { once: true });
+    } else {
+      logoEl.textContent = (iv.company?.name || '?')[0].toUpperCase();
+    }
+  }
+  if (companyEl) companyEl.textContent = iv.company?.name || '';
+  if (roleEl)    roleEl.textContent    = iv.jd?.structured?.role_title || iv.stage || '';
+  if (timeEl)    timeEl.textContent    = _formatEarTime(iv);
+}
+window.updateEarContext = updateEarContext;
+window.getEarSelectedId = () => _earSelectedId;
+
+// Wire the change button and dropdown (runs once)
+(function _wireEarDropdown() {
+  const changeBtn  = _el('ear-iv-change-btn');
+  const dropdownEl = _el('ear-iv-dropdown');
+  if (!changeBtn || !dropdownEl) return;
+
+  changeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const upcoming = _getUpcomingInterviews();
+    if (!upcoming.length) return;
+
+    dropdownEl.innerHTML = upcoming.map(iv => {
+      const initial = (iv.company?.name || '?')[0].toUpperCase();
+      const logoHtml = iv.company?.logo_url
+        ? `<img src="${iv.company.logo_url}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">${initial}`
+        : initial;
+      return `
+        <div class="ear-iv-option${iv.id === _earSelectedId ? ' active' : ''}" data-iv-id="${iv.id}">
+          <div class="ear-iv-option-logo">${logoHtml}</div>
+          <div class="ear-iv-option-info">
+            <div class="ear-iv-option-company">${iv.company?.name || 'Unknown'}</div>
+            <div class="ear-iv-option-time">${_formatEarTime(iv)}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    dropdownEl.style.display = dropdownEl.style.display === 'none' ? '' : 'none';
+  });
+
+  dropdownEl.addEventListener('click', (e) => {
+    const opt = e.target.closest('.ear-iv-option');
+    if (!opt) return;
+    _earSelectedId = opt.dataset.ivId;
+    dropdownEl.style.display = 'none';
+    updateEarContext();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!dropdownEl.contains(e.target) && e.target !== changeBtn) {
+      dropdownEl.style.display = 'none';
+    }
+  });
+})();
+
 function renderInterviews() {
   const all  = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   const grid  = _el('upcoming-interviews-grid');
   const empty = _el('upcoming-empty-state');
 
   refreshDashboardStats();
+  updateEarContext();
 
   if (!grid) return;
 
