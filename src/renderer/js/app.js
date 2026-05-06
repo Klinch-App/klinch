@@ -575,14 +575,30 @@ const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
   launchBtn.addEventListener('click', () => {
     window._openConsentModal(async () => {
+      launchBtn.disabled = true;
       await window.klinch.invoke('overlay:launch');
-      launchBtn.textContent = 'Klinch Ear Active';
-      launchBtn.style.opacity = '0.6';
-      launchBtn.style.cursor = 'default';
+      const ok = await window.STT.startSession();
+      if (ok) {
+        launchBtn.textContent = 'Klinch Ear Active';
+        launchBtn.style.opacity = '0.6';
+        launchBtn.style.cursor = 'default';
+        // Sync the dashboard panel buttons
+        if (btnStart) btnStart.style.display = 'none';
+        if (btnStop)  btnStop.style.display  = '';
+      }
+      launchBtn.disabled = false;
     });
   });
 
   window.klinch.on('overlay:closed', () => {
+    // Stop STT if it was running via the pop-out path
+    window.STT.stopSession();
+    // Reset dashboard panel buttons
+    if (btnStop)  btnStop.style.display  = 'none';
+    if (btnStart) btnStart.style.display = '';
+    transcriptLines = [];
+    renderTranscript();
+    // Reset launch button
     launchBtn.innerHTML = `
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
         <rect x="1" y="3" width="12" height="8" rx="2"/>
