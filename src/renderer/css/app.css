@@ -4708,96 +4708,6 @@ html, body {
 
 .ob-dev-skip:hover { opacity: 1; }
 
-/* ── Applications — Outreach card ───────────────────────────────────────────── */
-
-
-/* ── Interview Detail — Outreach sections ───────────────────────────────────── */
-
-.ivdp-outreach-urgency {
-  padding: 8px 20px 0;
-  font-size: 12px;
-  color: var(--accent-amber, #f59e0b);
-  font-weight: 500;
-}
-
-.ivdp-outreach-skeleton {
-  padding: 12px 0;
-}
-
-.ivdp-outreach-block {
-  margin-bottom: 20px;
-}
-.ivdp-outreach-block:last-child {
-  margin-bottom: 0;
-}
-
-.ivdp-outreach-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.ivdp-copybox {
-  background: var(--bg-deep, #0c0a1e);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-primary);
-  white-space: pre-wrap;
-  word-break: break-word;
-  margin-bottom: 8px;
-  font-family: var(--font-sans);
-}
-
-.ivdp-copybox-subject {
-  font-weight: 600;
-  font-size: 13px;
-  padding: 8px 14px;
-  margin-bottom: 4px;
-}
-
-.ivdp-outreach-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ivdp-outreach-btn {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.ivdp-outreach-open {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-.ivdp-outreach-open:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(139, 92, 246, 0.08);
-}
-
-.ivdp-outreach-copy {
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.35);
-  color: var(--primary);
-}
-.ivdp-outreach-copy:hover {
-  background: rgba(139, 92, 246, 0.22);
-  border-color: rgba(139, 92, 246, 0.55);
-}
-
 /* ── Recording consent modal ────────────────────────────────────────────────── */
 
 .consent-backdrop {
@@ -5279,4 +5189,185 @@ html, body {
   font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+/* ── Coach — Outreach Actions ────────────────────────────────────────────────── */
+
+.coach-outreach-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 16px 0 8px;
+}
+
+.coach-outreach-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.coach-outreach-card:hover { border-color: var(--border); }
+
+.coach-outreach-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
+}
+
+.coach-outreach-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coach-outreach-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-outreach-role {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-outreach-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.coach-outreach-date {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.coach-outreach-tag {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.coach-outreach-tag-pre  { background: rgba(124,58,255,0.15); color: var(--primary-light); }
+.coach-outreach-tag-post { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+.coach-outreach-card-body {
+  padding: 14px 16px;
+}
+
+.coach-outreach-generate-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.coach-outreach-generate-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: var(--primary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.coach-outreach-generate-btn:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: rgba(139, 92, 246, 0.55);
+}
+.coach-outreach-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coach-outreach-block {
+  margin-bottom: 16px;
+}
+.coach-outreach-block:last-of-type { margin-bottom: 0; }
+
+.coach-outreach-block-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.coach-outreach-copybox {
+  background: var(--bg-deep, #0c0a1e);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+}
+.coach-outreach-copybox-subject {
+  font-weight: 600;
+  padding: 7px 12px;
+  margin-bottom: 3px;
+}
+
+.coach-outreach-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.coach-outreach-btn {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.coach-outreach-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.coach-outreach-btn-ghost:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.coach-outreach-sent-row {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}
+.coach-outreach-btn-sent {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: #4ade80;
+}
+.coach-outreach-btn-sent:hover {
+  background: rgba(34,197,94,0.18);
+  border-color: rgba(34,197,94,0.5);
 }
