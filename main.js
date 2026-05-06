@@ -33,7 +33,20 @@ function createMainWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src/renderer/index.html'));
-  mainWindow.once('ready-to-show', () => mainWindow.show());
+
+  // Show only after the renderer signals it has finished initialization.
+  // This prevents the window flashing in an intermediate state while
+  // setup.js awaits async IPC calls (audio:setup-status, etc.).
+  let _shown = false;
+  const _show = () => {
+    if (!_shown && mainWindow && !mainWindow.isDestroyed()) {
+      _shown = true;
+      mainWindow.show();
+    }
+  };
+  ipcMain.once('app:initialized', _show);
+  // Safety fallback — show after 4s if the signal is never received
+  setTimeout(_show, 4000);
 
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
