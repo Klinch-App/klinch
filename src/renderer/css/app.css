@@ -761,7 +761,7 @@ html, body {
 .setup-cta:hover:not(:disabled) { opacity: 0.88; }
 
 .setup-cta:disabled {
-  opacity: 0.35;
+  opacity: 1;
   cursor: default;
 }
 
