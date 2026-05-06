@@ -466,6 +466,7 @@
                 <option value="Applied">Applied</option>
                 <option value="Interviewing">Interviewing</option>
                 <option value="Offer">Offer</option>
+                <option value="Offer Accepted">Offer Accepted</option>
                 <option value="Withdrawn">Withdrawn</option>
                 <option value="Rejected">Rejected</option>
               </select>
@@ -994,6 +995,7 @@
                 <option value="Applied">Applied</option>
                 <option value="Interviewing">Interviewing</option>
                 <option value="Offer">Offer</option>
+                <option value="Offer Accepted">Offer Accepted</option>
                 <option value="Withdrawn">Withdrawn</option>
                 <option value="Rejected">Rejected</option>
               </select>
@@ -1041,6 +1043,45 @@
       <div class="delete-confirm-actions">
         <button class="ai-btn-primary" id="ap-link-yes" style="flex:1;padding:10px 0">Yes, add it</button>
         <button class="btn-keep" id="ap-link-no">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offer Accepted — Celebration modal -->
+  <div id="cel-modal-backdrop" class="cel-modal-backdrop" style="display:none">
+    <div class="cel-modal-card">
+      <button class="cel-close-btn" id="cel-close" aria-label="Close">✕</button>
+
+      <div class="cel-header">🎉 Congratulations!</div>
+      <div class="cel-subtext">You landed the role. This is what all the prep was for.</div>
+
+      <div class="cel-company-row">
+        <div id="cel-company-logo-wrap" class="cel-logo-wrap"></div>
+        <div class="cel-company-info">
+          <div class="cel-company-name" id="cel-company-name"></div>
+          <div class="cel-role-title" id="cel-role-title"></div>
+        </div>
+      </div>
+
+      <div class="cel-share-section">
+        <div class="cel-share-title">Share your win &amp; earn a $20 gift card</div>
+        <div class="cel-share-body">Post about your experience on LinkedIn and we'll send you a $20 Amazon gift card as a thank you.</div>
+        <textarea id="cel-li-post" class="cel-post-textarea"></textarea>
+        <div class="cel-post-actions">
+          <button id="cel-copy-post" class="cel-btn-secondary">Copy Post</button>
+          <button id="cel-post-li" class="cel-btn-primary">Post on LinkedIn</button>
+        </div>
+        <div class="cel-submit-hint">After posting, submit your LinkedIn post URL below to claim your gift card.</div>
+        <input type="url" id="cel-li-url" class="cel-url-input" placeholder="Paste your LinkedIn post URL here">
+        <button id="cel-submit-review" class="cel-btn-primary cel-btn-full">Submit for Review</button>
+        <div id="cel-submit-confirm" class="cel-submit-confirm" style="display:none">
+          Submitted! We'll review your post and send your gift card within 24 hours.
+        </div>
+      </div>
+
+      <div class="cel-footer">
+        <button id="cel-close-btn" class="cel-btn-secondary">Close</button>
+        <button id="cel-view-app" class="cel-btn-primary">View Application</button>
       </div>
     </div>
   </div>
@@ -1300,5 +1341,8 @@
   <script src="js/pages/calendar.js"></script>
   <script src="js/pages/resume.js"></script>
   <script src="js/pages/coach.js"></script>
+
+  <!-- Confetti canvas — sits above all UI, pointer-events:none -->
+  <canvas id="confetti-canvas" style="display:none"></canvas>
 </body>
 </html>

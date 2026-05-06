@@ -14,17 +14,20 @@ window.ApplicationsPage = (() => {
   };
 
   const STATUS_CLASS = {
-    'Applied':      'ap-status-applied',
-    'Interviewing': 'ap-status-interviewing',
-    'Offer':        'ap-status-offer',
-    'Withdrawn':    'ap-status-withdrawn',
-    'Rejected':     'ap-status-rejected',
+    'Applied':        'ap-status-applied',
+    'Interviewing':   'ap-status-interviewing',
+    'Offer':          'ap-status-offer',
+    'Offer Accepted': 'ap-status-offer-accepted',
+    'Withdrawn':      'ap-status-withdrawn',
+    'Rejected':       'ap-status-rejected',
   };
 
   let _filter = { status: '', stage: '', search: '', sort: 'date_applied' };
   let _pendingLinkRecord = null;
   let _deleteTargetId    = null;
   let _detailApp         = null;
+  let _cel_appId         = null;
+  let _confettiRaf       = null;
 
   const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
 
@@ -107,12 +110,77 @@ window.ApplicationsPage = (() => {
     return [...real, ...synthetic];
   }
 
+  // ── Confetti ──────────────────────────────────────────────────────────────────
+
+  function _fireConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    canvas.style.display = 'block';
+
+    const COLORS   = ['#7C3AFF', '#DC3CA0', '#3CDBA0', '#FFFFFF', '#9B6BFF', '#E879C0'];
+    const DURATION = 3800;
+
+    const particles = Array.from({ length: 180 }, () => ({
+      x:     Math.random() * canvas.width,
+      y:     -20 - Math.random() * 120,
+      w:     5 + Math.random() * 9,
+      h:     Math.random() < 0.4 ? (5 + Math.random() * 9) : (2 + Math.random() * 4),
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      vx:    -2 + Math.random() * 4,
+      vy:    1.5 + Math.random() * 4,
+      rot:   Math.random() * Math.PI * 2,
+      rotV:  -0.12 + Math.random() * 0.24,
+      phase: Math.random() * Math.PI * 2,
+      amp:   0.5 + Math.random() * 1.5,
+    }));
+
+    let startTime = null;
+    cancelAnimationFrame(_confettiRaf);
+
+    function _tick(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed  = ts - startTime;
+      const progress = Math.min(elapsed / DURATION, 1);
+      const alpha    = progress > 0.65 ? 1 - (progress - 0.65) / 0.35 : 1;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach(p => {
+        p.vy  += 0.05;
+        p.x   += p.vx + Math.sin(elapsed * 0.002 + p.phase) * p.amp * 0.1;
+        p.y   += p.vy;
+        p.rot += p.rotV;
+
+        const bottomFade = Math.max(0, 1 - Math.max(0, p.y - canvas.height * 0.85) / (canvas.height * 0.15));
+        ctx.save();
+        ctx.globalAlpha = alpha * bottomFade;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (progress < 1) {
+        _confettiRaf = requestAnimationFrame(_tick);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
+      }
+    }
+
+    _confettiRaf = requestAnimationFrame(_tick);
+  }
+
   // ── Stats ─────────────────────────────────────────────────────────────────────
 
   function renderStats() {
     const all    = _getMergedApps();
     const active = all.filter(a => a.status === 'Interviewing').length;
-    const offers = all.filter(a => a.status === 'Offer').length;
+    const offers = all.filter(a => a.status === 'Offer' || a.status === 'Offer Accepted').length;
     const times  = all.map(responseDays).filter(d => d !== null);
     const avg    = times.length ? Math.round(times.reduce((s, d) => s + d, 0) / times.length) : null;
 
@@ -248,8 +316,16 @@ window.ApplicationsPage = (() => {
         <div class="co-hero-name">${_esc(app.company?.name || '')}</div>
         <div class="co-hero-domain" style="cursor:default">${_esc(app.role_title || '')}</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
-        <span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end">
+        ${!app._synthetic ? `
+          <select class="ap-status-select" id="ap-status-select">
+            <option value="Applied"        ${app.status==='Applied'        ?'selected':''}>Applied</option>
+            <option value="Interviewing"   ${app.status==='Interviewing'   ?'selected':''}>Interviewing</option>
+            <option value="Offer"          ${app.status==='Offer'          ?'selected':''}>Offer</option>
+            <option value="Offer Accepted" ${app.status==='Offer Accepted' ?'selected':''}>Offer Accepted</option>
+            <option value="Withdrawn"      ${app.status==='Withdrawn'      ?'selected':''}>Withdrawn</option>
+            <option value="Rejected"       ${app.status==='Rejected'       ?'selected':''}>Rejected</option>
+          </select>` : `<span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>`}
         ${app.current_stage ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
         ${hot ? `<span class="ap-hot" style="font-size:16px" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
         <button class="ap-add-iv-btn">+ Add Interview</button>
@@ -270,6 +346,21 @@ window.ApplicationsPage = (() => {
       : null;
 
     let html = `
+      ${(app.status === 'Offer Accepted' && app.offer_modal_shown) ? `
+        <div class="ap-win-banner">
+          <div class="ap-win-banner-left">
+            <span class="ap-win-banner-icon">🎉</span>
+            <div>
+              <div class="ap-win-banner-title">You landed this one!</div>
+              <div class="ap-win-banner-sub">${app.offer_review_status === 'pending_review'
+                ? 'Gift card claim submitted — we\'ll review within 24 hours.'
+                : 'Share your win on LinkedIn and earn a $20 gift card.'}</div>
+            </div>
+          </div>
+          ${app.offer_review_status !== 'pending_review'
+            ? '<button class="ap-win-banner-btn" id="ap-win-share-btn">Share &amp; Earn $20 →</button>'
+            : ''}
+        </div>` : ''}
       <div class="co-section">
         <div class="co-section-title">Timeline</div>
         <div class="ap-timeline-row">
@@ -338,6 +429,9 @@ window.ApplicationsPage = (() => {
     _el('ap-detail-body').innerHTML = html;
     if (window.wireImgFallbacks) window.wireImgFallbacks(_el('ap-detail-body'));
 
+    const winBtn = _el('ap-win-share-btn');
+    if (winBtn) winBtn.addEventListener('click', () => _showCelebrationModal(_detailApp));
+
     const notesEl = _el('ap-detail-notes');
     if (notesEl) {
       notesEl.addEventListener('input', () => {
@@ -369,6 +463,78 @@ window.ApplicationsPage = (() => {
         </div>
         <span class="icard-date" style="flex-shrink:0">${_esc(dateStr)}</span>
       </div>`;
+  }
+
+  // ── Status update ────────────────────────────────────────────────────────────
+
+  function _updateAppStatus(id, newStatus) {
+    const all = getAll();
+    const idx = all.findIndex(a => a.id === id);
+    if (idx === -1) return;
+    const oldStatus     = all[idx].status;
+    all[idx].status     = newStatus;
+    all[idx].updated_at = new Date().toISOString();
+    saveAll(all);
+    if (_detailApp?.id === id) _detailApp = all[idx];
+    refresh();
+
+    // Trigger 2: status changed to 'Offer Accepted' → confetti + modal (once)
+    if (newStatus === 'Offer Accepted' && oldStatus !== 'Offer Accepted') {
+      _fireConfetti();
+      if (!all[idx].offer_modal_shown) {
+        setTimeout(() => _showCelebrationModal(all[idx]), 1000);
+      }
+    }
+  }
+
+  // ── Celebration modal ─────────────────────────────────────────────────────────
+
+  function _showCelebrationModal(app) {
+    _cel_appId = app.id;
+
+    const logoWrap = _el('cel-company-logo-wrap');
+    if (app.company?.logo_url) {
+      logoWrap.innerHTML = `<img src="${_esc(app.company.logo_url)}" class="cel-logo-img" alt="">`;
+    } else {
+      logoWrap.innerHTML = `<div class="cel-logo-fb">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
+    }
+
+    _el('cel-company-name').textContent = app.company?.name || '';
+    _el('cel-role-title').textContent   = app.role_title   || '';
+
+    const roleTitle   = app.role_title    || '[Role Title]';
+    const companyName = app.company?.name || '[Company Name]';
+    _el('cel-li-post').value =
+      `Just accepted an offer as ${roleTitle} at ${companyName}. If you're interviewing in SaaS sales, check out Klinch — it's an AI interview coaching tool that helped me prepare and stay sharp during every interview. Real-time suggestions, post-interview coaching, and a full job search tracker in one place. tryklinch.com #NewJob #SaaSSales #Klinch`;
+
+    _el('cel-li-url').value = app.offer_linkedin_post_url || '';
+    const alreadySubmitted = app.offer_review_status === 'pending_review';
+    _el('cel-submit-confirm').style.display = alreadySubmitted ? '' : 'none';
+    _el('cel-submit-review').style.display  = alreadySubmitted ? 'none' : '';
+
+    const backdrop = _el('cel-modal-backdrop');
+    backdrop.style.display = 'flex';
+    requestAnimationFrame(() => backdrop.classList.add('visible'));
+  }
+
+  function _hideCelebrationModal() {
+    const backdrop = _el('cel-modal-backdrop');
+    backdrop.classList.remove('visible');
+    setTimeout(() => { backdrop.style.display = 'none'; }, 220);
+
+    if (_cel_appId) {
+      const all = getAll();
+      const idx = all.findIndex(a => a.id === _cel_appId);
+      if (idx !== -1 && !all[idx].offer_modal_shown) {
+        all[idx].offer_modal_shown = true;
+        saveAll(all);
+        if (_detailApp?.id === _cel_appId) {
+          _detailApp = all[idx];
+          _renderDetailBody(_detailApp);
+        }
+      }
+      _cel_appId = null;
+    }
   }
 
   // ── Add Application modal ─────────────────────────────────────────────────────
@@ -585,7 +751,7 @@ window.ApplicationsPage = (() => {
         all[idx].interview_ids.push(record.id);
       }
       all[idx].current_stage = record.stage;
-      if (!['Offer', 'Withdrawn', 'Rejected'].includes(all[idx].status)) {
+      if (!['Offer', 'Offer Accepted', 'Withdrawn', 'Rejected'].includes(all[idx].status)) {
         all[idx].status = 'Interviewing';
       }
       // Recalculate first interview date from all linked interviews
@@ -599,6 +765,9 @@ window.ApplicationsPage = (() => {
     } else {
       showLinkPrompt(record);
     }
+
+    // Trigger 1: interview added at 'Offer' stage → confetti (no modal)
+    if (record.stage === 'Offer') _fireConfetti();
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────────
@@ -693,10 +862,16 @@ window.ApplicationsPage = (() => {
       refresh();
     });
 
-    // Detail hero: add interview button
+    // Detail hero: add interview button + status select
     _el('ap-detail-hero').addEventListener('click', e => {
       if (e.target.closest('.ap-add-iv-btn') && _detailApp) {
         window.AddInterview?.openWithCompany(_detailApp.company, _detailApp.jd || null);
+      }
+    });
+    _el('ap-detail-hero').addEventListener('change', e => {
+      const sel = e.target.closest('#ap-status-select');
+      if (sel && _detailApp && !_detailApp._synthetic) {
+        _updateAppStatus(_detailApp.id, sel.value);
       }
     });
 
@@ -756,6 +931,48 @@ window.ApplicationsPage = (() => {
     _el('ap-delete-cancel').addEventListener('click', _closeDeleteConfirm);
     _el('ap-delete-confirm').addEventListener('click', e => {
       if (e.target === _el('ap-delete-confirm')) _closeDeleteConfirm();
+    });
+
+    // Celebration modal
+    _el('cel-close').addEventListener('click',     _hideCelebrationModal);
+    _el('cel-close-btn').addEventListener('click', _hideCelebrationModal);
+    _el('cel-modal-backdrop').addEventListener('click', e => {
+      if (e.target === _el('cel-modal-backdrop')) _hideCelebrationModal();
+    });
+    _el('cel-copy-post').addEventListener('click', () => {
+      navigator.clipboard.writeText(_el('cel-li-post').value).then(() => {
+        const btn  = _el('cel-copy-post');
+        const prev = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = prev; }, 2000);
+      });
+    });
+    _el('cel-post-li').addEventListener('click', () => {
+      window.klinch?.invoke('shell:open-external', { url: 'https://www.linkedin.com/feed/' });
+    });
+    _el('cel-submit-review').addEventListener('click', () => {
+      const url = _el('cel-li-url').value.trim();
+      if (!url) { _el('cel-li-url').focus(); return; }
+      if (_cel_appId) {
+        const all = getAll();
+        const idx = all.findIndex(a => a.id === _cel_appId);
+        if (idx !== -1) {
+          all[idx].offer_linkedin_post_url = url;
+          all[idx].offer_review_status     = 'pending_review';
+          saveAll(all);
+          if (_detailApp?.id === _cel_appId) _detailApp = all[idx];
+        }
+      }
+      _el('cel-submit-confirm').style.display = '';
+      _el('cel-submit-review').style.display  = 'none';
+    });
+    _el('cel-view-app').addEventListener('click', () => {
+      const id = _cel_appId;
+      _hideCelebrationModal();
+      setTimeout(() => {
+        window.navigateTo?.('applications');
+        setTimeout(() => id && openDetail(id), 50);
+      }, 220);
     });
   }
 

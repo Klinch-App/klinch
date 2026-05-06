@@ -27,6 +27,17 @@ const OB_STEPS = [
     options: ['Startup (1–50)', 'Scale-up (51–500)', 'Mid-market (501–2000)', 'Enterprise (2000+)'],
   },
   {
+    key: 'job_search_status',
+    q: 'Where are you in your job search?',
+    type: 'choice',
+    options: ['Just starting out', 'Actively interviewing', 'Have offers, deciding', 'Passively exploring'],
+  },
+  {
+    key: 'salary_range',
+    q: "What's your target base salary range?",
+    type: 'salary',
+  },
+  {
     key: 'challenge',
     q: "What's your biggest interview challenge?",
     type: 'choice',
@@ -34,33 +45,25 @@ const OB_STEPS = [
     options: ['Nerves & confidence', 'Structuring my answers', 'Knowledge gaps', 'Negotiating compensation'],
   },
   {
-    key: 'job_search_status',
-    q: 'Where are you in your job search?',
-    type: 'choice',
-    options: ['Just starting out', 'Actively interviewing', 'Have offers, deciding', 'Passively exploring'],
-  },
-  {
     key: 'strongest_asset',
     q: "What's your strongest asset as a candidate?",
     type: 'text',
     placeholder: 'e.g. Consistent quota attainment, strong relationship builder',
+    optional: true,
   },
   {
     key: 'improvement_area',
     q: "What's one area you know you need to improve?",
     type: 'text',
     placeholder: 'e.g. Talking too much, weak on compensation conversations',
+    optional: true,
   },
   {
     key: 'tools',
     q: 'What tools and platforms are you most experienced with?',
     type: 'text',
     placeholder: 'e.g. Salesforce, Outreach, HubSpot, Gong',
-  },
-  {
-    key: 'salary_range',
-    q: "What's your target base salary range?",
-    type: 'salary',
+    optional: true,
   },
   {
     key: 'additional_context',
@@ -96,7 +99,7 @@ function showOnboarding() {
       company_size: ['Startup (1–50)'], challenge: ['Nerves & confidence'],
       job_search_status: 'Actively interviewing', strongest_asset: '[dev]',
       improvement_area: '[dev]', tools: '[dev]',
-      salary_range: '$70,000 – $90,000', additional_context: '',
+      salary_range: 'USD $70,000 – $90,000', additional_context: '',
     }));
     const exitEl = introEl.style.display !== 'none' ? introEl : cardBody;
     exitEl.classList.add('ob-exit-left');
@@ -203,41 +206,62 @@ function showOnboarding() {
       });
       otherInp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
     } else if (s.type === 'salary') {
-      inputWrap.style.cssText = 'flex-direction:column;gap:8px';
-      let existMin = '', existMax = '';
+      inputWrap.style.cssText = 'flex-direction:column;gap:12px';
+      const currencies = [
+        { code: 'USD', symbol: '$',   label: 'USD ($)' },
+        { code: 'EUR', symbol: '€',   label: 'EUR (€)' },
+        { code: 'GBP', symbol: '£',   label: 'GBP (£)' },
+        { code: 'CAD', symbol: 'CA$', label: 'CAD (CA$)' },
+        { code: 'AUD', symbol: 'A$',  label: 'AUD (A$)' },
+      ];
+      let existCode = 'USD', existMin = '', existMax = '';
       const existing = answers[s.key] || '';
       if (existing) {
-        const m = existing.match(/\$?([\d,]+)\s*[–-]\s*\$?([\d,]+)/);
-        if (m) { existMin = m[1].replace(/,/g, ''); existMax = m[2].replace(/,/g, ''); }
+        const m = existing.match(/^([A-Z]{3})\s+[^\d]*([\d,]+)(?:\s*[–-]\s*[^\d]*([\d,]+))?/);
+        if (m) { existCode = m[1]; existMin = m[2].replace(/,/g, ''); existMax = (m[3] || '').replace(/,/g, ''); }
+      }
+      const curObj = currencies.find(c => c.code === existCode) || currencies[0];
+      function _salOpts(sym, sel) {
+        let o = `<option value="">Select</option>`;
+        for (let v = 50000; v <= 500000; v += 10000)
+          o += `<option value="${v}"${sel == v ? ' selected' : ''}>${sym}${v.toLocaleString()}</option>`;
+        return o;
       }
       inputWrap.innerHTML = `
-        <div class="ob-salary-row">
-          <div class="ob-salary-field">
-            <span class="ob-salary-prefix">$</span>
-            <input class="ob-salary-input ob-sal-min" type="number" placeholder="70000" min="0" step="1000" value="${existMin}">
-          </div>
-          <span class="ob-salary-sep">–</span>
-          <div class="ob-salary-field">
-            <span class="ob-salary-prefix">$</span>
-            <input class="ob-salary-input ob-sal-max" type="number" placeholder="90000" min="0" step="1000" value="${existMax}">
-          </div>
+        <div class="ob-salary-currency-row">
+          <select class="ob-salary-select ob-currency-select">
+            ${currencies.map(c => `<option value="${c.code}" data-symbol="${c.symbol}"${c.code === existCode ? ' selected' : ''}>${c.label}</option>`).join('')}
+          </select>
         </div>
-        <div class="ob-salary-hint">Numbers only — no $ or commas needed</div>`;
-      const minInp = inputWrap.querySelector('.ob-sal-min');
-      const maxInp = inputWrap.querySelector('.ob-sal-max');
+        <div class="ob-salary-row">
+          <select class="ob-salary-select ob-sal-min">${_salOpts(curObj.symbol, existMin)}</select>
+          <span class="ob-salary-sep">–</span>
+          <select class="ob-salary-select ob-sal-max">${_salOpts(curObj.symbol, existMax)}</select>
+        </div>`;
+      const currSel = inputWrap.querySelector('.ob-currency-select');
+      const minSel  = inputWrap.querySelector('.ob-sal-min');
+      const maxSel  = inputWrap.querySelector('.ob-sal-max');
       function _syncSalary() {
-        const min = minInp.value, max = maxInp.value;
-        answers[s.key] = (min && max) ? `$${Number(min).toLocaleString()} – $${Number(max).toLocaleString()}`
-                       : min          ? `$${Number(min).toLocaleString()}+`
+        const opt  = currSel.options[currSel.selectedIndex];
+        const sym  = opt.dataset.symbol;
+        const code = currSel.value;
+        const min  = minSel.value, max = maxSel.value;
+        answers[s.key] = (min && max) ? `${code} ${sym}${Number(min).toLocaleString()} – ${sym}${Number(max).toLocaleString()}`
+                       : min          ? `${code} ${sym}${Number(min).toLocaleString()}+`
                        : '';
         updateNext();
       }
-      minInp.addEventListener('input', _syncSalary);
-      maxInp.addEventListener('input', _syncSalary);
-      minInp.addEventListener('keydown', e => { if (e.key === 'Enter') maxInp.focus(); });
-      maxInp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
+      function _rebuildSalOpts() {
+        const sym = currSel.options[currSel.selectedIndex].dataset.symbol;
+        const prevMin = minSel.value, prevMax = maxSel.value;
+        minSel.innerHTML = _salOpts(sym, prevMin);
+        maxSel.innerHTML = _salOpts(sym, prevMax);
+        _syncSalary();
+      }
+      currSel.addEventListener('change', _rebuildSalOpts);
+      minSel.addEventListener('change', _syncSalary);
+      maxSel.addEventListener('change', _syncSalary);
       if (existMin) _syncSalary();
-      setTimeout(() => minInp.focus(), 250);
     } else if (s.type === 'textarea') {
       inputWrap.style.cssText = 'flex-direction:column;gap:0';
       inputWrap.innerHTML = `<textarea class="ob-textarea" placeholder="${s.placeholder}">${answers[s.key] || ''}</textarea>`;
