@@ -117,13 +117,12 @@ window.ResumePage = (() => {
       placements.push({ bubble, top });
     });
 
-    // Sort by natural position, then push down to prevent overlap
+    // Sort by document order, then stack from the top — numbered badges keep the association
     placements.sort((a, b) => a.top - b.top);
-    let minTop = 0;
+    let cursor = 28; // matches .rs-text-view padding-top
     for (const p of placements) {
-      const finalTop = Math.max(p.top, minTop);
-      p.bubble.style.top = finalTop + 'px';
-      minTop = finalTop + p.bubble.offsetHeight + 12;
+      p.bubble.style.top = cursor + 'px';
+      cursor += p.bubble.offsetHeight + 12;
     }
 
     // Ensure the wrap is tall enough for both columns
