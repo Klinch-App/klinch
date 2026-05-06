@@ -177,7 +177,7 @@ window.CoachPage = (() => {
 
     return `
       <div class="coach-outreach-card" id="${cardId}">
-        <div class="coach-outreach-card-header">
+        <div class="coach-outreach-card-header" data-toggle-card="${cardId}">
           <div class="coach-outreach-card-meta">
             <span class="coach-outreach-company">${company}</span>
             <span class="coach-outreach-role">${role}</span>
@@ -185,6 +185,7 @@ window.CoachPage = (() => {
           <div class="coach-outreach-card-badges">
             ${dateLabel ? `<span class="coach-outreach-date">${dateLabel}</span>` : ''}
             <span class="coach-outreach-tag ${tagClass}">${typeLabel}</span>
+            <span class="coach-outreach-chevron">▾</span>
           </div>
         </div>
         <div class="coach-outreach-card-body" id="${cardId}-body">
@@ -220,6 +221,13 @@ window.CoachPage = (() => {
 
   function _wireOutreachEvents(list) {
     list.addEventListener('click', async e => {
+      const toggleHdr = e.target.closest('[data-toggle-card]');
+      if (toggleHdr && !e.target.closest('button')) {
+        const card = document.getElementById(toggleHdr.dataset.toggleCard);
+        card?.classList.toggle('coach-outreach-card-collapsed');
+        return;
+      }
+
       const genBtn = e.target.closest('[data-outreach-type]');
       if (genBtn) {
         const ivId = genBtn.dataset.ivId;
@@ -332,6 +340,7 @@ window.CoachPage = (() => {
       _saveOutreachCache(cache);
 
       cardBody.innerHTML = _buildOutreachContentHtml(ivId, type, data);
+      document.getElementById(`coach-outreach-${ivId}-${type}`)?.classList.remove('coach-outreach-card-collapsed');
     } catch (err) {
       console.error('[coach-outreach] generate failed:', err);
       btn.disabled = false;
