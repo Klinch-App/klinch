@@ -369,6 +369,163 @@ html, body {
   box-shadow: 0 0 0 1px rgba(124, 58, 255, 0.08), 0 4px 24px rgba(124, 58, 255, 0.10);
 }
 
+/* ── Klinch Ear — interview context bar ─────────────────────────────────── */
+
+.ear-iv-context {
+  position: relative;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(124, 58, 255, 0.2);
+}
+
+.ear-iv-selected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ear-iv-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.ear-iv-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ear-iv-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.ear-iv-company {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.ear-iv-role {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.ear-iv-time {
+  font-size: 13px;
+  color: var(--primary-light);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.ear-iv-dot {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ear-iv-change-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.ear-iv-change-btn:hover { color: var(--primary-light); }
+
+.ear-iv-none {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.ear-iv-add-link {
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--primary-light);
+  cursor: pointer;
+  padding: 0;
+}
+.ear-iv-add-link:hover { opacity: 0.8; }
+
+.ear-iv-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  z-index: 200;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+
+.ear-iv-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.ear-iv-option:hover { background: var(--bg-hover); }
+.ear-iv-option.active { background: rgba(124,58,255,0.12); }
+
+.ear-iv-option-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.ear-iv-option-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ear-iv-option-info { flex: 1; min-width: 0; }
+.ear-iv-option-company {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ear-iv-option-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
 /* ── Setup modal ─────────────────────────────────────────────────────────── */
 
 .setup-modal {
@@ -4639,4 +4796,322 @@ html, body {
 .ivdp-outreach-copy:hover {
   background: rgba(139, 92, 246, 0.22);
   border-color: rgba(139, 92, 246, 0.55);
+}
+
+/* ── Recording consent modal ────────────────────────────────────────────────── */
+
+.consent-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 26, 0.82);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.consent-backdrop.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.consent-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  width: 580px;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(14px) scale(0.97);
+  transition: transform 0.22s ease;
+}
+.consent-backdrop.visible .consent-card {
+  transform: translateY(0) scale(1);
+}
+
+.consent-header {
+  padding: 28px 28px 0;
+}
+
+.consent-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.consent-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.consent-body {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.consent-checkbox-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  transition: border-color 0.15s, background 0.15s;
+}
+.consent-checkbox-row:hover {
+  border-color: var(--border);
+  background: var(--bg-hover);
+}
+.consent-checkbox-row.checked {
+  border-color: rgba(124, 58, 255, 0.5);
+  background: rgba(124, 58, 255, 0.06);
+}
+
+.consent-check-wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.consent-check-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.consent-check-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-deep, #0c0a1e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.consent-check-box::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg) translateY(-1px);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.consent-check-input:checked ~ .consent-check-box {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.consent-check-input:checked ~ .consent-check-box::after {
+  opacity: 1;
+}
+
+.consent-check-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  flex: 1;
+}
+
+.consent-check-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.consent-log-note {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  padding: 0 2px;
+}
+
+.consent-footer {
+  padding: 0 28px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.consent-launch-btn {
+  flex: 1;
+  padding: 11px 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+.consent-launch-btn:disabled {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.consent-launch-btn:not(:disabled):hover {
+  background: var(--primary-light, #7c3aed);
+}
+
+.consent-cancel-btn {
+  background: none;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.15s;
+}
+.consent-cancel-btn:hover {
+  color: var(--text-secondary);
+}
+
+/* ── Terms of Service modal ─────────────────────────────────────────────────── */
+
+.tos-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 26, 0.78);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.tos-backdrop.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.tos-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  width: 640px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.2s ease;
+}
+.tos-backdrop.visible .tos-card {
+  transform: translateY(0) scale(1);
+}
+
+.tos-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.tos-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.tos-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tos-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.tos-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.tos-body {
+  overflow-y: auto;
+  padding: 24px 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tos-section {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tos-section:first-child { padding-top: 0; }
+.tos-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.tos-section-heading {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary-light);
+  margin-bottom: 8px;
+}
+
+.tos-section p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0 0 8px;
+}
+.tos-section p:last-child { margin-bottom: 0; }
+
+.tos-section ul {
+  margin: 8px 0 10px 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.tos-section ul li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.tos-section strong {
+  color: var(--text-primary);
+  font-weight: 600;
 }

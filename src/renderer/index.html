@@ -163,6 +163,23 @@
 
           <div class="section-title ear-section-title" style="margin-top:28px">Klinch Ear</div>
           <div class="interview-panel ear-panel">
+            <div class="ear-iv-context" id="ear-iv-context">
+              <div class="ear-iv-selected" id="ear-iv-selected">
+                <div class="ear-iv-logo" id="ear-iv-logo"></div>
+                <div class="ear-iv-info">
+                  <span class="ear-iv-company" id="ear-iv-company"></span>
+                  <span class="ear-iv-dot">·</span>
+                  <span class="ear-iv-role" id="ear-iv-role"></span>
+                  <span class="ear-iv-dot">·</span>
+                  <span class="ear-iv-time" id="ear-iv-time"></span>
+                </div>
+                <button class="ear-iv-change-btn" id="ear-iv-change-btn">change →</button>
+              </div>
+              <div class="ear-iv-none" id="ear-iv-none" style="display:none">
+                <span>No upcoming interviews — </span><button class="ear-iv-add-link add-interview-trigger">Add one →</button>
+              </div>
+              <div class="ear-iv-dropdown" id="ear-iv-dropdown" style="display:none"></div>
+            </div>
             <div class="interview-controls">
               <div class="device-status">
                 <span class="device-dot" id="device-dot"></span>
@@ -618,6 +635,15 @@
               <button id="st-seed-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Seed Data →</button>
             </div>
           </div>
+
+          <div class="st-section-label" style="margin-top:32px">Legal</div>
+          <div class="st-toggle-row">
+            <div class="st-toggle-info">
+              <div class="st-toggle-label">Terms of Service</div>
+              <div class="st-toggle-sub">Effective May 2026 · Klinch LLC</div>
+            </div>
+            <button id="st-tos-btn" class="st-reset-trigger">View Terms →</button>
+          </div>
         </div>
 
         <!-- Reset confirmation modal -->
@@ -1061,6 +1087,175 @@
       <div class="ob-nav">
         <button class="ob-back-btn" id="ob-back-btn">← Back</button>
         <button class="ob-next-btn" id="ob-next-btn" disabled>Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recording consent modal — shown before every Klinch Ear session -->
+  <div id="consent-modal-backdrop" class="consent-backdrop">
+    <div class="consent-card">
+      <div class="consent-header">
+        <div class="consent-title">Before we begin</div>
+        <div class="consent-subtitle">Two quick acknowledgements are required each session.</div>
+      </div>
+      <div class="consent-body">
+
+        <label class="consent-checkbox-row" id="consent-row-recording">
+          <div class="consent-check-wrap">
+            <input type="checkbox" id="consent-recording" class="consent-check-input">
+            <div class="consent-check-box"></div>
+          </div>
+          <div class="consent-check-text">
+            <div class="consent-check-label">Recording Consent</div>
+            I confirm that I have notified or will notify all participants in this session that the conversation will be transcribed by Klinch for my personal coaching and review. I understand that recording laws vary by jurisdiction and I accept full responsibility for compliance with all applicable recording laws in my location.
+          </div>
+        </label>
+
+        <label class="consent-checkbox-row" id="consent-row-nda">
+          <div class="consent-check-wrap">
+            <input type="checkbox" id="consent-nda" class="consent-check-input">
+            <div class="consent-check-box"></div>
+          </div>
+          <div class="consent-check-text">
+            <div class="consent-check-label">NDA Acknowledgement</div>
+            If I am subject to a non-disclosure agreement or confidentiality obligation in connection with this interview, I confirm that my use of Klinch — including the recording and storage of this conversation — complies with my obligations under that agreement.
+          </div>
+        </label>
+
+        <div class="consent-log-note">Your acknowledgements are logged with a timestamp for your records. Klinch does not share this data.</div>
+
+      </div>
+      <div class="consent-footer">
+        <button id="consent-launch-btn" class="consent-launch-btn" disabled>Launch Klinch Ear</button>
+        <button id="consent-cancel-btn" class="consent-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms of Service modal -->
+  <div id="tos-modal-backdrop" class="tos-backdrop">
+    <div class="tos-card">
+      <div class="tos-header">
+        <div>
+          <div class="tos-title">Terms of Service</div>
+          <div class="tos-subtitle">Klinch LLC &mdash; Effective May 2026</div>
+        </div>
+        <button class="tos-close" id="tos-close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="tos-body">
+
+        <div class="tos-section">
+          <div class="tos-section-heading">1. Acceptance</div>
+          <p>By using Klinch you agree to these Terms. You must be 18 or older.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">2. Service Description</div>
+          <p>Klinch is an AI-powered interview coaching desktop app including Klinch Ear (real-time AI suggestions), transcript capture, post-interview coaching, company research, resume analysis, outreach generation, and application tracking.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">3. Eligibility</div>
+          <p>You must be 18 or older, legally able to enter contracts, and not prohibited by applicable law from using the Service.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">4. User Accounts</div>
+          <p>You agree to provide accurate information, maintain the security of your account, notify us promptly of any unauthorized access, and accept responsibility for all activity that occurs under your account.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">5. Billing</div>
+          <p>Klinch offers the following plans:</p>
+          <ul>
+            <li><strong>Free Trial</strong> — 3 sessions, no credit card required</li>
+            <li><strong>Starter</strong> — $9.99/month (10 sessions)</li>
+            <li><strong>Unlimited</strong> — $19.99/month</li>
+            <li><strong>Pay-per-use</strong> — $1.99 per 5-session pack</li>
+          </ul>
+          <p>Plans are billed monthly in advance via Stripe. You may cancel at any time — access continues through the end of your current billing period. No prorated refunds are issued. Unused Starter credits do not roll over. Price changes will be communicated with 30 days' notice. Taxes are collected where required by law.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">6. Recording Consent</div>
+          <p>You are solely responsible for complying with all applicable recording laws in your jurisdiction, including two-party and all-party consent laws. Before each Klinch Ear session you must acknowledge that you have notified — or will notify — all participants that the session will be transcribed. Your acknowledgement is logged with a timestamp. Klinch LLC bears no liability for your failure to obtain required consents.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">7. NDAs &amp; Confidentiality</div>
+          <p>If you are subject to a non-disclosure agreement you are solely responsible for ensuring your use of Klinch complies with it. Klinch LLC is not responsible for any breach of confidentiality resulting from your use of the Service. Transcripts can be set to auto-delete after 7, 30, or 90 days in Settings. Manual deletion is available at any time.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">8. AI Disclosure</div>
+          <p>Klinch uses artificial intelligence including Claude by Anthropic. AI-generated content may be inaccurate or incomplete. All suggestions are provided for coaching purposes only and do not constitute professional advice of any kind. Klinch LLC makes no warranties regarding the accuracy of AI output.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">9. Acceptable Use</div>
+          <p>You agree not to use Klinch to violate any laws, record conversations without required consent, misrepresent yourself to employers, commit fraud, reverse engineer the application, resell or transfer your account, or damage Klinch's infrastructure or systems.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">10. Intellectual Property</div>
+          <p>Klinch LLC owns all intellectual property rights in the application and its underlying technology. You retain ownership of your content — including your resume, notes, and transcripts. You grant Klinch LLC a limited license to process your content solely to provide the Service. Klinch LLC will not use your content to train AI models or share it with third parties except as described in the Privacy Policy.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">11. Privacy</div>
+          <p>Your use of Klinch is subject to our Privacy Policy, which is incorporated into these Terms by reference.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">12. Third-Party Services</div>
+          <p>Klinch integrates with third-party services including Anthropic, Deepgram, Stripe, and Apollo.io. Your use of these integrations is subject to their own terms and privacy policies. Klinch LLC is not responsible for any third-party practices.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">13. Disclaimers</div>
+          <p>The Service is provided "as is" without warranties of any kind, express or implied. Klinch LLC does not warrant that the Service will be uninterrupted, error-free, or that it will meet your specific requirements.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">14. Limitation of Liability</div>
+          <p>Klinch LLC is not liable for any indirect, incidental, special, or consequential damages arising from your use of the Service. Our total liability to you is capped at the greater of: (a) amounts you paid to Klinch in the prior 12 months, or (b) $100.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">15. Indemnification</div>
+          <p>You agree to indemnify and hold harmless Klinch LLC against any claims, damages, or expenses arising from your use of the Service, your violation of these Terms, your violation of any recording or consent laws, your breach of any NDA, or your content.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">16. Termination</div>
+          <p>Klinch LLC may suspend or terminate your access at any time. You may terminate by cancelling your subscription and deleting the application. No refund is issued upon termination.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">17. Governing Law</div>
+          <p>These Terms are governed by the laws of the State of Illinois. Disputes will be resolved in Illinois state or federal courts.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">18. Changes to These Terms</div>
+          <p>We will notify you of material changes at least 14 days in advance. Continued use of the Service after the effective date of any change constitutes your acceptance of the updated Terms.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">19. Severability</div>
+          <p>If any provision of these Terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">20. Entire Agreement</div>
+          <p>These Terms, together with the Privacy Policy, constitute the entire agreement between you and Klinch LLC regarding your use of the Service.</p>
+        </div>
+
+        <div class="tos-section">
+          <div class="tos-section-heading">21. Contact</div>
+          <p>Questions? Reach us at <strong>hello@tryklinch.com</strong> or <strong>tryklinch.com</strong>.</p>
+        </div>
+
       </div>
     </div>
   </div>
