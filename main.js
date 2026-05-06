@@ -12,8 +12,7 @@ nativeTheme.themeSource = 'dark';
 let mainWindow = null;
 let overlayWindow = null;
 
-const OVERLAY_W = 680;
-const OVERLAY_H = 110;
+const OVERLAY_H = 170;
 
 // ─── Main window ────────────────────────────────────────────────────────────
 
@@ -54,9 +53,9 @@ function createOverlayWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
 
   overlayWindow = new BrowserWindow({
-    width: OVERLAY_W,
+    width,
     height: OVERLAY_H,
-    x: Math.round((width - OVERLAY_W) / 2),
+    x: 0,
     y: 0,
     transparent: true,
     frame: false,
@@ -152,7 +151,7 @@ ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
 // Overlay renderer → resize window (e.g. when switching to bullet mode)
 ipcMain.on('overlay:resize', (_event, height) => {
   if (!overlayWindow?.isDestroyed()) {
-    overlayWindow.setSize(OVERLAY_W, Math.round(height));
+    overlayWindow.setSize(overlayWindow.getBounds().width, Math.round(height));
   }
 });
 
