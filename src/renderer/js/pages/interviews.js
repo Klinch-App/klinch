@@ -701,12 +701,17 @@ window.InterviewsPage = (() => {
       });
     }
 
-    // Wire resume link in fit banner
+    // Wire resume link in fit banner + AI section toggles
     const detailPage2 = _el('iv-detail-page');
     if (detailPage2) {
       detailPage2.addEventListener('click', e => {
         const link = e.target.closest('.ivdp-fit-link[data-nav]');
         if (link && window.navigateTo) window.navigateTo(link.dataset.nav);
+
+        const toggleHdr = e.target.closest('[data-toggle-ai-section]');
+        if (toggleHdr) {
+          toggleHdr.closest('.ivdp-ai-section')?.classList.toggle('ivdp-ai-section-collapsed');
+        }
       });
     }
   }
@@ -745,18 +750,38 @@ window.InterviewsPage = (() => {
     saveAll(all);
   }
 
-  function _renderMarkdownish(text) {
-    if (!text) return '';
+  function _processMarkdownBody(text) {
     return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/^### (.+)$/gm, '<h4 class="ivdp-ai-h4">$1</h4>')
-      .replace(/^## (.+)$/gm,  '<h3 class="ivdp-ai-h3">$1</h3>')
       .replace(/^- (.+)$/gm,   '<li>$1</li>')
       .replace(/(<li>.*<\/li>(\n|$))+/g, m => `<ul>${m}</ul>`)
       .replace(/\n\n/g, '</p><p>')
       .replace(/^(?!<[hul])(.+)$/gm, (m, p) => p ? `<p>${p}</p>` : '')
       .replace(/<p><\/p>/g, '');
+  }
+
+  function _renderMarkdownish(text) {
+    if (!text) return '';
+    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const parts   = escaped.split(/^## (.+)$/m);
+
+    if (parts.length === 1) return _processMarkdownBody(parts[0]);
+
+    let html = parts[0]?.trim() ? `<div class="ivdp-ai-intro">${_processMarkdownBody(parts[0])}</div>` : '';
+    for (let i = 1; i < parts.length; i += 2) {
+      const heading = parts[i];
+      const body    = parts[i + 1] || '';
+      html += `
+        <div class="ivdp-ai-section ivdp-ai-section-collapsed">
+          <div class="ivdp-ai-section-hdr" data-toggle-ai-section>
+            <span>${heading}</span>
+            <span class="ivdp-ai-chevron">▾</span>
+          </div>
+          <div class="ivdp-ai-section-body">${_processMarkdownBody(body)}</div>
+        </div>`;
+    }
+    return html;
   }
 
   async function _fireAIAnalysis(iv, only) {
