@@ -564,6 +564,138 @@ window.CoachPage = (() => {
         body:  'The best SEs can explain technical concepts to a non-technical audience without dumbing it down. Be ready to demonstrate this. Have an example of when you bridged the gap between technical and business stakeholders.',
       },
     ],
+    revops: [
+      {
+        title: 'Lead with revenue impact',
+        stage: 'Hiring Manager',
+        body:  'RevOps interviews are won with outcome stories. Every process improvement, system migration, or forecast fix needs a revenue number attached — reduced ramp time by X weeks, increased forecast accuracy to Y%. Make it concrete.',
+      },
+      {
+        title: 'Know the full funnel cold',
+        stage: 'Any',
+        body:  'You will be asked how you think about the revenue funnel end to end. Have your conversion rates, cycle lengths, and attribution logic ready. Weak answers here signal someone who built reports but never influenced strategy.',
+      },
+      {
+        title: 'Show cross-functional range',
+        stage: 'Hiring Manager',
+        body:  'RevOps lives at the intersection of Sales, Marketing, and CS. Be ready to talk about how you aligned competing priorities across those teams — and a specific time you resolved a conflict between them.',
+      },
+      {
+        title: 'Ask about the tech stack',
+        stage: 'Any',
+        body:  "Ask what their CRM, MAP, and reporting stack look like and where the biggest data integrity issues are. This signals you know where RevOps work actually lives and helps you assess whether it's a role you can win in.",
+      },
+    ],
+    marketing: [
+      {
+        title: 'Attribution is everything',
+        stage: 'Hiring Manager',
+        body:  'Marketing interviews live or die on pipeline contribution. Know your MQL-to-SQL conversion rate, cost per opportunity, and how much of closed revenue your programs influenced. Vague answers about brand and awareness will not land.',
+      },
+      {
+        title: 'Lead with a campaign story',
+        stage: 'Any',
+        body:  'Have one well-structured campaign story ready: the objective, the channel mix, the budget, the result, and what you would do differently. Interviewers use this to assess how you think, not just what you executed.',
+      },
+      {
+        title: 'Show you understand sales alignment',
+        stage: 'Hiring Manager',
+        body:  "Marketing candidates who can talk about how they worked with sales — joint pipeline reviews, SLA agreements, feedback loops on lead quality — stand out immediately. Show you see marketing as a revenue function, not a creative one.",
+      },
+      {
+        title: 'Ask about the pipeline target',
+        stage: 'Hiring Manager',
+        body:  "Asking what percentage of pipeline is expected to come from marketing signals commercial maturity. It also tells you whether this is a role with clear accountability or one where you will be measured on outputs no one can connect to revenue.",
+      },
+    ],
+    partnerships: [
+      {
+        title: 'Show a partner revenue story',
+        stage: 'Hiring Manager',
+        body:  'Partnerships interviews are about co-sell motion and sourced revenue. Have a story ready that shows how you recruited a partner, enabled them, and generated pipeline together — with numbers. Co-sell influence is good; sourced deals are better.',
+      },
+      {
+        title: 'Demonstrate partner activation',
+        stage: 'Any',
+        body:  "Recruiting partners is table stakes — everyone can sign agreements. What separates good partnerships candidates is activation: how you moved a partner from signed to producing. Walk through the specific steps you took.",
+      },
+      {
+        title: 'Know how you measure partner health',
+        stage: 'Hiring Manager',
+        body:  'Be ready to talk about your tier structure, what metrics you tracked per partner, and how you decided where to invest your time. Showing systematic thinking about partner health sets you apart from relationship-only candidates.',
+      },
+      {
+        title: 'Ask about the partner ecosystem today',
+        stage: 'Any',
+        body:  'Ask how many active partners they have, what percentage are producing, and where the biggest untapped opportunity is. This positions you as someone who will audit and build — not just inherit and manage.',
+      },
+    ],
+    engineering: [
+      {
+        title: 'Nail the behavioural layer',
+        stage: 'Hiring Manager',
+        body:  'Technical interviews focus on code, but hiring decisions turn on behavioural signals. Have STAR stories ready for how you handled ambiguity, disagreed with a technical decision, unblocked a team dependency, and learned from a failure.',
+      },
+      {
+        title: 'Talk about impact, not implementation',
+        stage: 'Any',
+        body:  "When describing past projects, lead with the business outcome, not the tech stack. 'I reduced p95 latency by 60% which unlocked a new enterprise tier' lands better than 'I refactored the service layer using async workers'. Both are true — order matters.",
+      },
+      {
+        title: 'Ask about engineering culture',
+        stage: 'Hiring Manager',
+        body:  'Ask how the team handles code review, how on-call is structured, how often production incidents happen, and what the last major technical decision debated was. The answers tell you more about day-to-day reality than any job description.',
+      },
+      {
+        title: 'Show you have range beyond the code',
+        stage: 'Any',
+        body:  'Engineers who can talk to product managers, explain tradeoffs to non-technical stakeholders, and write clear documentation are disproportionately valuable. Have an example of when you bridged that gap — it will stick in the interviewers memory.',
+      },
+    ],
+    hr: [
+      {
+        title: 'Anchor every story in a metric',
+        stage: 'Hiring Manager',
+        body:  'HR candidates often tell stories without numbers. Come prepared with time-to-fill, offer acceptance rate, 90-day retention, engagement scores, or eNPS. If you ran programs, know the before and after. Numbers make soft skills legible.',
+      },
+      {
+        title: 'Show you understand the business',
+        stage: 'Any',
+        body:  "The best HR candidates talk about headcount planning in the context of revenue targets, not just hiring plans. Show you understand how talent decisions connect to company performance — it signals you will be a strategic partner, not just an executor.",
+      },
+      {
+        title: 'Have an employee relations story ready',
+        stage: 'Hiring Manager',
+        body:  "You will almost certainly be asked about a difficult employee situation. Prepare one that shows you balanced empathy with process discipline, involved the right stakeholders, and reached a resolution that was fair and legally sound.",
+      },
+      {
+        title: 'Ask about their biggest people challenge',
+        stage: 'Any',
+        body:  "Asking what the company's biggest talent or culture challenge is right now signals strategic curiosity. The answer also tells you what you're actually walking into — and whether it's a problem you know how to solve.",
+      },
+    ],
+    enablement: [
+      {
+        title: 'Lead with ramp time and quota attainment',
+        stage: 'Hiring Manager',
+        body:  'Enablement interviews come down to one question: did your programs move the business? Know your before-and-after on ramp time, time to first deal, and quota attainment. If you can say you reduced ramp by X weeks and improved attainment by Y%, you will stand out.',
+      },
+      {
+        title: 'Show you understand the sales motion',
+        stage: 'Any',
+        body:  "Enablement candidates who have sold — or who deeply understand how reps sell — are far more credible than those who built training from the outside. Show you have shadowed calls, ridden along on deals, and built content from real field insights.",
+      },
+      {
+        title: 'Demonstrate cross-functional alignment',
+        stage: 'Hiring Manager',
+        body:  'Enablement sits between Sales, Product, and Marketing. Be ready to talk about how you aligned messaging across those teams, how you handled competing priorities for rep attention, and how you measured content adoption.',
+      },
+      {
+        title: 'Ask about rep feedback loops',
+        stage: 'Any',
+        body:  "Ask how reps currently surface feedback on what's working and what's not, and how that feedback gets into training. A company with no feedback loop is one where enablement is output-driven, not outcome-driven — good to know before you accept.",
+      },
+    ],
   };
 
   const STAGE_CLASS = {
@@ -574,10 +706,16 @@ window.CoachPage = (() => {
 
   function _getRoleKey(profile) {
     const r = (profile.role_type || '').toLowerCase();
-    if (r.includes('account executive') || /\bae\b/.test(r))                          return 'ae';
-    if (r.includes('customer success')  || /\bcs\b/.test(r))                          return 'cs';
-    if (r.includes('account manager')   || /\bam\b/.test(r))                          return 'am';
-    if (r.includes('solutions engineer') || r.includes('sales engineer') || /\bse\b/.test(r)) return 'se';
+    if (r.includes('account executive') || /\bae\b/.test(r))                                    return 'ae';
+    if (r.includes('customer success')  || /\bcs\b/.test(r))                                    return 'cs';
+    if (r.includes('account manager')   || /\bam\b/.test(r))                                    return 'am';
+    if (r.includes('solutions engineer') || r.includes('sales engineer') || /\bse\b/.test(r))   return 'se';
+    if (r.includes('revenue operations') || r.includes('revops') || r.includes('rev ops'))      return 'revops';
+    if (r.includes('partner') || r.includes('alliance') || r.includes('channel'))               return 'partnerships';
+    if (r.includes('enablement'))                                                                return 'enablement';
+    if (r.includes('engineer') || r.includes('developer') || r.includes('software'))            return 'engineering';
+    if (r.includes('hr') || r.includes('human resources') || r.includes('people ops') || r.includes('talent') || r.includes('recruit')) return 'hr';
+    if (r.includes('marketing') || r.includes('demand gen') || r.includes('growth'))            return 'marketing';
     return 'sdr';
   }
 
