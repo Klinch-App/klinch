@@ -170,7 +170,7 @@ function _resetContent() {
     pauseBadge.classList.remove('show');
   }
 
-  window.klinch.send('overlay:resize', 110);
+  window.klinch.send('overlay:resize', 170);
 }
 
 // ─── Core actions ─────────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ function switchToMode(mode) {
     btnMode.classList.remove('on');
     tpTrack.style.display = 'block';
     bulletsList.style.display = 'none';
-    window.klinch.send('overlay:resize', 110);
+    window.klinch.send('overlay:resize', 170);
     if (state.hasContent && !state.paused) startScroll();
   } else {
     btnMode.textContent = 'Bullets';
@@ -275,7 +275,7 @@ function revealBullets() {
 
 function resizeForBullets() {
   const h = 32 + state.bullets.length * 44 + 28; // controls + items + padding
-  window.klinch.send('overlay:resize', Math.min(Math.max(h, 110), 240));
+  window.klinch.send('overlay:resize', Math.min(Math.max(h, 170), 340));
 }
 
 // ─── Teleprompter scroll ──────────────────────────────────────────────────────
