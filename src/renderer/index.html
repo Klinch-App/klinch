@@ -127,6 +127,19 @@
             </div>
           </div>
 
+          <!-- Free trial banner — hidden by billing.js when not on free trial -->
+          <div id="trial-banner" class="trial-banner" style="display:none">
+            <div class="trial-banner-body">
+              <svg class="trial-banner-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="8" cy="8" r="6.5"/>
+                <path d="M8 5v3.5l2 1.5"/>
+              </svg>
+              <span>You have <strong id="trial-credits-count">3</strong> free trial session<span id="trial-plural">s</span> remaining.</span>
+              <button class="trial-banner-upgrade" id="trial-banner-upgrade">Upgrade anytime →</button>
+            </div>
+            <button class="trial-banner-close" id="trial-banner-close" title="Dismiss">×</button>
+          </div>
+
           <div class="section-title">Overview</div>
           <div class="card-grid">
             <div class="card" data-nav="interviews">
@@ -571,46 +584,48 @@
 
           <div class="st-section-label" style="margin-top:28px">Plan</div>
 
+          <!-- Billing status — populated dynamically by billing.js -->
+          <div id="billing-status-section"></div>
+
           <div class="plan-grid">
 
-            <div class="plan-card plan-card-current">
-              <div class="plan-current-badge">Current Plan</div>
+            <div class="plan-card" data-plan-id="free_trial">
               <div class="plan-name">Free Trial</div>
               <div class="plan-price">Free</div>
               <div class="plan-features">
-                <div class="plan-feature">3 interviews included</div>
+                <div class="plan-feature">3 sessions included</div>
                 <div class="plan-feature">No credit card required</div>
               </div>
             </div>
 
-            <div class="plan-card">
+            <div class="plan-card" data-plan-id="starter">
               <div class="plan-name">Starter</div>
               <div class="plan-price">$9.99<span class="plan-price-period">/month</span></div>
               <div class="plan-features">
-                <div class="plan-feature">10 interviews per month</div>
+                <div class="plan-feature">10 sessions per month</div>
                 <div class="plan-feature">Unlimited Dry Runs</div>
               </div>
-              <button class="plan-upgrade-btn" data-plan="Starter">Upgrade →</button>
+              <button class="plan-upgrade-btn" data-checkout="starter">Upgrade →</button>
             </div>
 
-            <div class="plan-card">
+            <div class="plan-card" data-plan-id="unlimited">
               <div class="plan-name">Unlimited</div>
               <div class="plan-price">$19.99<span class="plan-price-period">/month</span></div>
               <div class="plan-features">
-                <div class="plan-feature">Unlimited interviews</div>
+                <div class="plan-feature">Unlimited sessions</div>
                 <div class="plan-feature">Unlimited Dry Runs</div>
               </div>
-              <button class="plan-upgrade-btn" data-plan="Unlimited">Upgrade →</button>
+              <button class="plan-upgrade-btn" data-checkout="unlimited">Upgrade →</button>
             </div>
 
-            <div class="plan-card">
+            <div class="plan-card" data-plan-id="pay_per_use">
               <div class="plan-name">Pay-per-use</div>
-              <div class="plan-price">$1.99<span class="plan-price-period"> per 5 interviews</span></div>
+              <div class="plan-price">$1.99<span class="plan-price-period"> per 5 sessions</span></div>
               <div class="plan-features">
                 <div class="plan-feature">Buy credits as you need them</div>
                 <div class="plan-feature">Unlimited Dry Runs</div>
               </div>
-              <button class="plan-upgrade-btn" data-plan="Pay-per-use">Buy Credits →</button>
+              <button class="plan-upgrade-btn" data-checkout="pack">Buy Credits →</button>
             </div>
 
           </div>
@@ -1329,8 +1344,73 @@
     </div>
   </div>
 
+  <!-- ── Upgrade plan modal ───────────────────────────────────────────────── -->
+  <div id="upgrade-modal" class="upgrade-backdrop" style="display:none">
+    <div class="upgrade-card">
+      <div class="upgrade-header">
+        <div class="upgrade-title">You're out of interview sessions</div>
+        <div class="upgrade-sub">Choose a plan to keep your momentum going</div>
+      </div>
+      <div class="upgrade-plans">
+
+        <div class="upgrade-plan">
+          <div class="upgrade-plan-name">Starter</div>
+          <div class="upgrade-plan-price">$9.99<span class="upgrade-plan-per">/month</span></div>
+          <div class="upgrade-plan-sessions">10 sessions per month</div>
+          <ul class="upgrade-plan-features">
+            <li>Unlimited Dry Runs</li>
+            <li>Renews monthly</li>
+          </ul>
+          <button class="upgrade-plan-btn" data-checkout="starter">Select Plan →</button>
+        </div>
+
+        <div class="upgrade-plan upgrade-plan-featured">
+          <div class="upgrade-plan-popular">Most Popular</div>
+          <div class="upgrade-plan-name">Unlimited</div>
+          <div class="upgrade-plan-price">$19.99<span class="upgrade-plan-per">/month</span></div>
+          <div class="upgrade-plan-sessions">Unlimited sessions</div>
+          <ul class="upgrade-plan-features">
+            <li>Unlimited Dry Runs</li>
+            <li>Never worry about credits</li>
+          </ul>
+          <button class="upgrade-plan-btn" data-checkout="unlimited">Select Plan →</button>
+        </div>
+
+        <div class="upgrade-plan">
+          <div class="upgrade-plan-name">5-Session Pack</div>
+          <div class="upgrade-plan-price">$1.99<span class="upgrade-plan-per"> one-time</span></div>
+          <div class="upgrade-plan-sessions">5 sessions, no subscription</div>
+          <ul class="upgrade-plan-features">
+            <li>No commitment</li>
+            <li>Buy as you need</li>
+          </ul>
+          <button class="upgrade-plan-btn upgrade-plan-btn-outline" data-checkout="pack">Buy Pack →</button>
+        </div>
+
+      </div>
+      <button class="upgrade-dismiss" id="upgrade-maybe-later">Maybe later</button>
+    </div>
+  </div>
+
+  <!-- ── Cancel subscription confirm modal ────────────────────────────────── -->
+  <div id="billing-cancel-modal" class="delete-confirm-backdrop">
+    <div class="delete-confirm-card" style="width:420px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:10px">Cancel subscription?</div>
+        <div class="delete-confirm-title">
+          You'll retain full access until <strong class="cancel-period-end-date">your current billing period ends</strong>. No refunds for the current period.
+        </div>
+      </div>
+      <div class="delete-confirm-actions">
+        <button class="btn-keep" id="billing-cancel-abort">Keep Plan</button>
+        <button class="btn-delete-confirm" id="billing-cancel-confirm">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/stt.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/billing.js"></script>
   <script src="js/dev-seed.js"></script>
   <script src="js/pages/dry-run.js"></script>
   <script src="js/setup.js"></script>

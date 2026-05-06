@@ -449,15 +449,7 @@ if (_notifToggle) {
   });
 }
 
-// ── Settings — plan upgrade buttons ──────────────────────────────────────────
-document.getElementById('page-settings').addEventListener('click', e => {
-  const btn = e.target.closest('.plan-upgrade-btn');
-  if (!btn) return;
-  const orig = btn.textContent;
-  btn.textContent = 'Coming soon';
-  btn.disabled = true;
-  setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
-});
+// ── Settings — plan upgrade buttons handled by billing.js ────────────────────
 
 // ── Settings — reset app data ─────────────────────────────────────────────────
 (function() {
@@ -574,11 +566,16 @@ document.getElementById('page-settings').addEventListener('click', e => {
 const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
   launchBtn.addEventListener('click', () => {
+    if (!window.Billing?.canStartSession()) {
+      window.Billing?.showUpgradeModal();
+      return;
+    }
     window._openConsentModal(async () => {
       launchBtn.disabled = true;
       await window.klinch.invoke('overlay:launch');
       const ok = await window.STT.startSession();
       if (ok) {
+        window.Billing?.consumeCredit();
         launchBtn.textContent = 'Klinch Ear Active';
         launchBtn.style.opacity = '0.6';
         launchBtn.style.cursor = 'default';
@@ -639,6 +636,10 @@ function renderTranscript(interimText = null, interimSpeaker = null) {
 
 if (btnStart) {
   btnStart.addEventListener('click', () => {
+    if (!window.Billing?.canStartSession()) {
+      window.Billing?.showUpgradeModal();
+      return;
+    }
     window._openConsentModal(async () => {
       btnStart.disabled = true;
       btnStart.textContent = 'Starting Klinch Ear…';
@@ -647,6 +648,7 @@ if (btnStart) {
 
       const ok = await window.STT.startSession();
       if (ok) {
+        window.Billing?.consumeCredit();
         btnStart.style.display = 'none';
         btnStop.style.display  = '';
       }
