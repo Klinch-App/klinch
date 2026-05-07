@@ -1,0 +1,120 @@
+/*
+ * SUPABASE SCHEMA — run in Supabase SQL editor to create tables
+ *
+ * -- profiles (extends auth.users)
+ * create table profiles (
+ *   id uuid references auth.users primary key,
+ *   role_type text,
+ *   experience_years text,
+ *   company_size text,
+ *   challenge text,
+ *   job_search_status text,
+ *   strongest_asset text,
+ *   improvement_area text,
+ *   tools text,
+ *   salary_range text,
+ *   additional_context text,
+ *   stripe_customer_id text,
+ *   plan text default 'free',
+ *   credits integer default 3,
+ *   created_at timestamptz default now()
+ * );
+ *
+ * -- interviews
+ * create table interviews (
+ *   id uuid primary key,
+ *   user_id uuid references auth.users,
+ *   data jsonb,
+ *   created_at timestamptz default now(),
+ *   updated_at timestamptz default now()
+ * );
+ *
+ * -- applications
+ * create table applications (
+ *   id uuid primary key,
+ *   user_id uuid references auth.users,
+ *   data jsonb,
+ *   created_at timestamptz default now(),
+ *   updated_at timestamptz default now()
+ * );
+ *
+ * -- dry_runs
+ * create table dry_runs (
+ *   id uuid primary key,
+ *   user_id uuid references auth.users,
+ *   data jsonb,
+ *   created_at timestamptz default now()
+ * );
+ *
+ * -- resumes
+ * create table resumes (
+ *   user_id uuid references auth.users primary key,
+ *   data jsonb,
+ *   updated_at timestamptz default now()
+ * );
+ *
+ * Row-level security — enable RLS and add policies so users only see their own rows:
+ *   alter table profiles    enable row level security;
+ *   alter table interviews  enable row level security;
+ *   alter table applications enable row level security;
+ *   alter table dry_runs    enable row level security;
+ *   alter table resumes     enable row level security;
+ *
+ *   create policy "own rows" on profiles    for all using (auth.uid() = id);
+ *   create policy "own rows" on interviews  for all using (auth.uid() = user_id);
+ *   create policy "own rows" on applications for all using (auth.uid() = user_id);
+ *   create policy "own rows" on dry_runs    for all using (auth.uid() = user_id);
+ *   create policy "own rows" on resumes     for all using (auth.uid() = user_id);
+ */
+
+'use strict';
+
+const path = require('path');
+const fs   = require('fs');
+
+let supabase = null;
+
+function init() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    console.warn('[auth] SUPABASE_URL or SUPABASE_ANON_KEY not set — auth running in dev bypass mode');
+    return;
+  }
+
+  // Persist Supabase session to a file in the user-data directory.
+  // Requires electron's `app` module — init() must be called after app.whenReady().
+  const { app } = require('electron');
+  const SESSION_PATH = path.join(app.getPath('userData'), 'klinch-auth.json');
+
+  function _read() {
+    try { return JSON.parse(fs.readFileSync(SESSION_PATH, 'utf8')); }
+    catch { return {}; }
+  }
+  function _write(data) {
+    try { fs.writeFileSync(SESSION_PATH, JSON.stringify(data), 'utf8'); }
+    catch (err) { console.error('[auth] session write failed:', err.message); }
+  }
+
+  const storage = {
+    getItem:    (key)        => _read()[key] ?? null,
+    setItem:    (key, value) => { const d = _read(); d[key] = value; _write(d); },
+    removeItem: (key)        => { const d = _read(); delete d[key]; _write(d); },
+  };
+
+  const { createClient } = require('@supabase/supabase-js');
+  supabase = createClient(url, key, {
+    auth: {
+      storage,
+      autoRefreshToken:   true,
+      persistSession:     true,
+      detectSessionInUrl: false,
+      flowType:           'pkce',
+    },
+  });
+
+  console.log('[auth] Supabase client initialized');
+}
+
+module.exports = { get supabase() { return supabase; }, init };
