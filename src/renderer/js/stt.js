@@ -177,7 +177,7 @@ window.STT = (() => {
 
   // ── Session lifecycle ──────────────────────────────────────────────────────
 
-  async function startSession() {
+  async function startSession(interviewId) {
     if (sessionActive) return true;
     console.log('[stt] startSession()');
 
@@ -240,7 +240,7 @@ window.STT = (() => {
     sessionActive = true;
     interviewerBuf = '';
 
-    await window.klinch.invoke('interview:start');
+    await window.klinch.invoke('interview:start', { interviewId: interviewId || null });
     console.log('[stt] session active — interviewer:', !!wsInterviewer, '| mic:', !!wsMic);
     return true;
   }

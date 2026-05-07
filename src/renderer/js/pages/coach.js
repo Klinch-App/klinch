@@ -1,6 +1,6 @@
 window.CoachPage = (() => {
 
-  const CACHE_KEY = 'coach_actions';
+  const CACHE_KEY = 'klinch_coach_actions';
   const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
   function _esc(s) {

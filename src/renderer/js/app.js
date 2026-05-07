@@ -600,7 +600,7 @@ if (launchBtn) {
     window._openConsentModal(async () => {
       launchBtn.disabled = true;
       await window.klinch.invoke('overlay:launch');
-      const ok = await window.STT.startSession();
+      const ok = await window.STT.startSession(window.getEarSelectedId?.() || null);
       if (ok) {
         window.Billing?.consumeCredit();
         launchBtn.textContent = 'Klinch Ear Active';
@@ -640,6 +640,7 @@ const btnStop        = document.getElementById('btn-stop-interview');
 const deviceDot      = document.getElementById('device-dot');
 const deviceLabel    = document.getElementById('device-label');
 const transcriptBody = document.getElementById('transcript-body');
+const feedbackStatus = document.getElementById('feedback-status');
 
 // Each entry: { speaker: 'interviewer'|'you', text: string }
 let transcriptLines = [];
@@ -670,10 +671,11 @@ if (btnStart) {
     window._openConsentModal(async () => {
       btnStart.disabled = true;
       btnStart.textContent = 'Starting Klinch Ear…';
+      if (feedbackStatus) feedbackStatus.style.display = 'none';
 
       await window.klinch.invoke('overlay:launch');
 
-      const ok = await window.STT.startSession();
+      const ok = await window.STT.startSession(window.getEarSelectedId?.() || null);
       if (ok) {
         window.Billing?.consumeCredit();
         btnStart.style.display = 'none';
@@ -692,6 +694,17 @@ if (btnStop) {
     btnStart.style.display = '';
     transcriptLines = [];
     renderTranscript();
+
+    if (feedbackStatus) {
+      feedbackStatus.textContent = 'Generating feedback…';
+      feedbackStatus.style.display = '';
+    }
+
+    await window.klinch.invoke('interview:feedback', { interviewId: window.getEarSelectedId?.() || null });
+
+    if (feedbackStatus) {
+      feedbackStatus.textContent = 'Feedback ready — view in Interviews';
+    }
   });
 }
 
