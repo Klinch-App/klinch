@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { streamAnswer, streamFeedback } = require('../api/claude');
+const { randomUUID } = require('crypto');
 
 let getMainWindow = null;
 let getOverlayWindow = null;
@@ -8,6 +9,7 @@ let sessionActive = false;
 let currentMode = 'teleprompter';
 let isProcessing = false;
 let sessionTranscript = [];
+let currentInterviewId = null;
 
 function init({ mainWindow, overlayWindow }) {
   getMainWindow = mainWindow;
@@ -16,7 +18,8 @@ function init({ mainWindow, overlayWindow }) {
 }
 
 function registerHandlers() {
-  ipcMain.handle('interview:start', () => {
+  ipcMain.handle('interview:start', (_event, { interviewId } = {}) => {
+    currentInterviewId = interviewId || null;
     sessionActive = true;
     isProcessing = false;
     sessionTranscript = [];
@@ -66,6 +69,45 @@ function registerHandlers() {
     console.log('[interview] generating feedback for transcript:\n', formatted);
     let feedback = '';
     await streamFeedback(formatted, (token) => { feedback += token; });
+
+    const sessionRecord = {
+      session_id:   randomUUID(),
+      interview_id: currentInterviewId,
+      created_at:   new Date().toISOString(),
+      transcript:   sessionTranscript.slice(),
+      feedback,
+    };
+
+    const win = getMainWindow();
+    if (win && !win.isDestroyed()) {
+      // Double-stringify so the payload is a safe JS string literal regardless of feedback content
+      const payloadLiteral = JSON.stringify(JSON.stringify(sessionRecord));
+      await win.webContents.executeJavaScript(`
+        (function() {
+          try {
+            var record = JSON.parse(${payloadLiteral});
+            var interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+            var idx = interviews.findIndex(function(iv) { return iv.id === record.interview_id; });
+            if (idx !== -1) {
+              var sessions = interviews[idx].sessions || [];
+              sessions.push({
+                session_id: record.session_id,
+                created_at: record.created_at,
+                transcript: record.transcript,
+                feedback:   record.feedback
+              });
+              interviews[idx] = Object.assign({}, interviews[idx], { sessions: sessions });
+            } else {
+              interviews.push(record);
+            }
+            localStorage.setItem('klinch_interviews', JSON.stringify(interviews));
+          } catch(e) {
+            console.error('[interview] session write failed', e);
+          }
+        })();
+      `).catch((err) => console.error('[interview] executeJavaScript failed:', err.message));
+    }
+
     return feedback;
   });
 }
