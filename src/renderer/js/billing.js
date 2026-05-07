@@ -69,23 +69,32 @@ window.Billing = (() => {
 
   async function _maybeSyncSubscription() {
     const b = _getBilling();
-    if (!b.subscription_id) return;
+    // Run if we have a subscription or at least a customer on file
+    if (!b.subscription_id && !b.customer_id) return;
     try {
       const res = await window.klinch.invoke('billing:sync-status', {
-        subscription_id: b.subscription_id,
+        subscription_id: b.subscription_id || undefined,
+        customer_id:     b.customer_id     || undefined,
       });
       if (!res.ok) return;
       const updated = { ...b };
-      if (res.current_period_end) {
-        updated.period_end = new Date(res.current_period_end * 1000).toISOString();
-      }
-      updated.cancel_at_period_end = res.cancel_at_period_end;
+
+      // Apply Supabase-authoritative fields (survive reinstalls)
+      if (res.stripe_customer_id) updated.customer_id = res.stripe_customer_id;
+      if (res.plan)                updated.plan = res.plan;
+      if (res.credits !== undefined && res.credits !== null) updated.credits_remaining = res.credits;
+
+      // Apply Stripe subscription fields
+      if (res.current_period_end)               updated.period_end          = new Date(res.current_period_end * 1000).toISOString();
+      if (res.cancel_at_period_end !== undefined) updated.cancel_at_period_end = res.cancel_at_period_end;
+
       // Subscription lapsed — drop back to free trial
       if (res.status === 'canceled' || res.status === 'unpaid') {
-        updated.plan             = 'free_trial';
+        updated.plan              = 'free_trial';
         updated.credits_remaining = 0;
-        updated.subscription_id  = null;
+        updated.subscription_id   = null;
       }
+
       _saveBilling(updated);
       refreshBanner();
       refreshSettings();
@@ -230,6 +239,13 @@ window.Billing = (() => {
     _hideUpgradeModal();
     refreshBanner();
     refreshSettings();
+
+    // Persist billing state to Supabase so it survives reinstalls
+    window.klinch.invoke('billing:sync-to-supabase', {
+      plan:               b.plan,
+      credits:            b.plan === 'unlimited' ? -1 : (b.credits_remaining || 0),
+      stripe_customer_id: b.customer_id || null,
+    }).catch(() => {});
 
     const msgs = {
       starter:   'Starter plan activated! You have 10 sessions this month.',

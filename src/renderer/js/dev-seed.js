@@ -30,9 +30,9 @@
   }
 
   function _load() {
-    // Clear all existing klinch data
+    // Clear all existing klinch data (preserve dev auth bypass so reload doesn't show login)
     Object.keys(localStorage)
-      .filter(k => k.startsWith('klinch'))
+      .filter(k => k.startsWith('klinch') && k !== 'klinch_dev_auth_bypass')
       .forEach(k => localStorage.removeItem(k));
 
     // ── IDs ────────────────────────────────────────────────────────────────────
@@ -435,12 +435,27 @@ Cold calling, email copywriting, objection handling, territory management`,
     // ── Settings ───────────────────────────────────────────────────────────────
     const settings = { notifications_enabled: true };
 
+    const profile = {
+      completed: true,
+      role_type: 'AE', experience_years: '3–5 years',
+      company_size: ['Scale-up (51–500)', 'Mid-market (501–2000)'],
+      challenge: ['Structuring my answers', 'Nerves & confidence'],
+      job_search_status: 'Actively interviewing',
+      strongest_asset: 'Consistent quota attainment',
+      improvement_area: 'Compensation negotiation',
+      tools: 'Salesforce, Outreach, Gong',
+      salary_range: 'USD $120,000 – $150,000',
+      additional_context: '[seed data]',
+    };
+
     // ── Write to localStorage ──────────────────────────────────────────────────
-    localStorage.setItem('klinch_interviews',   JSON.stringify(interviews));
-    localStorage.setItem('klinch_applications', JSON.stringify(applications));
-    localStorage.setItem('klinch_resume',       JSON.stringify(resume));
-    localStorage.setItem('klinch_dry_runs',     JSON.stringify([dryRun]));
-    localStorage.setItem('klinch_settings',     JSON.stringify(settings));
+    localStorage.setItem('klinch_setup_complete', '1');
+    localStorage.setItem('klinch_profile',        JSON.stringify(profile));
+    localStorage.setItem('klinch_interviews',     JSON.stringify(interviews));
+    localStorage.setItem('klinch_applications',   JSON.stringify(applications));
+    localStorage.setItem('klinch_resume',         JSON.stringify(resume));
+    localStorage.setItem('klinch_dry_runs',       JSON.stringify([dryRun]));
+    localStorage.setItem('klinch_settings',       JSON.stringify(settings));
   }
 
 })();

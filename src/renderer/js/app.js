@@ -366,9 +366,29 @@ function showOnboarding() {
 }
 
 // Gate: show onboarding if profile not yet completed
-(function() {
+// Called directly on authed launch, or by auth.js after sign-in
+function _klinchInitApp() {
   const p = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
   if (!p.completed) showOnboarding();
+}
+window._klinchInitApp = _klinchInitApp;
+
+// Auth gate — check session, sync data from Supabase, then init app
+(async function() {
+  // Dev bypass: persists across reloads so the login screen doesn't re-appear
+  // after onboarding's location.reload() call.
+  if (window.klinch.isDev && localStorage.getItem('klinch_dev_auth_bypass') === '1') {
+    _klinchInitApp();
+    return;
+  }
+
+  const res = await window.klinch.invoke('auth:get-session');
+  if (res.ok && res.session) {
+    await window.Sync?.syncAllDown?.(); // Supabase wins on conflict
+    _klinchInitApp();
+  } else {
+    window.Auth?.showAuthScreen();
+  }
 })();
 
 // ── Profile context helper ─────────────────────────────────────────────────────
@@ -464,7 +484,7 @@ if (_notifToggle) {
 
   confirmBtn?.addEventListener('click', () => {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('klinch'))
+      .filter(k => k.startsWith('klinch') && k !== 'klinch_dev_auth_bypass')
       .forEach(k => localStorage.removeItem(k));
     location.reload();
   });
@@ -486,6 +506,13 @@ if (_notifToggle) {
     location.reload();
   });
 })();
+
+// ── Settings — Sign Out ───────────────────────────────────────────────────────
+document.getElementById('st-sign-out-btn')?.addEventListener('click', async () => {
+  localStorage.removeItem('klinch_dev_auth_bypass');
+  await window.klinch.invoke('auth:sign-out');
+  location.reload();
+});
 
 // ── Settings — Terms of Service modal ────────────────────────────────────────
 (function() {

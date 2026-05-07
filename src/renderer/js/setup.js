@@ -27,7 +27,7 @@
   // Show modal immediately (synchronously) if setup hasn't been completed.
   // This prevents a flash of main app content on reload (e.g., after onboarding)
   // while we wait for the async audio:setup-status IPC call.
-  if (localStorage.getItem('klinch-setup-complete') !== '1') {
+  if (localStorage.getItem('klinch_setup_complete') !== '1') {
     modal.style.display = 'flex';
   }
 
@@ -125,13 +125,13 @@
   });
 
   continueBtn.addEventListener('click', () => {
-    localStorage.setItem('klinch-setup-complete', '1');
+    localStorage.setItem('klinch_setup_complete', '1');
     modal.style.display = 'none';
   });
 
   // ── Initial check ──────────────────────────────────────────────────────────
 
-  const previouslyComplete = localStorage.getItem('klinch-setup-complete') === '1';
+  const previouslyComplete = localStorage.getItem('klinch_setup_complete') === '1';
   if (previouslyComplete) {
     const status = await window.klinch.invoke('audio:setup-status');
     if (status.blackholeInstalled && status.multiOutputReady) {
@@ -139,7 +139,7 @@
       window.klinch.send('app:initialized'); // Signal main: ready, no setup needed
       return;
     }
-    localStorage.removeItem('klinch-setup-complete');
+    localStorage.removeItem('klinch_setup_complete');
     modal.style.display = 'flex'; // status changed since last visit, show modal
   }
 

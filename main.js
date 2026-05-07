@@ -7,6 +7,12 @@ const audio          = require('./src/main/ipc/audio');
 const interviewsData = require('./src/main/ipc/interviews-data');
 const resumeData     = require('./src/main/ipc/resume');
 const billing        = require('./src/main/ipc/billing');
+const supabaseApi    = require('./src/main/api/supabase');
+const authIpc        = require('./src/main/ipc/auth');
+const syncIpc        = require('./src/main/ipc/sync');
+
+// Register klinch:// custom protocol for OAuth callback (must happen before app ready)
+app.setAsDefaultProtocolClient('klinch');
 
 nativeTheme.themeSource = 'dark';
 
@@ -264,6 +270,10 @@ app.whenReady().then(() => {
   createMainWindow();
   startReminderScheduler();
 
+  supabaseApi.init();
+  authIpc.init({ mainWindow: () => mainWindow });
+  syncIpc.init();
+
   audio.init();
   interviewsData.init();
   resumeData.init();
@@ -294,6 +304,12 @@ app.on('window-all-closed', () => {
   unregisterOverlayShortcuts();
   try { globalShortcut.unregister('CommandOrControl+Return'); } catch (_) {}
   if (process.platform !== 'darwin') app.quit();
+});
+
+// macOS: handle klinch:// custom-protocol redirect from OAuth browser flow
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  authIpc.handleAuthCallback(url);
 });
 
 // Restore system audio output before quit — covers force-quit, Cmd+Q, and
