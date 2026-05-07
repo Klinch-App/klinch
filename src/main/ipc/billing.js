@@ -31,7 +31,7 @@ async function _getSession() {
 }
 
 // Upsert billing fields into the profiles table
-async function _saveBillingToProfile(userId, { plan, credits, stripe_customer_id }) {
+async function _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at }) {
   const { supabase } = supabaseApi;
   if (!supabase || !userId) return;
   try {
@@ -39,6 +39,16 @@ async function _saveBillingToProfile(userId, { plan, credits, stripe_customer_id
     if (plan               !== undefined) row.plan                = plan;
     if (credits            !== undefined) row.credits             = credits;
     if (stripe_customer_id !== undefined) row.stripe_customer_id = stripe_customer_id;
+    // Only write trial_started_at if not already set in Supabase (preserve first-write semantics)
+    if (trial_started_at   !== undefined && trial_started_at !== null) {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('trial_started_at')
+        .eq('id', userId)
+        .single()
+        .catch(() => ({ data: null }));
+      if (!existing?.trial_started_at) row.trial_started_at = trial_started_at;
+    }
     await supabase.from('profiles').upsert(row, { onConflict: 'id' });
   } catch (err) {
     console.error('[billing] profile upsert:', err.message);
@@ -130,7 +140,7 @@ function init() {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('stripe_customer_id, plan, credits')
+          .select('stripe_customer_id, plan, credits, trial_started_at')
           .eq('id', userId)
           .single();
         if (data) {
@@ -149,6 +159,7 @@ function init() {
         stripe_customer_id:  profileBilling?.stripe_customer_id ?? null,
         plan:                profileBilling?.plan               ?? null,
         credits:             profileBilling?.credits            ?? null,
+        trial_started_at:    profileBilling?.trial_started_at   ?? null,
       };
     }
 
@@ -159,6 +170,7 @@ function init() {
         stripe_customer_id:  profileBilling?.stripe_customer_id ?? null,
         plan:                profileBilling?.plan               ?? null,
         credits:             profileBilling?.credits            ?? null,
+        trial_started_at:    profileBilling?.trial_started_at   ?? null,
       };
     }
 
@@ -180,6 +192,7 @@ function init() {
         stripe_customer_id:   profileBilling?.stripe_customer_id ?? null,
         plan:                 profileBilling?.plan               ?? null,
         credits:              profileBilling?.credits            ?? null,
+        trial_started_at:     profileBilling?.trial_started_at   ?? null,
       };
     } catch (err) {
       console.error('[billing] sync-status:', err.message);
@@ -189,10 +202,10 @@ function init() {
 
   // ── Persist billing state to Supabase profiles ─────────────────────────────
   // Called by renderer after any successful checkout or credit change.
-  ipcMain.handle('billing:sync-to-supabase', async (_e, { plan, credits, stripe_customer_id }) => {
+  ipcMain.handle('billing:sync-to-supabase', async (_e, { plan, credits, stripe_customer_id, trial_started_at }) => {
     const { userId } = await _getSession();
     if (!userId) return { ok: true }; // no session — skip silently
-    await _saveBillingToProfile(userId, { plan, credits, stripe_customer_id });
+    await _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at });
     return { ok: true };
   });
 

@@ -31,6 +31,7 @@ window.Billing = (() => {
     return {
       plan:                 'free_trial',
       credits_remaining:    3,
+      trial_started_at:     new Date().toISOString(),
       period_end:           null,
       subscription_id:      null,
       customer_id:          null,
@@ -43,10 +44,30 @@ window.Billing = (() => {
   function init() {
     const s = _getSettings();
     if (!s.billing) {
-      // First launch after onboarding — set free trial
-      _saveBilling(_defaultState());
+      // First launch — write default state including trial_started_at
+      const init_state = _defaultState();
+      _saveBilling(init_state);
+      // Sync trial_started_at to Supabase now (fire-and-forget; silently skipped if not yet authed)
+      window.klinch.invoke('billing:sync-to-supabase', {
+        plan:               init_state.plan,
+        credits:            init_state.credits_remaining,
+        stripe_customer_id: null,
+        trial_started_at:   init_state.trial_started_at,
+      }).catch(() => {});
     } else {
       _checkPeriodReset();
+      // Backfill trial_started_at for users created before this field existed
+      const b = _getBilling();
+      if (!b.trial_started_at) {
+        const backfilled = { ...b, trial_started_at: new Date().toISOString() };
+        _saveBilling(backfilled);
+        window.klinch.invoke('billing:sync-to-supabase', {
+          plan:               backfilled.plan,
+          credits:            backfilled.credits_remaining || 0,
+          stripe_customer_id: backfilled.customer_id || null,
+          trial_started_at:   backfilled.trial_started_at,
+        }).catch(() => {});
+      }
     }
     _bindUpgradeModal();
     _bindCancelModal();
@@ -83,6 +104,8 @@ window.Billing = (() => {
       if (res.stripe_customer_id) updated.customer_id = res.stripe_customer_id;
       if (res.plan)                updated.plan = res.plan;
       if (res.credits !== undefined && res.credits !== null) updated.credits_remaining = res.credits;
+      // Restore trial_started_at from Supabase only if not already set locally
+      if (res.trial_started_at && !updated.trial_started_at) updated.trial_started_at = res.trial_started_at;
 
       // Apply Stripe subscription fields
       if (res.current_period_end)               updated.period_end          = new Date(res.current_period_end * 1000).toISOString();
@@ -103,9 +126,20 @@ window.Billing = (() => {
 
   // ── Plan enforcement ──────────────────────────────────────────────────────────
 
+  function getTrialDaysRemaining() {
+    const b = _getBilling();
+    if (!b.trial_started_at) return 7;
+    const msLeft = new Date(b.trial_started_at).getTime() + 7 * 24 * 60 * 60 * 1000 - Date.now();
+    return Math.max(0, Math.floor(msLeft / (24 * 60 * 60 * 1000)));
+  }
+
   function canStartSession() {
     const b = _getBilling();
     if (b.plan === 'unlimited') return true;
+    if (b.plan === 'free_trial' && b.trial_started_at) {
+      const expiry = new Date(b.trial_started_at).getTime() + 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() >= expiry) return false;
+    }
     return (b.credits_remaining || 0) > 0;
   }
 
@@ -245,6 +279,7 @@ window.Billing = (() => {
       plan:               b.plan,
       credits:            b.plan === 'unlimited' ? -1 : (b.credits_remaining || 0),
       stripe_customer_id: b.customer_id || null,
+      trial_started_at:   b.trial_started_at || null,
     }).catch(() => {});
 
     const msgs = {
@@ -305,12 +340,14 @@ window.Billing = (() => {
     const banner = document.getElementById('trial-banner');
     if (!banner) return;
     const b = _getBilling();
-    if (b.plan !== 'free_trial' || (b.credits_remaining || 0) <= 0) {
+    if (b.plan !== 'free_trial' || !canStartSession()) {
       banner.style.display = 'none';
       return;
     }
-    const el = document.getElementById('trial-credits-count');
-    if (el) el.textContent = b.credits_remaining;
+    const creditsEl = document.getElementById('trial-credits-count');
+    if (creditsEl) creditsEl.textContent = b.credits_remaining;
+    const daysEl = document.getElementById('trial-days-count');
+    if (daysEl) daysEl.textContent = getTrialDaysRemaining();
     banner.style.display = '';
   }
 
@@ -327,6 +364,14 @@ window.Billing = (() => {
   function refreshSettings() {
     _renderBillingStatus();
     _updatePlanCardHighlight();
+    _updateTrialCard();
+  }
+
+  function _updateTrialCard() {
+    const el = document.getElementById('trial-days-remaining-feature');
+    if (!el) return;
+    const days = getTrialDaysRemaining();
+    el.textContent = days > 0 ? `${days} day${days !== 1 ? 's' : ''} remaining` : 'Trial expired';
   }
 
   function _renderBillingStatus() {
@@ -445,6 +490,7 @@ window.Billing = (() => {
     init,
     canStartSession,
     consumeCredit,
+    getTrialDaysRemaining,
     showUpgradeModal,
     openBillingPortal,
     refreshBanner,
