@@ -705,11 +705,11 @@ function renderInterviews() {
     const interviewers = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
 
     const photoStackHtml = interviewers.slice(0, 3).map((iw, i) => iw.photo_url
-      ? `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
+      ? `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)" title="${iw.name || ''}">
            <img src="${iw.photo_url}" class="icard-photo" alt="" data-fb="cphoto-${iv.id}-${i}">
            <div class="icard-photo-fb" data-fb-id="cphoto-${iv.id}-${i}" style="display:none">${(iw.name || '?')[0].toUpperCase()}</div>
          </div>`
-      : `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
+      : `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)" title="${iw.name || ''}">
            <div class="icard-photo-fb">${(iw.name || '?')[0].toUpperCase()}</div>
          </div>`
     ).join('');
