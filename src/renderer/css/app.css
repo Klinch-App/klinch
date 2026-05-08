@@ -1370,13 +1370,13 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s, background 0.15s;
   cursor: pointer;
   position: relative;
 }
 .icard:hover {
-  border-color: rgba(124, 58, 255, 0.45);
-  box-shadow: 0 6px 24px rgba(124, 58, 255, 0.14);
+  border-color: var(--primary);
+  background: var(--bg-elevated);
 }
 
 .icard-delete-btn {
@@ -2073,11 +2073,11 @@ html, body {
   flex-direction: column;
   gap: 12px;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.15s, background 0.15s;
 }
 .co-card:hover {
-  border-color: rgba(124, 58, 255, 0.45);
-  box-shadow: 0 6px 24px rgba(124, 58, 255, 0.12);
+  border-color: var(--primary);
+  background: var(--bg-elevated);
 }
 
 .co-card-logo-wrap {
@@ -2392,7 +2392,7 @@ html, body {
   transition: background 0.15s;
 }
 .co-iv-row:last-child { margin-bottom: 0; }
-.co-iv-row:hover { background: var(--bg-hover); }
+.co-iv-row:hover { background: var(--bg-elevated); }
 .co-iv-badges {
   display: flex;
   align-items: center;
@@ -2507,7 +2507,8 @@ html, body {
   border-bottom: 1px solid var(--border-subtle);
 }
 .co-news-item:last-child { border-bottom: none; padding-bottom: 0; }
-.co-news-link { cursor: pointer; }
+.co-news-link { cursor: pointer; transition: background 0.15s; }
+.co-news-link:hover { background: var(--bg-elevated); }
 .co-news-link:hover .co-news-title { color: var(--accent); }
 .co-news-title {
   font-size: 13px;
@@ -3423,7 +3424,9 @@ html, body {
   border-radius: var(--radius-md);
   padding: 14px;
   margin-bottom: 10px;
+  transition: border-color 0.15s;
 }
+.ivdp-session-card:hover { border-color: var(--primary); }
 .ivdp-session-date {
   font-size: 11px;
   font-weight: 600;
