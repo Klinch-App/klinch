@@ -197,6 +197,29 @@ function init() {
       return { ok: false, error: err.message, data: null };
     }
   });
+
+  // community:get-questions — fetch anonymized pool questions for a company domain
+  ipcMain.handle('community:get-questions', async (_event, { domain }) => {
+    const { supabase } = supabaseApi;
+    if (!supabase || !domain) return { ok: true, data: [] };
+
+    try {
+      const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('community_questions')
+        .select('question, interview_stage, created_at')
+        .eq('company_domain', domain)
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return { ok: true, data: data || [] };
+    } catch (err) {
+      console.error('[sync] community:get-questions:', err.message);
+      return { ok: false, error: err.message, data: [] };
+    }
+  });
 }
 
 module.exports = { init };

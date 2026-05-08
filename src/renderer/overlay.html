@@ -7,44 +7,9 @@
   <link rel="stylesheet" href="css/overlay.css">
 </head>
 <body>
-  <div class="overlay-wrap">
-    <div class="overlay-card" id="overlay-card">
-
-      <!-- Controls bar (drag handle + interactive buttons) -->
-      <div class="controls" id="controls">
-        <div class="status-dot" id="status-dot"></div>
-        <span class="controls-label">Klinch</span>
-        <div class="speed-control">
-          <button class="ctrl-btn ctrl-btn-speed" id="btn-speed-down" title="Slower (↓)">−</button>
-          <span class="speed-label" id="speed-label">80 wpm</span>
-          <button class="ctrl-btn ctrl-btn-speed" id="btn-speed-up" title="Faster (↑)">+</button>
-        </div>
-        <button class="ctrl-btn" id="btn-mode">Teleprompter</button>
-        <button class="ctrl-btn" id="btn-pause" title="Pause / Resume (Space)">⏸</button>
-        <button class="ctrl-btn ctrl-btn-dismiss" id="btn-dismiss" title="Dismiss (X / Esc)">✕</button>
-      </div>
-
-      <!-- Dynamic content area -->
-      <div class="content" id="content">
-        <!-- Teleprompter view -->
-        <div class="teleprompter-track" id="tp-track">
-          <span class="teleprompter-text" id="tp-text"></span>
-        </div>
-
-        <!-- Bullet view (hidden initially) -->
-        <ul class="bullets" id="bullets" style="display:none"></ul>
-
-        <!-- Listening state indicator (bottom-right corner) -->
-        <div class="listening-indicator" id="listening-indicator">
-          <span class="listening-dot"></span>
-          <span class="listening-label">Listening...</span>
-        </div>
-      </div>
-
-      <div class="pause-badge" id="pause-badge">Paused</div>
-    </div>
+  <div class="cue-wrap">
+    <div class="cue-text" id="cue-text"></div>
   </div>
-
   <script src="js/overlay.js"></script>
 </body>
 </html>

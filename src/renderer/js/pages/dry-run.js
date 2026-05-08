@@ -15,6 +15,7 @@ window.DryRunPage = (() => {
   let _mediaRecorder   = null;
   let _dgSocket        = null;
   let _micStream       = null;
+  let _retryQueue      = null;
 
   const MAX_QUESTIONS = 10;
   const STAGES = [
@@ -146,7 +147,7 @@ window.DryRunPage = (() => {
               <div class="dr-history-meta">
                 <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
                 <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
+                <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
               </div>
               <div class="dr-history-score">${r.report.overall_score}/10</div>
             </div>
@@ -267,6 +268,16 @@ window.DryRunPage = (() => {
     _renderSessionShell();
     _startTimer();
     _setupMicListeners();
+
+    if (_config.mode === 'retry') {
+      _retryQueue = await _loadRetryQuestions(_config.interview_id);
+      if (!_retryQueue.length) {
+        // No transcript or inference failed — fall back to generic generation
+        _config = { ..._config, mode: 'generic' };
+        _retryQueue = null;
+      }
+    }
+
     await _nextQuestion();
   }
 
@@ -447,26 +458,62 @@ window.DryRunPage = (() => {
     });
   }
 
+  async function _loadRetryQuestions(interviewId) {
+    const iv = _getInterviews().find(x => x.id === interviewId);
+    if (!iv) return [];
+
+    const sessions = (iv.sessions || []).filter(s => s.transcript?.length);
+    if (!sessions.length) return [];
+
+    const latest = sessions.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const transcriptText = latest.transcript.map(e => `You: ${e.text}`).join('\n');
+
+    const INFER_SYSTEM =
+      'You are an interview analyst. Given a candidate\'s spoken answers from a job interview, ' +
+      'infer the most likely question that prompted each answer. ' +
+      'Return ONLY a valid JSON array of question strings — no preamble, no markdown, no code fences. ' +
+      'Maximum 10 questions. Example: ["Tell me about yourself.", "Why do you want to work in sales?"]';
+
+    try {
+      const raw      = await _claude(INFER_SYSTEM, transcriptText, 600);
+      const cleaned  = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+      const questions = JSON.parse(cleaned);
+      if (!Array.isArray(questions)) return [];
+      return questions.filter(q => typeof q === 'string' && q.trim()).slice(0, 10);
+    } catch (_) {
+      return [];
+    }
+  }
+
   async function _nextQuestion() {
+    if (_config.mode === 'retry' && _questionNum >= (_retryQueue?.length ?? 0)) {
+      _endSession();
+      return;
+    }
+
     _questionNum++;
     const qNumEl = _el('dr-q-current');
     if (qNumEl) qNumEl.textContent = _questionNum;
 
-    const interviews = _getInterviews();
-    const jd = _config.interview_id
-      ? (interviews.find(iv => iv.id === _config.interview_id)?.jd?.structured ?? null)
-      : null;
-
     let question;
-    try {
-      const profileCtx = window.profileContext ? window.profileContext(profile) : '';
-      question = await _claude(
-        profileCtx ? profileCtx + '\n\n' + INTERVIEW_SYSTEM : INTERVIEW_SYSTEM,
-        JSON.stringify({ stage: _config.stage, mode: _config.mode, jd, history: _history }),
-        300
-      );
-    } catch (_) {
-      question = 'Walk me through how you handle a prospect who goes cold after initial interest.';
+    if (_config.mode === 'retry' && _retryQueue) {
+      question = _retryQueue[_questionNum - 1];
+    } else {
+      const interviews = _getInterviews();
+      const jd = _config.interview_id
+        ? (interviews.find(iv => iv.id === _config.interview_id)?.jd?.structured ?? null)
+        : null;
+
+      try {
+        const profileCtx = window.profileContext ? window.profileContext(profile) : '';
+        question = await _claude(
+          profileCtx ? profileCtx + '\n\n' + INTERVIEW_SYSTEM : INTERVIEW_SYSTEM,
+          JSON.stringify({ stage: _config.stage, mode: _config.mode, jd, history: _history }),
+          300
+        );
+      } catch (_) {
+        question = 'Walk me through how you handle a prospect who goes cold after initial interest.';
+      }
     }
 
     _currentQuestion = question;
@@ -526,7 +573,7 @@ window.DryRunPage = (() => {
       const profileCtx = window.profileContext ? window.profileContext(profile) : '';
       const raw     = await _claude(
         profileCtx ? profileCtx + '\n\n' + REPORT_SYSTEM : REPORT_SYSTEM,
-        JSON.stringify({ stage: _config.stage, history: _history }),
+        JSON.stringify({ stage: _config.stage || 'Interview', history: _history }),
         1500
       );
       const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
@@ -646,7 +693,7 @@ window.DryRunPage = (() => {
               <div class="dr-history-meta">
                 <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
                 <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
+                <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
               </div>
               <div class="dr-history-score">${r.report.overall_score}/10</div>
             </div>
@@ -686,9 +733,31 @@ window.DryRunPage = (() => {
     _isRecording     = false;
     _sessionRunId    = null;
     _currentQuestion = null;
+    _retryQueue      = null;
     _renderSetup();
   }
 
-  return { reset };
+  function launch(config) {
+    _stopTimer();
+    if (_mediaRecorder && _mediaRecorder.state !== 'inactive') { try { _mediaRecorder.stop(); } catch (_) {} }
+    _mediaRecorder = null;
+    if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    _config          = null;
+    _history         = [];
+    _questionNum     = 0;
+    _isRecording     = false;
+    _sessionRunId    = null;
+    _currentQuestion = null;
+    _retryQueue      = null;
+
+    const iv    = _getInterviews().find(x => x.id === config.interviewId) || null;
+    const stage = config.stage || iv?.stage || 'Interview';
+    _config = { mode: config.mode, stage, interview_id: config.interviewId || null };
+    _startSession();
+  }
+
+  return { reset, launch };
 
 })();

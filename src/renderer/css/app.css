@@ -606,6 +606,20 @@ html, body {
   border-radius: var(--radius-md);
 }
 
+.setup-heading {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+
+.setup-body {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
 .setup-step.is-done {
   border-color: rgba(34, 197, 94, 0.35);
   background: rgba(34, 197, 94, 0.05);
@@ -3245,6 +3259,48 @@ html, body {
   transition: background 0.12s;
 }
 .ivdp-iw-save:hover { background: var(--primary-dark); }
+
+/* Community Questions subsection */
+.ivdp-cq-subsection {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ivdp-cq-header { margin-bottom: 14px; }
+.ivdp-cq-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.ivdp-cq-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.ivdp-cq-group { margin-bottom: 16px; }
+.ivdp-cq-stage { margin-bottom: 8px; }
+.ivdp-cq-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ivdp-cq-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  line-height: 1.4;
+}
+.ivdp-cq-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}
 
 /* Session cards */
 .ivdp-session-card {

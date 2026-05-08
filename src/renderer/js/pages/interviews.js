@@ -430,6 +430,9 @@ window.InterviewsPage = (() => {
          <div class="ivdp-ai-body" id="ivdp-context-body" style="display:none"></div>
          <button class="ivdp-refresh-btn" id="ivdp-context-refresh" data-action="refresh-context" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
 
+    // ── Section 7: Session Feedback ───────────────────────────────────────────
+    const sessionFeedbackHtml = _buildSessionFeedbackHtml(iv);
+
     // ── Assemble full page ─────────────────────────────────────────────────────
     const container = _el('iv-detail-page');
     container.innerHTML = `
@@ -486,6 +489,20 @@ window.InterviewsPage = (() => {
           <button class="ivdp-add-btn" id="ivdp-add-interviewer" data-iv-id="${iv.id}">+ Add Interviewer</button>
         </div>
         <div class="ivdp-section-body" id="ivdp-panel-body">${panelHtml}</div>
+        ${iv.company?.domain ? `
+        <div class="ivdp-cq-subsection">
+          <div class="ivdp-cq-header">
+            <div class="ivdp-cq-title">Community Questions</div>
+            <div class="ivdp-cq-sub">From Klinch users who interviewed here</div>
+          </div>
+          <div id="ivdp-cq-body">
+            <div class="ivdp-ai-skeleton" id="ivdp-cq-skeleton">
+              <div class="ivdp-skel-line w80"></div>
+              <div class="ivdp-skel-line w60"></div>
+              <div class="ivdp-skel-line w70"></div>
+            </div>
+          </div>
+        </div>` : ''}
       </div>
 
       <!-- Section 5: Session History -->
@@ -504,7 +521,16 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body">${coachHtml}</div>
       </div>
 
-      <!-- Section 7: Context -->
+      <!-- Section 7: Session Feedback -->
+      ${sessionFeedbackHtml ? `
+      <div class="ivdp-section">
+        <div class="ivdp-section-header">
+          <div class="ivdp-section-title">Session Feedback</div>
+        </div>
+        <div class="ivdp-section-body">${sessionFeedbackHtml}</div>
+      </div>` : ''}
+
+      <!-- Section 8: Context -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Context &amp; Prep</div>
@@ -557,6 +583,47 @@ window.InterviewsPage = (() => {
       _fireCandidateFit(iv);
     }
 
+    // Fire Community Questions fetch if company domain is known
+    if (iv.company?.domain) {
+      _fireCommunityQuestions(iv);
+    }
+
+  }
+
+  function _buildSessionFeedbackHtml(iv) {
+    const sessions = (iv.sessions || []).filter(s => s.feedback);
+    if (!sessions.length) return '';
+
+    const sorted = sessions.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const latest = sorted[0];
+    const older  = sorted.slice(1);
+
+    const fmtDate = (iso) => iso
+      ? new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+      : '';
+
+    let html = `
+      <div class="ivdp-sf-session">
+        ${fmtDate(latest.created_at) ? `<div class="ivdp-col-label" style="margin-bottom:10px">${_esc(fmtDate(latest.created_at))}</div>` : ''}
+        <div class="ivdp-ai-body">${_renderMarkdownish(latest.feedback)}</div>
+        <button class="ivdp-refresh-btn" data-action="retry-dry-run" data-iv-id="${_esc(iv.id)}" style="margin-top:14px">↺ Retry in Dry Run</button>
+      </div>`;
+
+    if (older.length) {
+      html += `
+      <details class="ivdp-raw-jd" style="margin-top:16px">
+        <summary>View Previous Sessions (${older.length})</summary>
+        <div>
+          ${older.map(s => `
+            <div class="ivdp-sf-session" style="margin-bottom:20px;padding-top:16px;border-top:1px solid var(--border-subtle)">
+              ${fmtDate(s.created_at) ? `<div class="ivdp-col-label" style="margin-bottom:10px">${_esc(fmtDate(s.created_at))}</div>` : ''}
+              <div class="ivdp-ai-body">${_renderMarkdownish(s.feedback)}</div>
+            </div>`).join('')}
+        </div>
+      </details>`;
+    }
+
+    return html;
   }
 
   function _buildPanelHtml(iv, interviewers) {
@@ -682,6 +749,10 @@ window.InterviewsPage = (() => {
           iv.context_summary = null;
           _patchIv(id, { context_summary: null });
           _fireAIAnalysis(iv, 'context');
+        }
+        if (action === 'retry-dry-run') {
+          window.navigateTo('dry-run');
+          window.DryRunPage?.launch({ mode: 'retry', interviewId: id });
         }
         if (action === 'refresh-fit') {
           _patchIv(id, { candidate_fit: null });
@@ -923,6 +994,59 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
       const fitBody = _el('ivdp-fit-body');
       if (fitSkel) fitSkel.style.display = 'none';
       if (fitBody) { fitBody.innerHTML = '<div class="ivdp-ai-error">Analysis failed. Try refreshing.</div>'; fitBody.style.display = ''; }
+    }
+  }
+
+  async function _fireCommunityQuestions(iv) {
+    const domain  = iv.company?.domain;
+    const cqBody  = _el('ivdp-cq-body');
+    const cqSkel  = _el('ivdp-cq-skeleton');
+    if (!domain || !cqBody) return;
+
+    try {
+      const res = await window.klinch.invoke('community:get-questions', { domain });
+      if (cqSkel) cqSkel.style.display = 'none';
+
+      const questions = res?.data || [];
+      if (!questions.length) {
+        cqBody.innerHTML = `<div class="ivdp-cq-empty">No community questions yet for this company.</div>`;
+        return;
+      }
+
+      const stageOrder = [
+        'Recruiter Screen', 'Hiring Manager', 'Executive', 'Peer', 'Culture Fit',
+        'Technical Screen', 'Case Study / Presentation', 'Panel', 'Group', 'Final Round',
+      ];
+      const byStage = {};
+      questions.forEach(q => {
+        const s = q.interview_stage || 'General';
+        if (!byStage[s]) byStage[s] = [];
+        byStage[s].push(q);
+      });
+
+      const stages = Object.keys(byStage).sort((a, b) => {
+        const ai = stageOrder.indexOf(a), bi = stageOrder.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+
+      cqBody.innerHTML = stages.map(stage => {
+        const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
+        const items = byStage[stage]
+          .map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`)
+          .join('');
+        return `
+          <div class="ivdp-cq-group">
+            <div class="ivdp-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
+            <ul class="ivdp-cq-list">${items}</ul>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      console.error('[community-questions]', err);
+      if (cqSkel) cqSkel.style.display = 'none';
+      if (cqBody) cqBody.innerHTML = `<div class="ivdp-cq-empty">Could not load community questions.</div>`;
     }
   }
 

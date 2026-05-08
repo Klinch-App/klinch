@@ -7,50 +7,63 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const FEEDBACK_SYSTEM =
-  'You are an expert SDR interview coach. Analyze this interview transcript and give the candidate structured, specific feedback. ' +
-  'Reference actual things said — no generic advice. Use exactly this format:\n\n' +
-  '**What You Did Well**\n• [specific strength from the transcript]\n• [specific strength]\n• [specific strength]\n\n' +
-  '**What to Improve**\n• [specific weakness with actionable fix]\n• [specific weakness with actionable fix]\n• [specific weakness with actionable fix]\n\n' +
-  '**For Your Next Interview**\n• [concrete actionable tip]\n• [concrete actionable tip]\n• [concrete actionable tip]';
+  'You are a direct, experienced interview coach reviewing a candidate\'s responses from a sales interview. ' +
+  'You only have the candidate\'s words — infer what questions were likely asked from how they answered. ' +
+  'Evaluate across five areas: answer structure and quality, filler words and delivery patterns (quote specific ones if present), ' +
+  'answer length (flag responses that were too long, too short, or both), confidence and clarity, and overall impression. ' +
+  'End with exactly 2-3 specific improvements they should make in their next interview, grounded in what you actually heard. ' +
+  'Be honest and direct — vague praise is useless. Do not mention missing audio, recording limitations, or what you could not hear. ' +
+  'Use exactly this format:\n\n' +
+  '**Answer Quality**\n[2-3 sentences on structure, relevance, and substance of their answers]\n\n' +
+  '**Delivery**\n[Filler words used, pace, confidence — quote specific phrases if warranted]\n\n' +
+  '**Answer Length**\n[Were answers appropriately sized? Which ran long or short?]\n\n' +
+  '**Clarity & Confidence**\n[How clearly did they communicate? Did they sound certain or hesitant?]\n\n' +
+  '**Top Improvements**\n• [specific, actionable change]\n• [specific, actionable change]\n• [specific, actionable change — omit if only 2 apply]';
 
-const SYSTEM = {
-  teleprompter:
-    'You are an expert SDR interview coach giving real-time spoken coaching to a candidate mid-interview. ' +
-    'Respond in 2-3 clear, direct sentences the candidate can read aloud as they speak. ' +
-    'Be concrete, confident, and specific. No bullets, no markdown, no intro phrases like "Great question".',
 
-  bullets:
-    'You are an expert SDR interview coach giving structured talking points to a candidate mid-interview. ' +
-    'Respond with exactly 3-4 bullet points. Format each bullet as "• text" on its own line. ' +
-    'No intro sentence, no outro, no markdown other than the • character. ' +
-    'Each bullet should be one punchy sentence a candidate can say aloud.',
-};
+const COACHING_SYSTEM =
+  'You are a live interview delivery coach. The candidate just said these words. ' +
+  'If there is ONE clear delivery issue — filler words (um, uh, like, you know, literally, basically), ' +
+  'rambling or over-explaining, a very short answer, or a good moment to pause — respond with a single ' +
+  'coaching cue of 6 words or fewer that they can act on immediately. ' +
+  'Examples: "Slow down", "Cut the fillers", "Wrap it up", "Pause and breathe", "More detail here", "Look at the camera". ' +
+  'If delivery is fine, respond with exactly: NONE';
 
-/**
- * Stream a Claude answer for the given question.
- *
- * @param {string} question
- * @param {'teleprompter'|'bullets'} mode
- * @param {(token: string) => void} onToken - called for every streaming text delta
- * @returns {Promise<string>} full response text
- */
-async function streamAnswer(question, mode, onToken) {
-  const stream = client.messages.stream({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 300,
-    system: SYSTEM[mode] || SYSTEM.teleprompter,
-    messages: [{ role: 'user', content: question }],
+const INFER_QUESTIONS_SYSTEM =
+  'You are an interview analyst. Given a candidate\'s spoken answers from a job interview, ' +
+  'infer the most likely question that prompted each answer. ' +
+  'Strip all personally identifiable information: replace real names with generic terms ' +
+  '(e.g. "my manager", "a prospect", "the company"), and remove any email addresses, phone numbers, or locations. ' +
+  'Return ONLY a valid JSON array of question strings — no preamble, no markdown, no code fences. ' +
+  'Maximum 10 questions.';
+
+async function inferQuestions(transcript) {
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 600,
+    system: INFER_QUESTIONS_SYSTEM,
+    messages: [{ role: 'user', content: transcript }],
   });
+  const text    = response.content[0]?.text?.trim() || '';
+  const cleaned = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  try {
+    const questions = JSON.parse(cleaned);
+    if (!Array.isArray(questions)) return [];
+    return questions.filter(q => typeof q === 'string' && q.trim()).slice(0, 10);
+  } catch {
+    return [];
+  }
+}
 
-  let fullText = '';
-
-  stream.on('text', (text) => {
-    fullText += text;
-    onToken(text);
+async function getCoachingCue(transcript) {
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 20,
+    system: COACHING_SYSTEM,
+    messages: [{ role: 'user', content: transcript }],
   });
-
-  await stream.finalMessage();
-  return fullText;
+  const text = response.content[0]?.text?.trim() || '';
+  return text === 'NONE' || !text ? null : text;
 }
 
 async function streamFeedback(transcript, onToken) {
@@ -71,4 +84,4 @@ async function streamFeedback(transcript, onToken) {
   return fullText;
 }
 
-module.exports = { streamAnswer, streamFeedback };
+module.exports = { streamFeedback, getCoachingCue, inferQuestions };
