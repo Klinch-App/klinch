@@ -1016,7 +1016,13 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
       const res = await window.klinch.invoke('community:get-questions', { domain });
       if (cqSkel) cqSkel.style.display = 'none';
 
-      const questions = res?.data || [];
+      let questions = res?.data || [];
+      if (!questions.length && window.klinch?.isDev) {
+        try {
+          const devPool = JSON.parse(localStorage.getItem('klinch_dev_community_questions') || '{}');
+          questions = devPool[domain] || [];
+        } catch (_) {}
+      }
       if (!questions.length) {
         cqBody.innerHTML = `<div class="ivdp-cq-empty">No community questions yet for this company.</div>`;
         return;
