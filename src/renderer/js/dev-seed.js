@@ -473,6 +473,45 @@ Cold calling, email copywriting, objection handling, territory management`,
       },
     };
 
+    // ── Community Questions (dev fallback — normally lives in Supabase) ────────
+    const communityQuestions = {
+      'salesforce.com': [
+        { question: 'Tell me about yourself and what draws you to an SDR role.', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-45) },
+        { question: 'What do you know about Salesforce and why do you want to work here specifically?', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-38) },
+        { question: 'Are you comfortable with high-volume outbound — 80-plus touchpoints per day?', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-30) },
+        { question: 'What CRM tools have you used and how deeply did you work inside them?', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-22) },
+        { question: 'Walk me through your background and how it prepares you for this role.', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-14) },
+        { question: 'Where do you see yourself in two years?', interview_stage: 'Recruiter Screen', created_at: _daysFromNow(-7) },
+      ],
+      'hubspot.com': [
+        { question: 'Walk me through your outbound prospecting process from first touch to booked meeting.', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-60) },
+        { question: 'How do you handle a prospect who says they\'re not interested?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-52) },
+        { question: 'Tell me about a time you exceeded your activity or quota targets.', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-44) },
+        { question: 'How do you prioritize your account list when you have hundreds of accounts to work?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-36) },
+        { question: 'What\'s your approach to cold email copywriting — what makes a good subject line?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-28) },
+        { question: 'How do you stay motivated during a tough prospecting week?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-20) },
+        { question: 'How do you research a prospect before reaching out?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-12) },
+      ],
+      'outreach.io': [
+        { question: 'How do you use data and analytics to iterate on your outreach sequences?', interview_stage: 'Final Round', created_at: _daysFromNow(-90) },
+        { question: 'Give me an example of a creative prospecting approach that got a reply when nothing else had.', interview_stage: 'Final Round', created_at: _daysFromNow(-75) },
+        { question: 'How do you handle the "send me some information" brush-off on a cold call?', interview_stage: 'Final Round', created_at: _daysFromNow(-60) },
+        { question: 'What does your ideal prospecting day look like hour by hour?', interview_stage: 'Final Round', created_at: _daysFromNow(-50) },
+        { question: 'Why Outreach over other sales tech companies?', interview_stage: 'Final Round', created_at: _daysFromNow(-40) },
+        { question: 'Tell me about a time you missed your target and how you got back on track.', interview_stage: 'Final Round', created_at: _daysFromNow(-30) },
+        { question: 'Where do you see yourself in 18 months and how does this role get you there?', interview_stage: 'Final Round', created_at: _daysFromNow(-18) },
+      ],
+      'gong.io': [
+        { question: 'How would you use Gong\'s own platform to improve your prospecting?', interview_stage: 'Panel', created_at: _daysFromNow(-120) },
+        { question: 'Tell me about a time you turned a cold prospect into a booked meeting against the odds.', interview_stage: 'Panel', created_at: _daysFromNow(-105) },
+        { question: 'Describe a failure in your sales career and what you took from it.', interview_stage: 'Panel', created_at: _daysFromNow(-90) },
+        { question: 'How do you research enterprise accounts before building a sequence?', interview_stage: 'Panel', created_at: _daysFromNow(-75) },
+        { question: 'How would you pitch Gong to a prospect who already uses a conversation intelligence tool?', interview_stage: 'Panel', created_at: _daysFromNow(-60) },
+        { question: 'Walk us through a cold call opening you\'ve used that consistently gets traction.', interview_stage: 'Panel', created_at: _daysFromNow(-45) },
+        { question: 'What metrics do you use to judge whether your outreach is working?', interview_stage: 'Panel', created_at: _daysFromNow(-30) },
+      ],
+    };
+
     // ── Settings ───────────────────────────────────────────────────────────────
     const settings = { notifications_enabled: true };
 
@@ -490,13 +529,14 @@ Cold calling, email copywriting, objection handling, territory management`,
     };
 
     // ── Write to localStorage ──────────────────────────────────────────────────
-    localStorage.setItem('klinch_setup_complete', '1');
-    localStorage.setItem('klinch_profile',        JSON.stringify(profile));
-    localStorage.setItem('klinch_interviews',     JSON.stringify(interviews));
-    localStorage.setItem('klinch_applications',   JSON.stringify(applications));
-    localStorage.setItem('klinch_resume',         JSON.stringify(resume));
-    localStorage.setItem('klinch_dry_runs',       JSON.stringify([dryRun]));
-    localStorage.setItem('klinch_settings',       JSON.stringify(settings));
+    localStorage.setItem('klinch_setup_complete',           '1');
+    localStorage.setItem('klinch_profile',                  JSON.stringify(profile));
+    localStorage.setItem('klinch_interviews',               JSON.stringify(interviews));
+    localStorage.setItem('klinch_applications',             JSON.stringify(applications));
+    localStorage.setItem('klinch_resume',                   JSON.stringify(resume));
+    localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRun]));
+    localStorage.setItem('klinch_settings',                 JSON.stringify(settings));
+    localStorage.setItem('klinch_dev_community_questions',  JSON.stringify(communityQuestions));
   }
 
 })();
