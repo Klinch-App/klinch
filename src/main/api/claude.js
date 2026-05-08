@@ -7,7 +7,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const FEEDBACK_SYSTEM =
-  'You are a direct, experienced interview coach reviewing a candidate\'s responses from a sales interview. ' +
+  'You are a direct, experienced interview coach reviewing a candidate\'s responses from a job interview. ' +
   'You only have the candidate\'s words — infer what questions were likely asked from how they answered. ' +
   'Evaluate across five areas: answer structure and quality, filler words and delivery patterns (quote specific ones if present), ' +
   'answer length (flag responses that were too long, too short, or both), confidence and clarity, and overall impression. ' +
