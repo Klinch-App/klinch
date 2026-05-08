@@ -512,26 +512,31 @@ window.CompaniesPage = (() => {
       return ai - bi;
     });
 
-    // Resolve active stage (fall back to All if that stage has no questions)
-    const current = (activeStage && byStage[activeStage]) ? activeStage : null;
+    // Active stage — null means "All"; any _CQ_STAGE_ORDER value is valid even if count is 0
+    const current = activeStage ?? null;
 
-    // Stage tab buttons
+    // Stage tab buttons — always show every stage regardless of question count
     const tabsHtml = `
       <div class="co-cq-tabs">
         <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
           All <span class="co-cq-tab-count">${questions.length}</span>
         </button>
-        ${stages.map(s => `
+        ${_CQ_STAGE_ORDER.map(s => `
           <button class="co-cq-tab${current === s ? ' active' : ''}" data-stage="${_esc(s)}">
-            ${_esc(s)} <span class="co-cq-tab-count">${byStage[s].length}</span>
+            ${_esc(s)} <span class="co-cq-tab-count">${(byStage[s] || []).length}</span>
           </button>`).join('')}
       </div>`;
 
     // Question list — flat for single stage, grouped for All
     let contentHtml;
     if (current) {
-      const items = byStage[current].map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
-      contentHtml = `<ul class="co-cq-list">${items}</ul>`;
+      const stageQs = byStage[current] || [];
+      if (!stageQs.length) {
+        contentHtml = '<div class="co-empty-hint">No questions recorded for this stage yet.</div>';
+      } else {
+        const items = stageQs.map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
+        contentHtml = `<ul class="co-cq-list">${items}</ul>`;
+      }
     } else {
       contentHtml = stages.map(stage => {
         const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
