@@ -245,6 +245,7 @@ window.CompaniesPage = (() => {
     _loadSectionOverview(key, company.domain, cache);
     _loadSectionPeople(key, company.name, cache);
     _loadSectionNews(key, company.name);
+    _loadSectionCommunityQuestions(company.domain);
   }
 
   // ── Section: My Applications ──────────────────────────────────────────────────
@@ -444,6 +445,95 @@ window.CompaniesPage = (() => {
 
   function _renderSectionNotes(key, cache) {
     _el('co-notes-input').value = cache.notes || '';
+  }
+
+  // ── Section: Community Questions ─────────────────────────────────────────────
+
+  const _CQ_STAGE_ORDER = [
+    'Recruiter Screen', 'Hiring Manager', 'Executive', 'Peer', 'Culture Fit',
+    'Technical Screen', 'Case Study / Presentation', 'Panel', 'Group', 'Final Round',
+  ];
+
+  async function _loadSectionCommunityQuestions(domain) {
+    const section = _el('co-sec-community-questions');
+    const body    = _el('co-sec-cq-body');
+    if (!domain) { section.style.display = 'none'; return; }
+
+    section.style.display = '';
+    body.innerHTML = _skeleton(3);
+
+    try {
+      const res = await window.klinch.invoke('community:get-questions', { domain });
+      let all = res?.data || [];
+
+      if (!all.length && window.klinch?.isDev) {
+        try {
+          const devPool = JSON.parse(localStorage.getItem('klinch_dev_community_questions') || '{}');
+          all = devPool[domain] || [];
+        } catch (_) {}
+      }
+
+      _renderCommunityQuestions(body, all, false);
+    } catch (err) {
+      body.innerHTML = '<div class="co-empty-hint">Could not load community questions.</div>';
+    }
+  }
+
+  function _renderCommunityQuestions(el, all, showAll) {
+    const cutoff90  = Date.now() - 90 * 86400000;
+    const questions = showAll
+      ? all
+      : all.filter(q => new Date(q.created_at).getTime() >= cutoff90);
+    const hasMore   = !showAll && all.length > questions.length;
+
+    if (!all.length) {
+      el.innerHTML = '<div class="co-empty-hint">No community questions yet for this company — they\'ll appear here after Klinch users complete interviews.</div>';
+      return;
+    }
+
+    if (!questions.length) {
+      el.innerHTML = '<div class="co-empty-hint" style="margin-bottom:10px">No questions in the last 90 days.</div>' +
+        `<button class="co-cq-toggle-btn">View all 12 months (${all.length})</button>`;
+      el.querySelector('.co-cq-toggle-btn').addEventListener('click', () => _renderCommunityQuestions(el, all, true));
+      return;
+    }
+
+    const byStage = {};
+    questions.forEach(q => {
+      const s = q.interview_stage || 'General';
+      if (!byStage[s]) byStage[s] = [];
+      byStage[s].push(q);
+    });
+
+    const stages = Object.keys(byStage).sort((a, b) => {
+      const ai = _CQ_STAGE_ORDER.indexOf(a), bi = _CQ_STAGE_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+
+    const grouped = stages.map(stage => {
+      const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
+      const items = byStage[stage].map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
+      return `
+        <div class="co-cq-group">
+          <div class="co-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
+          <ul class="co-cq-list">${items}</ul>
+        </div>`;
+    }).join('');
+
+    const toggleLabel = hasMore
+      ? `View all 12 months (${all.length})`
+      : showAll ? 'Show recent (90 days)' : '';
+    const toggleHtml = toggleLabel
+      ? `<button class="co-cq-toggle-btn">${_esc(toggleLabel)}</button>`
+      : '';
+
+    el.innerHTML = grouped + toggleHtml;
+    el.querySelector('.co-cq-toggle-btn')?.addEventListener('click', () => {
+      _renderCommunityQuestions(el, all, !showAll);
+    });
   }
 
   // ── Skeleton helper ───────────────────────────────────────────────────────────
