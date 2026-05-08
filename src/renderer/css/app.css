@@ -2257,6 +2257,45 @@ html, body {
 }
 .co-cq-toggle-btn:hover { text-decoration: underline; }
 
+.co-cq-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.co-cq-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+.co-cq-tab:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+.co-cq-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.co-cq-tab-count {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+.co-cq-tab.active .co-cq-tab-count { opacity: 1; }
+.co-cq-content { margin-bottom: 4px; }
+
 .co-add-btn {
   background: none;
   border: 1px solid var(--border-subtle);
