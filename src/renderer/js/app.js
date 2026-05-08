@@ -84,7 +84,6 @@ function showOnboarding() {
   const backBtn      = document.getElementById('ob-back-btn');
   const nextBtn      = document.getElementById('ob-next-btn');
   const introEl          = document.getElementById('ob-intro');
-  const audioExplainerEl = document.getElementById('ob-audio-explainer');
   const progressWrap     = overlay.querySelector('.ob-progress-wrap');
   const navEl            = overlay.querySelector('.ob-nav');
   const devSkipBtn       = document.getElementById('ob-dev-skip');
@@ -101,21 +100,8 @@ function showOnboarding() {
       improvement_area: '[dev]', tools: '[dev]',
       salary_range: 'USD $70,000 – $90,000', additional_context: '',
     }));
-    const exitEl = introEl.style.display !== 'none' ? introEl : cardBody;
-    exitEl.classList.add('ob-exit-left');
-    setTimeout(() => {
-      exitEl.classList.remove('ob-exit-left');
-      exitEl.style.display        = 'none';
-      progressWrap.style.display  = 'none';
-      stepCount.style.display     = 'none';
-      navEl.style.display         = 'none';
-      devSkipBtn.style.display    = 'none';
-      audioExplainerEl.classList.add('ob-enter-right');
-      audioExplainerEl.style.display = '';
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        audioExplainerEl.classList.remove('ob-enter-right');
-      }));
-    }, 180);
+    overlay.classList.add('ob-fade-out');
+    setTimeout(() => location.reload(), 400);
   });
 
   // Hide Q&A chrome while intro screen is shown
@@ -138,11 +124,6 @@ function showOnboarding() {
         cardBody.classList.remove('ob-enter-right');
       }));
     }, 180);
-  });
-
-  document.getElementById('ob-audio-cta').addEventListener('click', () => {
-    overlay.classList.add('ob-fade-out');
-    setTimeout(() => location.reload(), 400);
   });
 
   let step = 0;
@@ -315,25 +296,7 @@ function showOnboarding() {
     }, 180);
   }
 
-  function toAudioExplainer() {
-    cardBody.classList.add('ob-exit-left');
-    setTimeout(() => {
-      cardBody.classList.remove('ob-exit-left');
-      cardBody.style.display      = 'none';
-      progressWrap.style.display  = 'none';
-      stepCount.style.display     = 'none';
-      navEl.style.display         = 'none';
-      devSkipBtn.style.display    = 'none';
-      userSkipBtn.style.display   = 'none';
-      audioExplainerEl.classList.add('ob-enter-right');
-      audioExplainerEl.style.display = '';
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        audioExplainerEl.classList.remove('ob-enter-right');
-      }));
-    }, 180);
-  }
-
-  backBtn.addEventListener('click', () => {
+backBtn.addEventListener('click', () => {
     if (step > 0) { step--; goTo(step, 'back'); }
   });
 
@@ -344,7 +307,8 @@ function showOnboarding() {
       goTo(step, 'fwd');
     } else {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
-      toAudioExplainer();
+      overlay.classList.add('ob-fade-out');
+      setTimeout(() => location.reload(), 400);
     }
   });
 
@@ -358,7 +322,8 @@ function showOnboarding() {
       goTo(step, 'fwd');
     } else {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
-      toAudioExplainer();
+      overlay.classList.add('ob-fade-out');
+      setTimeout(() => location.reload(), 400);
     }
   });
 
