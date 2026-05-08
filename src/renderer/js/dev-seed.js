@@ -180,6 +180,24 @@
         scheduled_at: _scheduledAt(-5, 11),
         status: 'completed',
         created_at: _daysFromNow(-14),
+        sessions: (function() {
+          var base = Date.now() - 5 * 86400000;
+          return [{
+            session_id: _uuid(),
+            created_at: _daysFromNow(-5),
+            transcript: [
+              { speaker: 'you', text: "I've been an SDR for about eighteen months, focused on mid-market outbound at a SaaS company. I manage roughly three hundred accounts and run multi-channel sequences across phone, email, and LinkedIn. Last quarter I came in at a hundred and twelve percent of my meeting quota, which I'm proud of given Q3 is historically our slowest.", timestamp: base },
+              { speaker: 'you', text: "My prospecting process starts the night before. I'll pick five to ten accounts, look for a specific trigger — a funding announcement, a new hire, a job posting that signals a pain point — and write a first email from scratch based on that. Follow-ups are semi-templated but always reference something from the prior touch. I don't do fully automated sequences for tier-one accounts.", timestamp: base + 240000 },
+              { speaker: 'you', text: "The objection I've gotten best at handling is 'we already have something for that.' I used to push back on it. Now I treat it as a question — I'll say 'totally fair, what made you choose it?' and that almost always opens a real conversation about whether it's actually working. Most people don't love the tool they're using, they just haven't had a reason to look.", timestamp: base + 540000 },
+              { speaker: 'you', text: "I actually use Outreach at my current company, which I think is a real advantage here. I'm not learning the platform, I'm selling something I use every day. The pitch I'd lead with centers on the analytics layer — being able to see what's resonating and iterate quickly. That feedback loop is what makes it different from a basic sequencer.", timestamp: base + 840000 },
+              { speaker: 'you', text: "I missed target in January. It was my first month with an expanded territory and I tried to work all three hundred accounts instead of tiering aggressively. I was spread too thin and my quality dropped. I went back to basics — built a tight tier-one list of forty accounts, got focused, and recovered to a hundred and six percent by March. I learned more from that miss than from any month I hit quota.", timestamp: base + 1200000 },
+              { speaker: 'you', text: "What gets me into this work is the craft side. I spend time reading about messaging, listening to my own call recordings, testing subject lines. I find it genuinely interesting, not just something I have to do. And Outreach's product is built for people who think that way — the premise is that if you pay attention to the data, you can get better faster. That's the environment I want to be in.", timestamp: base + 1500000 },
+              { speaker: 'you', text: "It comes down to three things. Product belief — I use Outreach and I think it's the best tool in its category. The internal culture around data and iteration, which I've heard about from people on your team. And the AE path — I want to make that transition in twelve to eighteen months and I've heard Outreach is one of the better places for it.", timestamp: base + 1800000 },
+              { speaker: 'you', text: "My main question is around what separates the SDRs who transition to AE quickly from those who stay in role longer than expected. Not just that the path exists — I want to understand what the top performers actually do differently in their first year that makes the difference.", timestamp: base + 2100000 },
+            ],
+            feedback: '**Answer Quality**\nAnswers were consistently structured and grounded in specifics — the 112% quota figure, the January miss with a clear recovery arc, and genuine product knowledge all added real credibility. The objection-handling answer was the standout: it moved cleanly from old behavior to new insight to outcome. The "why Outreach" answer showed authentic product familiarity rather than rehearsed talking points, which is rare at the final-round stage.\n\n**Delivery**\nPacing was confident throughout with minimal filler — a couple of instances of "um" and "I think" but nothing distracting. The failure story came across as well-rehearsed in the right sense: clear, self-aware, no over-hedging. Slight uptick in pace when walking through the prospecting process — worth watching on calls where you want the listener to absorb the detail.\n\n**Answer Length**\nMost answers ran 45–75 seconds, which is the right range for a final round. The objection-handling and failure answers hit the ideal length: specific enough to be credible, concise enough to hold attention. The closing "why Outreach" answer could have used one more concrete example — it ended a beat early and slightly undersold the conviction.\n\n**Clarity & Confidence**\nHigh confidence on metrics, product knowledge, and the failure story. The motivation answer was the clearest of the session — direct and specific with no hedging. The closing question for the interviewer was good but ended as a statement rather than a real exchange; a follow-on check-in would have kept you in control of the close.\n\n**Top Improvements**\n• Quantify the "why Outreach" answer — you described the analytics layer well but never tied it to a personal result. Add one data point: a subject line test, a sequence that outperformed, anything measurable that shows you\'ve already done the thing you\'re selling.\n• Turn your close into a dialogue — after expressing enthusiasm, add a micro-ask: "Is there anything from our conversations today that would give you pause?" That shifts from monologue to closing move.\n• Lead the failure answer with the outcome first ("I missed January by about 20%"), then explain why. You got there, but the inverted structure would have landed with more confidence from the start.',
+          }];
+        })(),
         coach_analysis: `**What You Did Well**
 • Opened with a strong research hook referencing Outreach's recent Series D — showed genuine preparation
 • Handled the "we already have a tool for that" objection confidently with a pivot to ROI
@@ -375,7 +393,30 @@ Cold calling, email copywriting, objection handling, territory management`,
         ],
         summary: 'Solid SDR profile with relevant tool experience and clear vertical focus. The main gap is quantification — nearly every bullet describes activity rather than outcomes. Adding 2–3 hard numbers (meetings set, pipeline generated, quota %) would move this from a 68 to an 85+ overnight.',
       },
-      role_fits: {},
+      role_fits: {
+        [IV_OUT]: {
+          keyword_match_score: 76,
+          keywords_present: [
+            'Outreach (platform experience)',
+            'B2B SaaS outbound prospecting',
+            'Multi-channel sequences (phone/email/LinkedIn)',
+            'LinkedIn Sales Navigator',
+            'Salesforce CRM',
+          ],
+          keywords_missing: [
+            'Quota attainment % (not stated)',
+            'Pipeline dollar amount missing',
+            'Mid-market/enterprise account scope',
+            'Conversation intelligence tools',
+          ],
+          talking_points: [
+            'Lead with the 112% quota figure immediately — Outreach is metrics-driven and this is your strongest credibility signal',
+            'Emphasize you\'re a current Outreach user: you\'re selling a tool you rely on every day, not one you learned for the interview',
+            'Connect your tiering methodology directly to their JD language around "Mid-Market segment" and "territory strategy"',
+          ],
+          strategic_summary: 'Solid alignment on core SDR skills, platform familiarity, and prospecting methodology. The main gap is quantification — the JD calls for "demonstrated ability to exceed activity-based targets" but the resume describes activities rather than outcomes. Going into this Final Round, anchor every answer in a specific number: meetings set, conversion rate, or quota attainment percentage.',
+        },
+      },
       created_at: _daysFromNow(-10),
       updated_at: _daysFromNow(-10),
     };
