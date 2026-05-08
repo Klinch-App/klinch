@@ -237,8 +237,9 @@ window.InterviewsPage = (() => {
     const empty = _el('iv-empty');
 
     let filtered = getAll().filter(iv => {
-      if (_filter.view === 'upcoming'  && isCompleted(iv))  return false;
-      if (_filter.view === 'completed' && !isCompleted(iv)) return false;
+      if (_filter.view === 'upcoming'   && isCompleted(iv))                       return false;
+      if (_filter.view === 'completed'  && !isCompleted(iv))                      return false;
+      if (_filter.view === 'this-week'  && (!isThisWeek(iv) || isCompleted(iv)))  return false;
       if (_filter.company && iv.company?.name !== _filter.company) return false;
       if (_filter.stage   && iv.stage   !== _filter.stage)  return false;
       if (_filter.format  && iv.format  !== _filter.format) return false;
@@ -1099,11 +1100,30 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
   // ── Init ──────────────────────────────────────────────────────────────────────
 
   function init() {
+    document.querySelectorAll('.iv-stat-card[data-stat-filter]').forEach(card => {
+      card.addEventListener('click', () => {
+        const view = card.dataset.statFilter;
+        _filter.view = view;
+        // Sync toggle buttons
+        document.querySelectorAll('.iv-toggle-btn').forEach(b => b.classList.remove('active'));
+        if (view === 'upcoming' || view === 'this-week') {
+          document.querySelector('.iv-toggle-btn[data-view="upcoming"]')?.classList.add('active');
+        } else if (view === 'completed') {
+          document.querySelector('.iv-toggle-btn[data-view="completed"]')?.classList.add('active');
+        }
+        // Active card highlight
+        document.querySelectorAll('.iv-stat-card').forEach(c => c.classList.remove('iv-stat-active'));
+        card.classList.add('iv-stat-active');
+        renderFeed();
+      });
+    });
+
     document.querySelectorAll('.iv-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.iv-toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _filter.view = btn.dataset.view;
+        document.querySelectorAll('.iv-stat-card').forEach(c => c.classList.remove('iv-stat-active'));
         renderFeed();
       });
     });
