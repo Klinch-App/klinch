@@ -1798,6 +1798,16 @@ html, body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 16px 16px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.iv-stat-card:hover {
+  border-color: var(--primary);
+  background: var(--bg-elevated);
+}
+.iv-stat-card.iv-stat-active {
+  border-color: var(--primary);
+  background: rgba(124, 58, 255, 0.08);
 }
 .iv-stat-label {
   font-size: 10px;
