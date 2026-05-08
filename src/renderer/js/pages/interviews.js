@@ -1012,6 +1012,61 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
     const cqSkel  = _el('ivdp-cq-skeleton');
     if (!domain || !cqBody) return;
 
+    const CQ_STAGE_ORDER = Object.keys(STAGE_BADGE);
+
+    function _paintCQ(questions, activeStage) {
+      const byStage = {};
+      questions.forEach(q => {
+        const s = q.interview_stage || 'General';
+        if (!byStage[s]) byStage[s] = [];
+        byStage[s].push(q);
+      });
+
+      const current = activeStage ?? null;
+
+      const tabsHtml = `
+        <div class="co-cq-tabs">
+          <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
+            All <span class="co-cq-tab-count">${questions.length}</span>
+          </button>
+          ${CQ_STAGE_ORDER.map(s => `
+            <button class="co-cq-tab${current === s ? ' active' : ''}" data-stage="${_esc(s)}">
+              ${_esc(s)} <span class="co-cq-tab-count">${(byStage[s] || []).length}</span>
+            </button>`).join('')}
+        </div>`;
+
+      let contentHtml;
+      if (current) {
+        const stageQs = byStage[current] || [];
+        if (!stageQs.length) {
+          contentHtml = '<div class="ivdp-cq-empty">No questions recorded for this stage yet.</div>';
+        } else {
+          const items = stageQs.map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('');
+          contentHtml = `<ul class="ivdp-cq-list">${items}</ul>`;
+        }
+      } else {
+        const populated = CQ_STAGE_ORDER.filter(s => byStage[s]?.length);
+        if (!populated.length) {
+          contentHtml = '<div class="ivdp-cq-empty">No community questions yet for this company.</div>';
+        } else {
+          contentHtml = populated.map(stage => {
+            const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
+            const items = byStage[stage].map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('');
+            return `
+              <div class="ivdp-cq-group">
+                <div class="ivdp-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
+                <ul class="ivdp-cq-list">${items}</ul>
+              </div>`;
+          }).join('');
+        }
+      }
+
+      cqBody.innerHTML = tabsHtml + `<div class="co-cq-content">${contentHtml}</div>`;
+      cqBody.querySelectorAll('.co-cq-tab').forEach(btn => {
+        btn.addEventListener('click', () => _paintCQ(questions, btn.dataset.stage || null));
+      });
+    }
+
     try {
       const res = await window.klinch.invoke('community:get-questions', { domain });
       if (cqSkel) cqSkel.style.display = 'none';
@@ -1023,41 +1078,8 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
           questions = devPool[domain] || [];
         } catch (_) {}
       }
-      if (!questions.length) {
-        cqBody.innerHTML = `<div class="ivdp-cq-empty">No community questions yet for this company.</div>`;
-        return;
-      }
 
-      const stageOrder = [
-        'Recruiter Screen', 'Hiring Manager', 'Executive', 'Peer', 'Culture Fit',
-        'Technical Screen', 'Case Study / Presentation', 'Panel', 'Group', 'Final Round',
-      ];
-      const byStage = {};
-      questions.forEach(q => {
-        const s = q.interview_stage || 'General';
-        if (!byStage[s]) byStage[s] = [];
-        byStage[s].push(q);
-      });
-
-      const stages = Object.keys(byStage).sort((a, b) => {
-        const ai = stageOrder.indexOf(a), bi = stageOrder.indexOf(b);
-        if (ai === -1 && bi === -1) return a.localeCompare(b);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      });
-
-      cqBody.innerHTML = stages.map(stage => {
-        const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
-        const items = byStage[stage]
-          .map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`)
-          .join('');
-        return `
-          <div class="ivdp-cq-group">
-            <div class="ivdp-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
-            <ul class="ivdp-cq-list">${items}</ul>
-          </div>`;
-      }).join('');
+      _paintCQ(questions, null);
     } catch (err) {
       console.error('[community-questions]', err);
       if (cqSkel) cqSkel.style.display = 'none';
