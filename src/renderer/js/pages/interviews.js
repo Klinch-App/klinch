@@ -603,10 +603,13 @@ window.InterviewsPage = (() => {
       : '';
 
     let html = `
-      <div class="ivdp-sf-session">
+      <div class="ivdp-sf-card">
         ${fmtDate(latest.created_at) ? `<div class="ivdp-col-label" style="margin-bottom:10px">${_esc(fmtDate(latest.created_at))}</div>` : ''}
         <div class="ivdp-ai-body">${_renderMarkdownish(latest.feedback)}</div>
-        <button class="ivdp-refresh-btn" data-action="retry-dry-run" data-iv-id="${_esc(iv.id)}" style="margin-top:14px">↺ Retry in Dry Run</button>
+        <div class="ivdp-sf-practice-cta">
+          <div class="ivdp-sf-practice-hint">Want to improve? Practice the questions from this session.</div>
+          <button class="ivdp-sf-practice-btn" data-action="retry-dry-run" data-iv-id="${_esc(iv.id)}">Practice This Interview →</button>
+        </div>
       </div>`;
 
     if (older.length) {

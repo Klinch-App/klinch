@@ -3302,6 +3302,40 @@ html, body {
   font-style: italic;
 }
 
+/* Session Feedback card */
+.ivdp-sf-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+.ivdp-sf-practice-cta {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ivdp-sf-practice-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.ivdp-sf-practice-btn {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--primary), var(--accent-pink));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  text-align: center;
+}
+.ivdp-sf-practice-btn:hover { opacity: 0.88; }
+
 /* Session cards */
 .ivdp-session-card {
   background: var(--bg-elevated);
