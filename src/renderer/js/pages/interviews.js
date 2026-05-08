@@ -1100,6 +1100,10 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
   // ── Init ──────────────────────────────────────────────────────────────────────
 
   function init() {
+    document.querySelector('.iv-calendar-panel')?.addEventListener('click', () => {
+      window.navigateTo('calendar');
+    });
+
     document.querySelectorAll('.iv-stat-card[data-stat-filter]').forEach(card => {
       card.addEventListener('click', () => {
         const view = card.dataset.statFilter;
