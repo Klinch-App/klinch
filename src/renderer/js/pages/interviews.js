@@ -388,18 +388,29 @@ window.InterviewsPage = (() => {
     const panelHtml = _buildPanelHtml(iv, interviewers);
 
     // ── Section 5: Session History ─────────────────────────────────────────────
-    const sessions   = iv.sessions || [];
-    const sessHtml   = sessions.length
-      ? sessions.map(s => `
-          <div class="ivdp-session-card">
-            <div class="ivdp-session-date">${_esc(s.date || '')}</div>
-            <div class="ivdp-session-notes">${_esc(s.notes || '')}</div>
-            <!-- TODO: wire transcript data -->
-          </div>`).join('')
+    const sessions = iv.sessions || [];
+    const sessHtml = sessions.length
+      ? sessions
+          .slice()
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .map(s => {
+            const sDateStr = s.created_at
+              ? new Date(s.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+              : '';
+            const raw     = s.feedback || '';
+            const preview = raw.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n+/g, ' ').trim();
+            const excerpt = preview.length > 100 ? preview.slice(0, 100).trimEnd() + '…' : preview || 'No feedback recorded.';
+            return `
+              <div class="ivdp-session-card">
+                ${sDateStr ? `<div class="ivdp-session-date">${_esc(sDateStr)}</div>` : ''}
+                <div class="ivdp-session-preview">${_esc(excerpt)}</div>
+                <button class="ivdp-sf-practice-btn" data-action="retry-dry-run" data-iv-id="${iv.id}" style="margin-top:14px">Practice This Interview →</button>
+              </div>`;
+          }).join('')
       : `<div class="ivdp-empty-state">
            <div class="ivdp-empty-icon">🎙️</div>
            <div class="ivdp-empty-title">No sessions yet</div>
-           <div class="ivdp-empty-sub">Start a Klinch Ear session before your interview to capture a live transcript and coaching notes.</div>
+           <div class="ivdp-empty-sub">Complete a live Klinch Ear session to see feedback here.</div>
          </div>`;
 
     // ── Section 6 & 7: Coach + Context (cached) ────────────────────────────────
@@ -489,12 +500,16 @@ window.InterviewsPage = (() => {
           <button class="ivdp-add-btn" id="ivdp-add-interviewer" data-iv-id="${iv.id}">+ Add Interviewer</button>
         </div>
         <div class="ivdp-section-body" id="ivdp-panel-body">${panelHtml}</div>
-        ${iv.company?.domain ? `
-        <div class="ivdp-cq-subsection">
-          <div class="ivdp-cq-header">
-            <div class="ivdp-cq-title">Community Questions</div>
-            <div class="ivdp-cq-sub">From Klinch users who interviewed here</div>
-          </div>
+      </div>
+
+      <!-- Section 5: Community Questions -->
+      ${iv.company?.domain ? `
+      <div class="ivdp-section">
+        <div class="ivdp-section-header">
+          <div class="ivdp-section-title">Community Questions</div>
+        </div>
+        <div class="ivdp-section-subtitle">Questions Klinch has identified from real interviews at this company over the last 12 months.</div>
+        <div class="ivdp-section-body">
           <div id="ivdp-cq-body">
             <div class="ivdp-ai-skeleton" id="ivdp-cq-skeleton">
               <div class="ivdp-skel-line w80"></div>
@@ -502,10 +517,10 @@ window.InterviewsPage = (() => {
               <div class="ivdp-skel-line w70"></div>
             </div>
           </div>
-        </div>` : ''}
-      </div>
+        </div>
+      </div>` : ''}
 
-      <!-- Section 5: Session History -->
+      <!-- Section 6: Session History -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Session History</div>
@@ -513,22 +528,13 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body">${sessHtml}</div>
       </div>
 
-      <!-- Section 6: Coach -->
+      <!-- Section 7: Coach -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Coach</div>
         </div>
         <div class="ivdp-section-body">${coachHtml}</div>
       </div>
-
-      <!-- Section 7: Session Feedback -->
-      ${sessionFeedbackHtml ? `
-      <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Session Feedback</div>
-        </div>
-        <div class="ivdp-section-body">${sessionFeedbackHtml}</div>
-      </div>` : ''}
 
       <!-- Section 8: Context -->
       <div class="ivdp-section">
