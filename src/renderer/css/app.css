@@ -5174,6 +5174,71 @@ html, body {
   color: var(--text-secondary);
 }
 
+/* ── Klinch Ear intro modal ──────────────────────────────────────────────────── */
+
+.ear-intro-card {
+  width: 620px;
+}
+
+.ear-intro-body {
+  gap: 12px;
+}
+
+.ear-intro-section {
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.ear-intro-section--no {
+  border-color: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.ear-intro-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.ear-intro-section--no .ear-intro-section-label {
+  color: #ef4444;
+}
+
+.ear-intro-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ear-intro-list li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ear-intro-note {
+  padding: 14px 16px;
+  border: 1px solid rgba(124, 58, 255, 0.2);
+  border-radius: var(--radius-md);
+  background: rgba(124, 58, 255, 0.05);
+}
+
+.ear-intro-note-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
 /* ── Terms of Service modal ─────────────────────────────────────────────────── */
 
 .tos-backdrop {
