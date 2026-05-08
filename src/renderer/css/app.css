@@ -235,12 +235,11 @@ html, body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 20px;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.card:hover { border-color: var(--border); }
 .card[data-nav] { cursor: pointer; }
-.card[data-nav]:hover { border-color: rgba(124, 58, 255, 0.45); }
+.card[data-nav]:hover { border-color: var(--primary); background: var(--bg-elevated); }
 
 .card-label {
   font-size: 11px;
