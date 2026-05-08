@@ -2956,6 +2956,12 @@ html, body {
   padding: 2px 8px;
 }
 .ivdp-section-body { padding: 20px; }
+.ivdp-section-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 10px 20px 0;
+  line-height: 1.5;
+}
 
 /* Add button */
 .ivdp-add-btn {
@@ -3260,23 +3266,7 @@ html, body {
 }
 .ivdp-iw-save:hover { background: var(--primary-dark); }
 
-/* Community Questions subsection */
-.ivdp-cq-subsection {
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-subtle);
-}
-.ivdp-cq-header { margin-bottom: 14px; }
-.ivdp-cq-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-.ivdp-cq-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-}
+/* Community Questions */
 .ivdp-cq-group { margin-bottom: 16px; }
 .ivdp-cq-stage { margin-bottom: 8px; }
 .ivdp-cq-list {
@@ -3352,7 +3342,8 @@ html, body {
   letter-spacing: 0.8px;
   margin-bottom: 6px;
 }
-.ivdp-session-notes { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.ivdp-session-notes   { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.ivdp-session-preview { font-size: 13px; color: var(--text-muted); line-height: 1.5; font-style: italic; }
 
 /* AI sections */
 .ivdp-ai-skeleton {
