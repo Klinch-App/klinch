@@ -479,7 +479,7 @@ window.CompaniesPage = (() => {
     }
   }
 
-  function _renderCommunityQuestions(el, all, showAll) {
+  function _renderCommunityQuestions(el, all, showAll, activeStage) {
     const cutoff90  = Date.now() - 90 * 86400000;
     const questions = showAll
       ? all
@@ -494,45 +494,68 @@ window.CompaniesPage = (() => {
     if (!questions.length) {
       el.innerHTML = '<div class="co-empty-hint" style="margin-bottom:10px">No questions in the last 90 days.</div>' +
         `<button class="co-cq-toggle-btn">View all 12 months (${all.length})</button>`;
-      el.querySelector('.co-cq-toggle-btn').addEventListener('click', () => _renderCommunityQuestions(el, all, true));
+      el.querySelector('.co-cq-toggle-btn').addEventListener('click', () => _renderCommunityQuestions(el, all, true, null));
       return;
     }
 
+    // Build stage map in canonical order
     const byStage = {};
     questions.forEach(q => {
       const s = q.interview_stage || 'General';
       if (!byStage[s]) byStage[s] = [];
       byStage[s].push(q);
     });
-
     const stages = Object.keys(byStage).sort((a, b) => {
       const ai = _CQ_STAGE_ORDER.indexOf(a), bi = _CQ_STAGE_ORDER.indexOf(b);
       if (ai === -1 && bi === -1) return a.localeCompare(b);
-      if (ai === -1) return 1;
-      if (bi === -1) return -1;
+      if (ai === -1) return 1; if (bi === -1) return -1;
       return ai - bi;
     });
 
-    const grouped = stages.map(stage => {
-      const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
-      const items = byStage[stage].map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
-      return `
-        <div class="co-cq-group">
-          <div class="co-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
-          <ul class="co-cq-list">${items}</ul>
-        </div>`;
-    }).join('');
+    // Resolve active stage (fall back to All if that stage has no questions)
+    const current = (activeStage && byStage[activeStage]) ? activeStage : null;
 
-    const toggleLabel = hasMore
-      ? `View all 12 months (${all.length})`
-      : showAll ? 'Show recent (90 days)' : '';
-    const toggleHtml = toggleLabel
-      ? `<button class="co-cq-toggle-btn">${_esc(toggleLabel)}</button>`
-      : '';
+    // Stage tab buttons
+    const tabsHtml = `
+      <div class="co-cq-tabs">
+        <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
+          All <span class="co-cq-tab-count">${questions.length}</span>
+        </button>
+        ${stages.map(s => `
+          <button class="co-cq-tab${current === s ? ' active' : ''}" data-stage="${_esc(s)}">
+            ${_esc(s)} <span class="co-cq-tab-count">${byStage[s].length}</span>
+          </button>`).join('')}
+      </div>`;
 
-    el.innerHTML = grouped + toggleHtml;
+    // Question list — flat for single stage, grouped for All
+    let contentHtml;
+    if (current) {
+      const items = byStage[current].map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
+      contentHtml = `<ul class="co-cq-list">${items}</ul>`;
+    } else {
+      contentHtml = stages.map(stage => {
+        const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
+        const items = byStage[stage].map(q => `<li class="co-cq-item">${_esc(q.question)}</li>`).join('');
+        return `
+          <div class="co-cq-group">
+            <div class="co-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
+            <ul class="co-cq-list">${items}</ul>
+          </div>`;
+      }).join('');
+    }
+
+    const toggleLabel = hasMore ? `View all 12 months (${all.length})` : showAll ? 'Show recent (90 days)' : '';
+    const toggleHtml  = toggleLabel ? `<button class="co-cq-toggle-btn">${_esc(toggleLabel)}</button>` : '';
+
+    el.innerHTML = tabsHtml + `<div class="co-cq-content">${contentHtml}</div>` + toggleHtml;
+
+    el.querySelectorAll('.co-cq-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _renderCommunityQuestions(el, all, showAll, btn.dataset.stage || null);
+      });
+    });
     el.querySelector('.co-cq-toggle-btn')?.addEventListener('click', () => {
-      _renderCommunityQuestions(el, all, !showAll);
+      _renderCommunityQuestions(el, all, !showAll, current);
     });
   }
 
