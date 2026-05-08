@@ -589,6 +589,30 @@ document.getElementById('st-sign-out-btn')?.addEventListener('click', async () =
   window._openConsentModal = _openConsentModal;
 })();
 
+// ── Klinch Ear intro modal (shown once, gates consent) ────────────────────────
+(function() {
+  const backdrop   = document.getElementById('ear-intro-backdrop');
+  const confirmBtn = document.getElementById('ear-intro-confirm-btn');
+
+  function _openIntroModal(onConfirm) {
+    backdrop.classList.add('visible');
+    confirmBtn.onclick = () => {
+      localStorage.setItem('klinch_ear_intro_seen', '1');
+      backdrop.classList.remove('visible');
+      onConfirm();
+    };
+  }
+
+  const _origOpen = window._openConsentModal;
+  window._openConsentModal = function(onConfirm) {
+    if (!localStorage.getItem('klinch_ear_intro_seen')) {
+      _openIntroModal(() => _origOpen(onConfirm));
+    } else {
+      _origOpen(onConfirm);
+    }
+  };
+})();
+
 // ── Overlay launch button ─────────────────────────────────────────────────────
 const launchBtn = document.getElementById('btn-launch-overlay');
 if (launchBtn) {
