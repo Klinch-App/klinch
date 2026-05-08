@@ -3,7 +3,6 @@ process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
 const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification } = require('electron');
 const path = require('path');
 const interview      = require('./src/main/ipc/interview');
-const audio          = require('./src/main/ipc/audio');
 const interviewsData = require('./src/main/ipc/interviews-data');
 const resumeData     = require('./src/main/ipc/resume');
 const billing        = require('./src/main/ipc/billing');
@@ -19,7 +18,6 @@ nativeTheme.themeSource = 'dark';
 let mainWindow = null;
 let overlayWindow = null;
 
-const OVERLAY_H = 170;
 
 // ─── Main window ────────────────────────────────────────────────────────────
 
@@ -78,11 +76,11 @@ function createOverlayWindow() {
     return;
   }
 
-  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const { width, height } = screen.getPrimaryDisplay().bounds;
 
   overlayWindow = new BrowserWindow({
     width,
-    height: OVERLAY_H,
+    height,
     x: 0,
     y: 0,
     transparent: true,
@@ -176,26 +174,7 @@ ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
   }
 });
 
-// Overlay renderer → resize window (e.g. when switching to bullet mode)
-ipcMain.on('overlay:resize', (_event, height) => {
-  if (!overlayWindow?.isDestroyed()) {
-    overlayWindow.setSize(overlayWindow.getBounds().width, Math.round(height));
-  }
-});
 
-// Main window → push content to overlay (relay channel for direct renderer→overlay pushes)
-ipcMain.on('overlay:set-text', (_event, data) => {
-  overlayWindow?.webContents.send('overlay:set-text', data);
-});
-ipcMain.on('overlay:append-token', (_event, token) => {
-  overlayWindow?.webContents.send('overlay:append-token', token);
-});
-ipcMain.on('overlay:clear', () => {
-  overlayWindow?.webContents.send('overlay:clear');
-});
-ipcMain.on('overlay:update-settings', (_event, settings) => {
-  overlayWindow?.webContents.send('overlay:settings', settings);
-});
 
 // ─── Interview reminder scheduler ────────────────────────────────────────────
 
@@ -274,7 +253,6 @@ app.whenReady().then(() => {
   authIpc.init({ mainWindow: () => mainWindow });
   syncIpc.init();
 
-  audio.init();
   interviewsData.init();
   resumeData.init();
   billing.init();
@@ -312,12 +290,3 @@ app.on('open-url', (event, url) => {
   authIpc.handleAuthCallback(url);
 });
 
-// Restore system audio output before quit — covers force-quit, Cmd+Q, and
-// window close while a session is still active.
-let quitting = false;
-app.on('before-quit', (e) => {
-  if (quitting) return;
-  e.preventDefault();
-  quitting = true;
-  audio.forceRestoreOutput().finally(() => app.quit());
-});

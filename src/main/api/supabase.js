@@ -65,6 +65,21 @@
  *   create policy "own rows" on applications for all using (auth.uid() = user_id);
  *   create policy "own rows" on dry_runs    for all using (auth.uid() = user_id);
  *   create policy "own rows" on resumes     for all using (auth.uid() = user_id);
+ *
+ * -- community_questions (shared anonymized interview question pool — no user_id, public read)
+ * create table community_questions (
+ *   id              uuid primary key default gen_random_uuid(),
+ *   question        text not null,
+ *   company_domain  text,
+ *   company_name    text,
+ *   interview_stage text,
+ *   created_at      timestamptz default now()
+ * );
+ *
+ *   alter table community_questions enable row level security;
+ *   -- anyone can read; only authenticated users (service role via insert from main process) can write
+ *   create policy "public read"  on community_questions for select using (true);
+ *   create policy "auth insert"  on community_questions for insert with check (auth.role() = 'authenticated');
  */
 
 'use strict';

@@ -726,12 +726,9 @@ document.addEventListener('stt:device-status', (e) => {
   const status = e.detail;
   if (!deviceDot) return;
   deviceDot.className = 'device-dot';
-  if (status === 'blackhole') {
+  if (status === 'mic') {
     deviceDot.classList.add('ok');
-    if (deviceLabel) deviceLabel.textContent = 'Audio device: BlackHole + mic ✓';
-  } else if (status === 'fallback') {
-    deviceDot.classList.add('warn');
-    if (deviceLabel) deviceLabel.textContent = 'Audio device: Default mic (BlackHole not found)';
+    if (deviceLabel) deviceLabel.textContent = 'Microphone active ✓';
   } else {
     deviceDot.classList.add('error');
     if (deviceLabel) deviceLabel.textContent = 'Audio device: Error — check microphone permissions';

@@ -1,18 +1,20 @@
 const { ipcMain } = require('electron');
-const { streamAnswer, streamFeedback } = require('../api/claude');
+const { streamFeedback, getCoachingCue, inferQuestions } = require('../api/claude');
 const { randomUUID } = require('crypto');
+const supabaseApi = require('../api/supabase');
 
-let getMainWindow = null;
+let getMainWindow   = null;
 let getOverlayWindow = null;
 
-let sessionActive = false;
-let currentMode = 'teleprompter';
-let isProcessing = false;
-let sessionTranscript = [];
+let sessionActive      = false;
+let sessionTranscript  = [];
 let currentInterviewId = null;
+let utteranceCount     = 0;
+
+const COACHING_EVERY = 3;
 
 function init({ mainWindow, overlayWindow }) {
-  getMainWindow = mainWindow;
+  getMainWindow    = mainWindow;
   getOverlayWindow = overlayWindow;
   registerHandlers();
 }
@@ -20,42 +22,35 @@ function init({ mainWindow, overlayWindow }) {
 function registerHandlers() {
   ipcMain.handle('interview:start', (_event, { interviewId } = {}) => {
     currentInterviewId = interviewId || null;
-    sessionActive = true;
-    isProcessing = false;
-    sessionTranscript = [];
+    sessionActive      = true;
+    sessionTranscript  = [];
+    utteranceCount     = 0;
   });
 
   ipcMain.handle('interview:stop', () => {
     sessionActive = false;
-    isProcessing = false;
   });
 
-  // Accumulate speaker-labelled transcript entries for post-interview feedback
+  // Accumulate transcript entries for post-interview feedback
   ipcMain.on('interview:transcript-entry', (_event, entry) => {
-    // entry: { speaker: 'interviewer'|'you', text: string, timestamp: number }
     sessionTranscript.push(entry);
   });
 
-  // Overlay mode changes
-  ipcMain.on('overlay:mode-changed', (_event, mode) => {
-    currentMode = mode;
-  });
-
-  // VAD-flushed or manually triggered question from stt.js (interviewer utterance)
-  ipcMain.on('interview:question', (_event, question) => {
-    if (!sessionActive || isProcessing || !question?.trim()) return;
-    handleQuestion(question.trim());
-  });
-
-  // Relay live interim transcript from main window to overlay
-  ipcMain.on('interview:transcript', (_event, text) => {
-    const overlay = getOverlayWindow();
-    if (overlay && !overlay.isDestroyed()) {
-      overlay.webContents.send('overlay:transcript', text);
+  // VAD-flushed candidate utterance — trigger coaching every COACHING_EVERY utterances
+  ipcMain.on('interview:question', (_event, _text) => {
+    if (!sessionActive) return;
+    utteranceCount++;
+    if (utteranceCount % COACHING_EVERY === 0) {
+      const chunk = sessionTranscript
+        .slice(-6)
+        .map((e) => e.text)
+        .join(' ')
+        .trim();
+      if (chunk) triggerCoachingCue(chunk);
     }
   });
 
-  // Post-interview feedback — returns full Claude analysis to renderer
+  // Post-interview feedback — full Claude analysis returned to renderer
   ipcMain.handle('interview:feedback', async () => {
     if (sessionTranscript.length === 0) {
       return 'No transcript recorded for this session.';
@@ -63,7 +58,7 @@ function registerHandlers() {
     const formatted = sessionTranscript
       .slice()
       .sort((a, b) => a.timestamp - b.timestamp)
-      .map((e) => `${e.speaker === 'interviewer' ? 'Interviewer' : 'You'}: ${e.text}`)
+      .map((e) => `You: ${e.text}`)
       .join('\n');
 
     console.log('[interview] generating feedback for transcript:\n', formatted);
@@ -80,7 +75,6 @@ function registerHandlers() {
 
     const win = getMainWindow();
     if (win && !win.isDestroyed()) {
-      // Double-stringify so the payload is a safe JS string literal regardless of feedback content
       const payloadLiteral = JSON.stringify(JSON.stringify(sessionRecord));
       await win.webContents.executeJavaScript(`
         (function() {
@@ -106,55 +100,64 @@ function registerHandlers() {
           }
         })();
       `).catch((err) => console.error('[interview] executeJavaScript failed:', err.message));
+
+      // Fetch the matched interview record so we can include company/stage in pool rows
+      let interviewRecord = null;
+      try {
+        const ivJson = await win.webContents.executeJavaScript(
+          `JSON.stringify((JSON.parse(localStorage.getItem('klinch_interviews') || '[]')).find(function(iv){ return iv.id === ${JSON.stringify(currentInterviewId)}; }) || null)`
+        );
+        interviewRecord = JSON.parse(ivJson);
+      } catch (_) {}
+
+      contributeToPool(formatted, interviewRecord); // fire-and-forget
     }
 
     return feedback;
   });
 }
 
-async function handleQuestion(question) {
-  isProcessing = true;
-  const mode = currentMode;
-  const overlay = getOverlayWindow();
-
-  if (!overlay || overlay.isDestroyed()) {
-    isProcessing = false;
-    return;
-  }
+async function contributeToPool(transcript, interviewRecord) {
+  const { supabase } = supabaseApi;
+  if (!supabase) return;
 
   try {
-    if (mode === 'teleprompter') {
-      overlay.webContents.send('overlay:clear');
-      await streamAnswer(question, mode, (token) => {
-        if (!overlay.isDestroyed()) {
-          overlay.webContents.send('overlay:append-token', token);
-        }
-      });
-    } else {
-      overlay.webContents.send('overlay:thinking');
-      const fullText = await streamAnswer(question, mode, () => {});
-      const bullets = parseBullets(fullText);
-      if (!overlay.isDestroyed()) {
-        overlay.webContents.send('overlay:set-text', { mode: 'bullets', bullets });
-      }
-    }
+    const questions = await inferQuestions(transcript);
+    if (!questions.length) return;
+
+    const domain = interviewRecord?.company?.domain || null;
+    const name   = interviewRecord?.company?.name   || null;
+    const stage  = interviewRecord?.stage           || null;
+    const now    = new Date().toISOString();
+
+    const rows = questions.map(q => ({
+      question:         q,
+      company_domain:   domain,
+      company_name:     name,
+      interview_stage:  stage,
+      created_at:       now,
+    }));
+
+    const { error } = await supabase.from('community_questions').insert(rows);
+    if (error) console.error('[interview] community_questions insert:', error.message);
   } catch (err) {
-    console.error('[interview] Claude error:', err.message);
+    console.error('[interview] contributeToPool:', err.message);
   }
-
-  if (!overlay.isDestroyed()) {
-    overlay.webContents.send('overlay:response-done');
-  }
-
-  isProcessing = false;
 }
 
-function parseBullets(raw) {
-  return raw
-    .split('\n')
-    .map((line) => line.replace(/^[•\-\*]\s*/, '').trim())
-    .filter((line) => line.length > 0)
-    .slice(0, 4);
+async function triggerCoachingCue(transcript) {
+  if (!sessionActive) return;
+  const overlay = getOverlayWindow();
+  if (!overlay || overlay.isDestroyed()) return;
+
+  try {
+    const cue = await getCoachingCue(transcript);
+    if (cue && sessionActive && !overlay.isDestroyed()) {
+      overlay.webContents.send('overlay:coaching-cue', cue);
+    }
+  } catch (err) {
+    console.error('[interview] coaching cue error:', err.message);
+  }
 }
 
 module.exports = { init };
