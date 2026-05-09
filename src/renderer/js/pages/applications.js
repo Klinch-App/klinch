@@ -379,32 +379,49 @@ window.ApplicationsPage = (() => {
         </div>
       </div>`;
 
-    if (app.jd?.structured) {
-      const jd = app.jd.structured;
+    if (app.jd?.structured || app.jd?.raw) {
+      const jd       = app.jd.structured || {};
+      const raw      = app.jd.raw || '';
+      const hasBoth  = !!(app.jd.structured && app.jd.raw);
+
       html += `
         <div class="co-section">
-          <div class="co-section-title">Job Description</div>
-          ${jd.role_title ? `<div class="ai-jd-role-title" style="margin-bottom:14px">${_esc(jd.role_title)}</div>` : ''}
-          ${jd.location || jd.salary ? `
-            <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;color:var(--text-muted)">
-              ${jd.location ? `<span>📍 ${_esc(jd.location)}</span>` : ''}
-              ${jd.salary   ? `<span>💰 ${_esc(jd.salary)}</span>`   : ''}
-            </div>` : ''}
-          ${jd.responsibilities?.length ? `
-            <div class="ai-jd-section">
-              <div class="ai-jd-section-label">Key Responsibilities</div>
-              <ul class="ai-jd-list">${jd.responsibilities.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
-            </div>` : ''}
-          ${jd.must_have?.length ? `
-            <div class="ai-jd-section">
-              <div class="ai-jd-section-label">Must-Have</div>
-              <ul class="ai-jd-list">${jd.must_have.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
-            </div>` : ''}
-          ${jd.nice_to_have?.length ? `
-            <div class="ai-jd-section">
-              <div class="ai-jd-section-label">Nice-to-Have</div>
-              <ul class="ai-jd-list">${jd.nice_to_have.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
-            </div>` : ''}
+          <div class="co-section-header">
+            <div class="co-section-title" style="margin-bottom:0">Job Description</div>
+            ${hasBoth ? `<button class="ap-jd-toggle" id="ap-jd-toggle" data-showing="summary">View full text →</button>` : ''}
+          </div>
+
+          ${app.jd.structured ? `
+            <div id="ap-jd-summary">
+              ${jd.role_title ? `<div class="ai-jd-role-title" style="margin-bottom:14px">${_esc(jd.role_title)}</div>` : ''}
+              ${jd.location || jd.salary ? `
+                <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;color:var(--text-muted)">
+                  ${jd.location ? `<span>📍 ${_esc(jd.location)}</span>` : ''}
+                  ${jd.salary   ? `<span>💰 ${_esc(jd.salary)}</span>`   : ''}
+                </div>` : ''}
+              ${jd.responsibilities?.length ? `
+                <div class="ai-jd-section">
+                  <div class="ai-jd-section-label">Key Responsibilities</div>
+                  <ul class="ai-jd-list">${jd.responsibilities.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
+                </div>` : ''}
+              ${jd.must_have?.length ? `
+                <div class="ai-jd-section">
+                  <div class="ai-jd-section-label">Must-Have</div>
+                  <ul class="ai-jd-list">${jd.must_have.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
+                </div>` : ''}
+              ${jd.nice_to_have?.length ? `
+                <div class="ai-jd-section">
+                  <div class="ai-jd-section-label">Nice-to-Have</div>
+                  <ul class="ai-jd-list">${jd.nice_to_have.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>
+                </div>` : ''}
+            </div>
+          ` : ''}
+
+          ${raw ? `
+            <div id="ap-jd-full"${app.jd.structured ? ' style="display:none"' : ''}>
+              <pre class="ap-jd-raw-text">${_esc(raw)}</pre>
+            </div>
+          ` : ''}
         </div>`;
     }
 
@@ -428,6 +445,24 @@ window.ApplicationsPage = (() => {
 
     _el('ap-detail-body').innerHTML = html;
     if (window.wireImgFallbacks) window.wireImgFallbacks(_el('ap-detail-body'));
+
+    const jdToggle = _el('ap-jd-toggle');
+    if (jdToggle) {
+      jdToggle.addEventListener('click', () => {
+        const showing = jdToggle.dataset.showing;
+        if (showing === 'summary') {
+          _el('ap-jd-summary').style.display = 'none';
+          _el('ap-jd-full').style.display    = '';
+          jdToggle.textContent               = '← Show summary';
+          jdToggle.dataset.showing           = 'full';
+        } else {
+          _el('ap-jd-full').style.display    = 'none';
+          _el('ap-jd-summary').style.display = '';
+          jdToggle.textContent               = 'View full text →';
+          jdToggle.dataset.showing           = 'summary';
+        }
+      });
+    }
 
     const winBtn = _el('ap-win-share-btn');
     if (winBtn) winBtn.addEventListener('click', () => _showCelebrationModal(_detailApp));
