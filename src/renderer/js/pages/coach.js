@@ -82,12 +82,25 @@ window.CoachPage = (() => {
       },
     ];
 
-    grid.innerHTML = stats.map(s => `
-      <div class="card">
-        <div class="card-label">${_esc(s.label)}</div>
-        <div class="card-value">${_esc(String(s.value))}</div>
-        <div class="card-sub">${_esc(s.sub)}</div>
-      </div>`).join('');
+    const NAV_TARGETS = {
+      'Active Applications':  'applications',
+      'Interviews Completed': 'interviews',
+      'Interviews Upcoming':  'interviews',
+    };
+
+    grid.innerHTML = stats.map(s => {
+      const nav = NAV_TARGETS[s.label];
+      return `
+        <div class="card coach-stat-card"${nav ? ` data-nav="${nav}"` : ''}>
+          <div class="card-label">${_esc(s.label)}</div>
+          <div class="card-value">${_esc(String(s.value))}</div>
+          <div class="card-sub">${_esc(s.sub)}</div>
+        </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.coach-stat-card[data-nav]').forEach(card => {
+      card.addEventListener('click', () => window.navigateTo?.(card.dataset.nav));
+    });
   }
 
   // ── Section 2 — Outreach Actions ─────────────────────────────────────────

@@ -5389,6 +5389,16 @@ html, body {
   margin-top: 32px;
 }
 
+.coach-stat-card {
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.coach-stat-card:hover {
+  border-color: var(--primary);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+}
+.coach-stat-card[data-nav] { cursor: pointer; }
+
 .coach-actions-header {
   display: flex;
   align-items: center;
