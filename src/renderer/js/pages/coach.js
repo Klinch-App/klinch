@@ -735,6 +735,67 @@ window.CoachPage = (() => {
       </div>`).join('');
   }
 
+  // ── Section 4 — Interview Scores ──────────────────────────────────────────
+
+  function _buildScoreDonut(score, size) {
+    const s = Math.min(100, Math.max(0, score || 0));
+    const px = size || 52;
+    const fs = px <= 52 ? 14 : 18;
+    return `
+      <div class="ivdp-fit-score-circle" style="width:${px}px;height:${px}px;flex-shrink:0">
+        <svg viewBox="0 0 36 36" class="ivdp-fit-donut" style="width:${px}px;height:${px}px">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
+            stroke-dasharray="${s} 100" stroke-dashoffset="25" stroke-linecap="round"/>
+        </svg>
+        <div class="ivdp-fit-pct" style="font-size:${fs}px">${s}</div>
+      </div>`;
+  }
+
+  function _renderInterviewScores() {
+    const list = document.getElementById('coach-scores-list');
+    if (!list) return;
+
+    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const scored = interviews
+      .filter(iv => iv.coach_score != null)
+      .sort((a, b) => new Date(b.scheduled_at || 0) - new Date(a.scheduled_at || 0));
+
+    if (!scored.length) {
+      list.innerHTML = '<div class="coach-actions-empty">No interview scores yet. Open an interview to generate coach analysis.</div>';
+      return;
+    }
+
+    const avg = Math.round(scored.reduce((s, iv) => s + iv.coach_score, 0) / scored.length);
+
+    const cards = scored.map(iv => {
+      const company = _esc(iv.company?.name || 'Unknown Company');
+      const stage   = _esc(iv.stage || 'Interview');
+      const date    = iv.scheduled_at
+        ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '';
+      return `
+        <div class="coach-score-card">
+          ${_buildScoreDonut(iv.coach_score, 52)}
+          <div class="coach-score-card-meta">
+            <div class="coach-score-card-company">${company}</div>
+            <div class="coach-score-card-stage">${stage}</div>
+            ${date ? `<div class="coach-score-card-date">${date}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    list.innerHTML = `
+      <div class="coach-scores-summary">
+        ${_buildScoreDonut(avg, 64)}
+        <div class="coach-scores-avg-meta">
+          <div class="coach-scores-avg-label">Average score</div>
+          <div class="coach-scores-avg-sub">${scored.length} interview${scored.length > 1 ? 's' : ''} scored</div>
+        </div>
+      </div>
+      <div class="coach-scores-grid">${cards}</div>`;
+  }
+
   // ── Init ──────────────────────────────────────────────────────────────────
 
   document.getElementById('coach-actions-refresh')?.addEventListener('click', () => {
@@ -747,6 +808,7 @@ window.CoachPage = (() => {
     _renderHealth(data);
     _renderOutreachSection();
     _fetchActions(data);
+    _renderInterviewScores();
     _renderTips(profile);
   }
 

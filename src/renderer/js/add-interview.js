@@ -545,6 +545,20 @@ function refreshDashboardStats() {
 
   if (resValEl) resValEl.textContent = resume ? '✓' : '—';
   if (resSubEl) resSubEl.textContent = resume ? 'Resume uploaded' : 'Upload your resume';
+
+  const coachValEl = document.querySelector('.card-value[data-stat="coach-score"]');
+  const coachSubEl = document.querySelector('[data-stat-sub="coach-score"]');
+  const scored = all.filter(iv => iv.coach_score != null);
+  if (coachValEl) {
+    if (scored.length) {
+      const avg = Math.round(scored.reduce((s, iv) => s + iv.coach_score, 0) / scored.length);
+      coachValEl.textContent = avg;
+      if (coachSubEl) coachSubEl.textContent = `Avg across ${scored.length} interview${scored.length > 1 ? 's' : ''}`;
+    } else {
+      coachValEl.textContent = '—';
+      if (coachSubEl) coachSubEl.textContent = 'Complete an interview to see score';
+    }
+  }
 }
 window.refreshDashboardStats = refreshDashboardStats;
 

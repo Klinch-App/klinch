@@ -419,9 +419,11 @@ window.InterviewsPage = (() => {
     const contextCached = iv.context_summary || null;
 
     const coachHtml = coachCached
-      ? `<div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
+      ? `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
+         <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
          <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`
-      : `<div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
+      : `<div id="ivdp-coach-score"></div>
+         <div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
            <div class="ivdp-skel-line w80"></div>
            <div class="ivdp-skel-line w60"></div>
            <div class="ivdp-skel-line w70"></div>
@@ -752,7 +754,8 @@ window.InterviewsPage = (() => {
         if (!iv) return;
         if (action === 'refresh-coach') {
           iv.coach_analysis = null;
-          _patchIv(id, { coach_analysis: null });
+          iv.coach_score    = null;
+          _patchIv(id, { coach_analysis: null, coach_score: null });
           _fireAIAnalysis(iv, 'coach');
         }
         if (action === 'refresh-context') {
@@ -865,6 +868,26 @@ window.InterviewsPage = (() => {
     return html;
   }
 
+  function _parseCoachScore(text) {
+    const match = text.match(/^SCORE:\s*(\d{1,3})\s*\n/i);
+    if (!match) return { score: null, text };
+    const score = Math.min(100, Math.max(0, parseInt(match[1], 10)));
+    return { score, text: text.slice(match[0].length) };
+  }
+
+  function _buildCoachScoreHtml(score) {
+    const s = Math.min(100, Math.max(0, score || 0));
+    return `
+      <div class="ivdp-fit-score-circle ivdp-coach-score-circle">
+        <svg viewBox="0 0 36 36" class="ivdp-fit-donut">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
+            stroke-dasharray="${s} 100" stroke-dashoffset="25" stroke-linecap="round"/>
+        </svg>
+        <div class="ivdp-fit-pct">${s}</div>
+      </div>`;
+  }
+
   async function _fireAIAnalysis(iv, only) {
     const roleTitle   = iv.jd?.structured?.role_title || 'this role';
     const company     = iv.company?.name || 'this company';
@@ -880,7 +903,10 @@ Must-have qualifications: ${mustHave}
 Nice-to-have qualifications: ${niceHave}
 Interviewers: ${interviewers}
 
-Provide concise, actionable coaching advice for this interview. Include:
+First, on its own line, output the candidate's overall interview readiness score (0–100) based on their profile fit for this role and stage:
+SCORE: [number]
+
+Then provide concise, actionable coaching advice for this interview. Include:
 ## Key Focus Areas
 ## Likely Questions to Prepare For
 ## How to Position Yourself
@@ -916,11 +942,17 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
 
       let ri = 0;
       if (needCoach && results[ri] !== undefined) {
-        const text = results[ri++];
-        _patchIv(iv.id, { coach_analysis: text });
+        const rawText = results[ri++];
+        const { score, text } = _parseCoachScore(rawText);
+        const patch = { coach_analysis: text };
+        if (score != null) patch.coach_score = score;
+        _patchIv(iv.id, patch);
+        const scoreEl = _el('ivdp-coach-score');
+        if (scoreEl && score != null) scoreEl.innerHTML = _buildCoachScoreHtml(score);
         if (coachSkel)    coachSkel.style.display    = 'none';
         if (coachBody)  { coachBody.innerHTML = _renderMarkdownish(text); coachBody.style.display = ''; }
         if (coachRefresh) coachRefresh.style.display = '';
+        if (window.refreshDashboardStats) window.refreshDashboardStats();
       }
       if (needContext && results[ri] !== undefined) {
         const text = results[ri];

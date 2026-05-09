@@ -232,8 +232,8 @@ html, body {
 
 .card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 20px;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -1794,9 +1794,9 @@ html, body {
 }
 .iv-stat-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px 16px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -1826,9 +1826,9 @@ html, body {
 /* Pipeline */
 .iv-pipeline-section {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
 }
 .iv-pipeline-title {
   font-size: 10px;
@@ -1890,8 +1890,8 @@ html, body {
 /* Mini-calendar */
 .iv-calendar-panel {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 16px 18px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
@@ -2075,9 +2075,9 @@ html, body {
 
 .co-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2603,13 +2603,13 @@ html, body {
 }
 .ap-stat-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.ap-stat-card:hover { background: var(--bg-elevated); border-color: var(--border); }
+.ap-stat-card:hover { background: var(--bg-elevated); border-color: var(--primary); }
 .ap-stat-label {
   font-size: 11px;
   font-weight: 600;
@@ -3196,6 +3196,9 @@ html, body {
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
+}
+.ivdp-coach-score-circle {
+  margin-bottom: 16px;
 }
 .ivdp-fit-cols { display: flex; gap: 20px; flex: 1; }
 .ivdp-fit-col  { flex: 1; }
@@ -5378,6 +5381,14 @@ html, body {
 
 /* ── Coach tab ───────────────────────────────────────────────────────────── */
 
+.coach-section-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 32px;
+}
+
 .coach-actions-header {
   display: flex;
   align-items: center;
@@ -5415,12 +5426,12 @@ html, body {
   align-items: flex-start;
   gap: 14px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   transition: border-color 0.15s;
 }
-.coach-action-card:hover { border-color: var(--border); }
+.coach-action-card:hover { border-color: var(--primary); }
 
 .coach-action-urgency-dot {
   width: 8px;
@@ -5481,7 +5492,79 @@ html, body {
 .coach-actions-empty {
   font-size: 13px;
   color: var(--text-muted);
-  padding: 20px 0 8px;
+  padding: 4px 0;
+}
+
+/* ── Interview Scores ────────────────────────────────────────────────────── */
+
+.coach-scores-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.coach-scores-avg-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coach-scores-avg-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.coach-scores-avg-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.coach-scores-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.coach-score-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  transition: border-color 0.15s;
+}
+.coach-score-card:hover { border-color: var(--primary); }
+
+.coach-score-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.coach-score-card-company {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-score-card-stage {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.coach-score-card-date {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* ── Tip cards ───────────────────────────────────────────────────────────── */
@@ -5495,15 +5578,15 @@ html, body {
 
 .coach-tip-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   transition: border-color 0.15s;
 }
-.coach-tip-card:hover { border-color: var(--border); }
+.coach-tip-card:hover { border-color: var(--primary); }
 
 .coach-tip-top {
   display: flex;
@@ -5550,14 +5633,14 @@ html, body {
 }
 
 .coach-outreach-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   margin-bottom: 12px;
   overflow: hidden;
   transition: border-color 0.15s;
 }
-.coach-outreach-card:hover { border-color: var(--border); }
+.coach-outreach-card:hover { border-color: var(--primary); }
 
 .coach-outreach-card-header {
   display: flex;
