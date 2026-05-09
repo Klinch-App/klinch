@@ -107,9 +107,9 @@
         <!-- Dashboard page -->
         <div id="page-dashboard">
           <div class="dashboard-hero">
-            <div class="hero-greeting">Ready to interview</div>
-            <div class="hero-title">Welcome to Klinch</div>
-            <div class="hero-subtitle">Your AI-powered SDR interview coach. Set up your profile to get started.</div>
+            <div class="hero-greeting">Welcome to Klinch</div>
+            <div class="hero-title">Your job search, supercharged.</div>
+            <div class="hero-subtitle">Klinch is the OS for SaaS job seekers. Add your interviews to get started.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
               <button class="hero-cta add-interview-trigger" style="margin-top:0">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
@@ -1289,6 +1289,46 @@
       <div class="consent-footer">
         <button id="ear-intro-confirm-btn" class="consent-launch-btn">Got it, let's go →</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Post-interview nudge modal -->
+  <div id="nudge-backdrop" class="consent-backdrop">
+    <div class="consent-card nudge-card">
+
+      <!-- Panel 1: the nudge question -->
+      <div id="nudge-panel-main">
+        <div class="consent-header">
+          <div class="consent-title" id="nudge-title"></div>
+          <div class="consent-subtitle" id="nudge-meta"></div>
+        </div>
+        <div class="nudge-body" id="nudge-action-btns">
+          <button class="nudge-btn nudge-btn-primary" id="nudge-happened">It happened ✓</button>
+          <button class="nudge-btn nudge-btn-secondary" id="nudge-rescheduled">It was rescheduled</button>
+          <button class="nudge-btn nudge-btn-ghost" id="nudge-cancelled">It was cancelled</button>
+        </div>
+        <div id="nudge-reschedule-panel" class="nudge-reschedule-panel" style="display:none">
+          <div class="nudge-reschedule-label">When was it rescheduled to?</div>
+          <input type="datetime-local" id="nudge-reschedule-input" class="nudge-date-input">
+          <div class="nudge-reschedule-actions">
+            <button class="nudge-btn nudge-btn-primary" id="nudge-reschedule-save">Save new date</button>
+            <button class="nudge-btn nudge-btn-ghost" id="nudge-reschedule-cancel">Back</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: coaching follow-up -->
+      <div id="nudge-panel-coaching" style="display:none">
+        <div class="consent-header">
+          <div class="consent-title">Want coaching feedback?</div>
+          <div class="consent-subtitle" id="nudge-coaching-meta"></div>
+        </div>
+        <div class="nudge-body">
+          <button class="nudge-btn nudge-btn-primary" id="nudge-coach-yes">Yes, open my Coach section →</button>
+          <button class="nudge-btn nudge-btn-ghost" id="nudge-coach-no">Not right now</button>
+        </div>
+      </div>
+
     </div>
   </div>
 

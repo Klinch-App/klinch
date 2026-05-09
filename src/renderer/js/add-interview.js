@@ -710,16 +710,24 @@ function renderInterviews() {
 
   if (!grid) return;
 
-  if (!all.length) {
+  const now = new Date();
+  const upcoming = [...all]
+    .filter(iv =>
+      iv.scheduled_at &&
+      new Date(iv.scheduled_at) > now &&
+      iv.status !== 'completed' &&
+      iv.status !== 'cancelled'
+    )
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+
+  if (!upcoming.length) {
     empty.style.display = '';
     grid.innerHTML = '';
     return;
   }
 
   empty.style.display = 'none';
-  const sorted = [...all].sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-
-  grid.innerHTML = sorted.map(iv => {
+  grid.innerHTML = upcoming.map(iv => {
     const dateObj = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
     const dateStr = dateObj
       ? dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })

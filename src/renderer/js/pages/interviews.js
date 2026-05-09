@@ -418,11 +418,17 @@ window.InterviewsPage = (() => {
     const coachCached   = iv.coach_analysis  || null;
     const contextCached = iv.context_summary || null;
 
-    const coachHtml = coachCached
-      ? `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
+    let coachHtml;
+    if (iv.status !== 'completed') {
+      coachHtml = `<div class="ivdp-empty-state">
+        <div class="ivdp-empty-sub">This section will populate once you mark this interview as complete.</div>
+      </div>`;
+    } else if (coachCached) {
+      coachHtml = `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
          <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
-         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`
-      : `<div id="ivdp-coach-score"></div>
+         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`;
+    } else {
+      coachHtml = `<div id="ivdp-coach-score"></div>
          <div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
            <div class="ivdp-skel-line w80"></div>
            <div class="ivdp-skel-line w60"></div>
@@ -431,6 +437,7 @@ window.InterviewsPage = (() => {
          </div>
          <div class="ivdp-ai-body" id="ivdp-coach-body" style="display:none"></div>
          <button class="ivdp-refresh-btn" id="ivdp-coach-refresh" data-action="refresh-coach" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
+    }
 
     const contextHtml = contextCached
       ? `<div class="ivdp-ai-body">${_renderMarkdownish(contextCached)}</div>
@@ -539,10 +546,10 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body">${coachHtml}</div>
       </div>
 
-      <!-- Section 8: Context -->
+      <!-- Section 8: Prep Notes -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Context &amp; Prep</div>
+          <div class="ivdp-section-title">Prep Notes</div>
         </div>
         <div class="ivdp-section-body">${contextHtml}</div>
       </div>
@@ -581,9 +588,15 @@ window.InterviewsPage = (() => {
     if (window.wireImgFallbacks) window.wireImgFallbacks(container);
     _wireDetailEvents(iv.id);
 
-    // Fire Coach + Context API calls in parallel if not yet cached
-    if (!coachCached || !contextCached) {
+    // Fire Coach (completed only) + Prep Notes as needed
+    const needCoach   = iv.status === 'completed' && !coachCached;
+    const needContext = !contextCached;
+    if (needCoach && needContext) {
       _fireAIAnalysis(iv);
+    } else if (needCoach) {
+      _fireAIAnalysis(iv, 'coach');
+    } else if (needContext) {
+      _fireAIAnalysis(iv, 'context');
     }
 
     // Fire Candidate Fit if resume + JD available but not yet cached
@@ -897,23 +910,34 @@ Interviewers: ${interviewers}
 First, on its own line, output the candidate's overall interview readiness score (0–100) based on their profile fit for this role and stage:
 SCORE: [number]
 
-Then provide concise, actionable coaching advice for this interview. Include:
-## Key Focus Areas
-## Likely Questions to Prepare For
-## How to Position Yourself
+Then provide concise, actionable coaching in exactly this format — use these exact section headers with no deviations:
 
-Keep it practical and specific to this stage and company. Be direct and confident in your guidance.`;
+**What You Did Well**
+• [bullet point]
+• [bullet point]
+
+**What to Improve**
+• [bullet point]
+• [bullet point]
+
+**For Your Next Interview**
+• [bullet point]
+• [bullet point]
+
+Be specific to this stage, company, and role. Be direct and confident.`;
 
     const contextPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview researcher. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
 
 Interviewers: ${interviewers}
+Must-have qualifications: ${mustHave}
+Nice-to-have qualifications: ${niceHave}
 
-Provide a research brief to help them prepare. Include:
+Provide a concise prep brief for this interview. Include:
 ## About the Company
 ## Role Context
 ## Questions to Ask Them
 
-Keep it concise and actionable. Focus on what's most useful for interview prep.`;
+Be specific and actionable. Focus on what will most help the candidate prepare for this specific role and stage.`;
 
     const needCoach   = !only || only === 'coach';
     const needContext = !only || only === 'context';

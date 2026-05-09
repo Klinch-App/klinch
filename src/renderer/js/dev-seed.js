@@ -44,7 +44,9 @@
     const AP_HB   = _uuid();
     const AP_OUT  = _uuid();
     const AP_GONG = _uuid();
-    const DR_ID   = _uuid();
+    const DR_ID      = _uuid();
+    const DR_ID_SF   = _uuid();
+    const DR_ID_GONG = _uuid();
 
     // ── Company objects ────────────────────────────────────────────────────────
     const _logoKey = window.klinch?.logoDevKey || '';
@@ -107,8 +109,9 @@
         },
         stage: 'Recruiter Screen',
         format: 'Virtual',
-        scheduled_at: _scheduledAt(1, 10),
+        scheduled_at: _scheduledAt(-1, 10),
         status: 'pending',
+        nudge_sent: false,
         created_at: _daysFromNow(-3),
       },
       {
@@ -144,8 +147,9 @@
         },
         stage: 'Hiring Manager',
         format: 'Virtual',
-        scheduled_at: _scheduledAt(3, 14),
+        scheduled_at: _scheduledAt(-1, 14),
         status: 'pending',
+        nudge_sent: false,
         created_at: _daysFromNow(-7),
       },
       {
@@ -443,19 +447,19 @@ Cold calling, email copywriting, objection handling, territory management`,
         { question: 'Do you have any questions for me?', answer: 'What does the ramp look like for a new SDR — how long until someone is expected to be at full quota? And what\'s something that separates the SDRs who make it to AE from the ones who stay in the role longer than expected?' },
       ],
       report: {
-        overall_score: 8,
+        overall_score: 80,
         summary: 'Strong overall performance. You came across as confident, well-prepared, and genuinely interested in the role rather than just the job. The standout moments were your specific prospecting win story and the self-aware answer about hard feedback. Main area to tighten: a couple of answers ran slightly long — SDR interviewers are looking for concise, punchy communication.',
         question_feedback: [
-          { question: 'Tell me about yourself and why you\'re interested in the SDR role here.', answer: 'I\'ve been in sales for about a year and a half now...', feedback: 'Clean and confident opening. Good that you connected your interest to the product specifically — that\'s more convincing than "I love the brand." Could trim by 20 seconds.', score: 8 },
-          { question: 'Walk me through your typical outbound process from first touch to booked meeting.', answer: 'I start with research...', feedback: 'Excellent structure. Trigger event mention shows sophistication. One small thing: "qualifying question before pitching" — name the question or give an example to make it concrete.', score: 9 },
-          { question: 'What\'s your proudest prospecting win and what made it work?', answer: 'I booked a meeting with a VP of Sales...', feedback: 'Best answer of the session. Specific, outcome-focused, shows creative thinking. This is exactly what interviewers want to hear.', score: 10 },
-          { question: 'How do you handle a prospect who says "just send me some information"?', answer: 'I usually say something like...', feedback: 'Good redirect technique. The follow-up with a specific question rather than a generic one-pager shows experience. Solid.', score: 8 },
-          { question: 'What does a bad prospecting day look like for you and how do you recover?', answer: 'A bad day is when I\'m going through the motions...', feedback: 'Self-aware and practical. The "write one really good email" recovery tactic is believable and specific. Good answer.', score: 8 },
-          { question: 'How do you prioritise your account list when you have 200 accounts to work?', answer: 'I tier them...', feedback: 'Tiered approach is the right answer and you explained it clearly. Could be slightly more specific about what a "trigger" looks like in practice.', score: 7 },
-          { question: 'Tell me about a time you got feedback that was hard to hear.', answer: 'My manager told me my call openings were too long...', feedback: 'One of the better "feedback" answers. You didn\'t deflect, you showed the change you made, and you measured the outcome. That\'s the trifecta.', score: 9 },
-          { question: 'Why HubSpot over a competitor like Salesforce or another CRM company?', answer: 'Honestly, HubSpot\'s product philosophy aligns...', feedback: 'Good differentiation angle. "Gets used" is a real point — tool adoption is a genuine pain point for buyers. Rings authentic.', score: 8 },
-          { question: 'Where do you see yourself in two years?', answer: 'I want to be an Account Executive...', feedback: 'Correct answer. You expressed ambition without sounding like you\'re just using the SDR role as a stepping stone. Balance struck well.', score: 7 },
-          { question: 'Do you have any questions for me?', answer: 'What does the ramp look like...', feedback: 'Both questions are smart and show you\'re thinking about success, not just getting the job. Strong close.', score: 9 },
+          { question: 'Tell me about yourself and why you\'re interested in the SDR role here.', answer: 'I\'ve been in sales for about a year and a half now...', feedback: 'Clean and confident opening. Good that you connected your interest to the product specifically — that\'s more convincing than "I love the brand." Could trim by 20 seconds.', score: 80 },
+          { question: 'Walk me through your typical outbound process from first touch to booked meeting.', answer: 'I start with research...', feedback: 'Excellent structure. Trigger event mention shows sophistication. One small thing: "qualifying question before pitching" — name the question or give an example to make it concrete.', score: 90 },
+          { question: 'What\'s your proudest prospecting win and what made it work?', answer: 'I booked a meeting with a VP of Sales...', feedback: 'Best answer of the session. Specific, outcome-focused, shows creative thinking. This is exactly what interviewers want to hear.', score: 98 },
+          { question: 'How do you handle a prospect who says "just send me some information"?', answer: 'I usually say something like...', feedback: 'Good redirect technique. The follow-up with a specific question rather than a generic one-pager shows experience. Solid.', score: 82 },
+          { question: 'What does a bad prospecting day look like for you and how do you recover?', answer: 'A bad day is when I\'m going through the motions...', feedback: 'Self-aware and practical. The "write one really good email" recovery tactic is believable and specific. Good answer.', score: 78 },
+          { question: 'How do you prioritise your account list when you have 200 accounts to work?', answer: 'I tier them...', feedback: 'Tiered approach is the right answer and you explained it clearly. Could be slightly more specific about what a "trigger" looks like in practice.', score: 72 },
+          { question: 'Tell me about a time you got feedback that was hard to hear.', answer: 'My manager told me my call openings were too long...', feedback: 'One of the better "feedback" answers. You didn\'t deflect, you showed the change you made, and you measured the outcome. That\'s the trifecta.', score: 91 },
+          { question: 'Why HubSpot over a competitor like Salesforce or another CRM company?', answer: 'Honestly, HubSpot\'s product philosophy aligns...', feedback: 'Good differentiation angle. "Gets used" is a real point — tool adoption is a genuine pain point for buyers. Rings authentic.', score: 81 },
+          { question: 'Where do you see yourself in two years?', answer: 'I want to be an Account Executive...', feedback: 'Correct answer. You expressed ambition without sounding like you\'re just using the SDR role as a stepping stone. Balance struck well.', score: 74 },
+          { question: 'Do you have any questions for me?', answer: 'What does the ramp look like...', feedback: 'Both questions are smart and show you\'re thinking about success, not just getting the job. Strong close.', score: 88 },
         ],
         patterns: {
           strengths: [
@@ -472,6 +476,88 @@ Cold calling, email copywriting, objection handling, territory management`,
         },
         filler_words: { count: 9, examples: ['honestly', 'kind of', 'you know'] },
         talk_time_note: 'Your answers averaged about 90 seconds each — slightly long for an SDR interview where brevity signals communication skill. Aim for 60–75 seconds on most questions and save the longer answers for "tell me about a win" type prompts.',
+      },
+    };
+
+    // ── Additional Dry Runs ────────────────────────────────────────────────────
+    const dryRunSF = {
+      id: DR_ID_SF,
+      created_at: _daysFromNow(-5),
+      mode: 'company',
+      stage: 'Recruiter Screen',
+      interview_id: IV_SF,
+      history: [
+        { question: 'Tell me about yourself and why you\'re interested in the SDR role here.', answer: 'I\'ve spent the last year and a half doing outbound in SaaS — mostly prospecting into the SMB and mid-market segments. What draws me to this role specifically is that I\'ve been using Salesforce CRM every day, so I\'d be selling a product I actually rely on. I think that\'s a genuinely different kind of credibility when you\'re talking to a prospect.' },
+        { question: 'Are you comfortable running high-volume outbound — 80-plus touchpoints per day?', answer: 'Comfortable is almost an understatement. In my current role I\'m running around 90 to 100 touches on a normal day across phone, email, and LinkedIn. I\'ve actually built a morning block system where I batch call activity in the first two hours before email takes over. The volume only works if the structure underneath it is solid.' },
+        { question: 'What CRM tools have you used and how deeply did you work in them?', answer: 'Salesforce primarily — I use it for pipeline management, activity logging, and pulling call lists. I\'ve also worked in HubSpot briefly. In Salesforce specifically I got comfortable building my own views and reports, not just using what my manager set up. I understand the difference between a lead and a contact and why it matters for territory tracking.' },
+        { question: 'Walk me through how you research a prospect before your first outreach.', answer: 'I start with the company first — recent news, funding, headcount growth signals on LinkedIn. Then I go to the specific person: their role, how long they\'ve been there, what they post about. I\'m looking for one genuine hook I can lead with. If the company just hired a VP of Sales, that\'s a signal. If the person wrote about pipeline generation, I can reference that specifically.' },
+        { question: 'Where do you see yourself in two years?', answer: 'I want to make the move to Account Executive. I\'m not in a rush — I think the SDR year and a half is genuinely where you build the foundation for everything else in sales. But I want to be the kind of SDR who runs enough pipeline and builds enough fluency in the sales conversation that the transition feels earned when it comes.' },
+      ],
+      report: {
+        overall_score: 73,
+        summary: 'Solid recruiter screen performance. You came across as grounded and well-prepared, with genuine product familiarity. The volume-handling and CRM answers were notably strong. Main gap: answers occasionally ran long on setup before getting to the core point — lead with your strongest sentence.',
+        question_feedback: [
+          { question: 'Tell me about yourself and why you\'re interested in the SDR role here.', answer: 'I\'ve spent the last year and a half doing outbound in SaaS...', feedback: 'Relevant opening with a good product-credibility hook at the end. The setup ran about 15 seconds longer than it needed to — lead with the product angle first, then add context.', score: 70 },
+          { question: 'Are you comfortable running high-volume outbound — 80-plus touchpoints per day?', answer: 'Comfortable is almost an understatement...', feedback: 'Best answer of the session. Specifics on 90-100 touches, a named system (morning block), and the follow-through point about structure making volume work. This is what high-confidence SDR answers sound like.', score: 88 },
+          { question: 'What CRM tools have you used and how deeply did you work in them?', answer: 'Salesforce primarily...', feedback: 'The detail about building your own views and understanding leads vs. contacts is exactly the right level of specificity. Shows you\'re a practitioner, not a checkbox candidate.', score: 82 },
+          { question: 'Walk me through how you research a prospect before your first outreach.', answer: 'I start with the company first...', feedback: 'Good structure (company → person → hook). The VP of Sales hire example is a real trigger signal, which shows you actually think this way. Could have named one more concrete example of a message you\'d send.', score: 74 },
+          { question: 'Where do you see yourself in two years?', answer: 'I want to make the move to Account Executive...', feedback: '"Earned when it comes" is a good phrase. The answer is confident without being presumptuous. Slightly generic — a sentence about what specifically about Salesforce\'s AE path attracted you would have grounded it.', score: 65 },
+        ],
+        patterns: {
+          strengths: [
+            'Specific activity numbers — citing 90-100 daily touches makes your volume answer credible, not vague',
+            'Product familiarity at a practitioner level — building your own CRM views shows you\'re a power user',
+            'Clean signal-based prospecting framework — company then person then hook is structured and repeatable',
+          ],
+          improvements: [
+            'Lead with your strongest sentence — several answers buried the headline in the middle',
+            'Ground your two-year answer in something specific to this company rather than leaving it generic',
+            'Add one result metric to the intro — even a rough meetings-set number would raise the opening significantly',
+          ],
+        },
+        filler_words: { count: 6, examples: ['actually', 'specifically', 'kind of'] },
+        talk_time_note: 'Answers averaged around 75 seconds — slightly above the ideal 60-second target for a recruiter screen. The extra length is coming from setup sentences before the main point. Practice leading with your conclusion and adding context after.',
+      },
+    };
+
+    const dryRunGong = {
+      id: DR_ID_GONG,
+      created_at: _daysFromNow(-9),
+      mode: 'company',
+      stage: 'Final Round',
+      interview_id: IV_GONG,
+      history: [
+        { question: 'How would you use Gong\'s own platform to improve your prospecting?', answer: 'I\'d start by pulling call recordings from the top five percent of calls in terms of conversion rate. I want to know what patterns appear in the openers and first two minutes. Then I\'d compare those against my own calls in the same time range and find the gaps. The second thing I\'d do is look at sentiment analysis data to see where prospects disengage — and use that to redesign the sequences where disengagement is highest. It\'s a continuous feedback loop that most SDRs leave on the table.' },
+        { question: 'Tell me about a time you turned a cold prospect into a booked meeting against the odds.', answer: 'I had a VP of Sales who had been in our CRM for eight months with zero engagement across every rep who touched the account. I noticed she\'d just posted on LinkedIn about struggling to get her new SDR team to ramp fast. I sent a two-sentence email: "Saw your post about SDR ramp time — we\'ve helped three similar teams cut ramp from 90 days to 45. Worth a 20-minute call?" She replied in four hours. The key was specificity — I didn\'t pretend to know her problem, I referenced her own words.' },
+        { question: 'Describe a failure in your sales career and what you took from it.', answer: 'Early in my current role I had a month where I hit activity targets but missed my meeting quota by 30 percent. I was focused entirely on volume — hitting the number of calls and emails — without asking whether those calls and emails were any good. My manager showed me the data: my connect rate was fine but my conversation-to-meeting rate was half the team average. That was the moment I understood the difference between activity and effectiveness. I rebuilt my call opener and my first email from scratch and recovered over the next two months.' },
+        { question: 'How would you pitch Gong to a prospect who already uses a conversation intelligence tool?', answer: 'I\'d ask them what they actually use the tool for day to day. In my experience most CI users are running it for manager review and compliance — they\'re not using it to proactively train their reps. Then I\'d focus on Gong\'s coaching workflows: the ability to set up libraries of winning calls, the automated alerts when a rep misses a key topic. The pitch isn\'t "we have better features" — it\'s "you\'re using 20 percent of what your current tool can do, and here\'s what the other 80 percent looks like when a team actually uses it."' },
+        { question: 'Walk us through a cold call opening you\'ve used that consistently gets traction.', answer: 'I use a version of the upfront contract open. Something like: "Hi Sarah, this is Alex — completely cold call, is this still a bad time?" The "still" implies it\'s always a bad time, which gets a laugh about 40 percent of the time. Then immediately: "I promise I\'ll be quick — I work with sales teams at companies like yours and I\'ve been seeing a pattern that I thought was worth a quick call. One minute?" If they stay on the line through that, they\'re already curious. I close with a question, not a pitch.' },
+      ],
+      report: {
+        overall_score: 91,
+        summary: 'Exceptional final round performance. Every answer was specific, structured, and showed genuine mastery of the craft. The Gong platform answer was particularly impressive — you didn\'t just describe features, you explained how you\'d extract value from data that most SDRs ignore. The cold call opening answer closed with a method, not just an example. One minor note: the failure answer was strong but slightly over-explained the recovery.',
+        question_feedback: [
+          { question: 'How would you use Gong\'s own platform to improve your prospecting?', answer: 'I\'d start by pulling call recordings from the top five percent...', feedback: 'Outstanding. You named specific data sources (top-5% conversion calls, sentiment analysis), specific actions (redesign sequences where disengagement is highest), and the underlying principle (continuous feedback loop). This answer would stand out in any final round.', score: 96 },
+          { question: 'Tell me about a time you turned a cold prospect into a booked meeting against the odds.', answer: 'I had a VP of Sales who had been in our CRM for eight months...', feedback: 'Perfect story structure. The eight-month ghost detail sets stakes. The two-sentence email shows restraint. Closing with "I referenced her own words" shows you understand why it worked — that\'s the insight that makes it a teaching story, not just a brag.', score: 95 },
+          { question: 'Describe a failure in your sales career and what you took from it.', answer: 'Early in my current role I had a month where I hit activity targets but missed my meeting quota by 30 percent...', feedback: 'The activity-versus-effectiveness insight is genuinely good and specific. The data your manager showed you (connect rate fine, conversation-to-meeting rate was half the team) shows self-awareness without defensiveness. The recovery arc is slightly over-explained — you can cut two sentences after the "rebuilt from scratch" line.', score: 88 },
+          { question: 'How would you pitch Gong to a prospect who already uses a conversation intelligence tool?', answer: 'I\'d ask them what they actually use the tool for day to day...', feedback: '"You\'re using 20 percent of what your current tool can do" is a genuinely effective reframe. The setup of asking how they use it before pitching shows sales maturity. Could have named one specific Gong feature by name to ground the pitch more concretely.', score: 89 },
+          { question: 'Walk us through a cold call opening you\'ve used that consistently gets traction.', answer: 'I use a version of the upfront contract open...', feedback: 'The "still a bad time" framing is memorable and the 40% laugh rate is a credible detail. Ending with "I close with a question, not a pitch" shows you understand the principle, not just the script. Strong close to the session.', score: 93 },
+        ],
+        patterns: {
+          strengths: [
+            'Data-driven thinking — you instinctively reference metrics to support every claim',
+            'Principle-based answers — you explain why your approaches work, not just what you do',
+            'Platform fluency — your Gong answer showed genuine understanding of how to extract value from CI data',
+            'Story structure — your prospecting win had clear stakes, specific action, and a replicable insight',
+          ],
+          improvements: [
+            'Trim the recovery arc in failure stories — once you show the fix worked, stop',
+            'Name specific features or data types when pitching a product — "coaching workflows" could become "Deal Warnings and Call Spotlight"',
+            'The competitive pitch could benefit from one quantified customer story to ground the 20% claim',
+          ],
+        },
+        filler_words: { count: 3, examples: ['kind of', 'actually'] },
+        talk_time_note: 'Answer length was well-controlled throughout — most responses hit the 75–90 second range appropriate for a final round. The failure story ran slightly long at ~2 minutes; trim the recovery section to keep it under 90 seconds.',
       },
     };
 
@@ -536,7 +622,7 @@ Cold calling, email copywriting, objection handling, territory management`,
     localStorage.setItem('klinch_interviews',               JSON.stringify(interviews));
     localStorage.setItem('klinch_applications',             JSON.stringify(applications));
     localStorage.setItem('klinch_resume',                   JSON.stringify(resume));
-    localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRun]));
+    localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRun, dryRunSF, dryRunGong]));
     localStorage.setItem('klinch_settings',                 JSON.stringify(settings));
     localStorage.setItem('klinch_dev_community_questions',  JSON.stringify(communityQuestions));
   }

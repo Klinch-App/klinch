@@ -3986,14 +3986,79 @@ html, body {
   gap: 8px;
 }
 
-.dr-history-row {
+.dr-history-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 14px;
 }
+
+.dr-history-filters {
+  display: flex;
+  gap: 8px;
+}
+.dr-history-filters .iv-filter-select {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.dr-history-row {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+.dr-history-row:hover { background: var(--bg-elevated); }
 .dr-history-row:last-child { border-bottom: none; }
+
+.dr-history-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 6px;
+}
+
+.dr-history-row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dr-history-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.dr-history-row--expanded .dr-history-chevron {
+  transform: rotate(180deg);
+}
+
+.dr-history-expand {
+  border-top: 1px solid var(--border-subtle);
+  padding: 0 6px 14px;
+}
+
+.dr-history-expand-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+}
+
+.dr-history-expand-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.dr-history-expand-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  flex: 1;
+}
 
 .dr-history-meta {
   display: flex;
@@ -4009,7 +4074,8 @@ html, body {
 }
 
 .dr-history-stage,
-.dr-history-mode {
+.dr-history-mode,
+.dr-history-company {
   font-size: 11px;
   color: var(--text-muted);
   background: var(--bg-elevated);
@@ -4996,6 +5062,87 @@ html, body {
 
 .ob-user-skip:hover { color: var(--text-secondary); }
 
+/* ── Post-interview nudge modal ──────────────────────────────────────────────── */
+
+.nudge-card {
+  width: 440px;
+}
+
+.nudge-body {
+  padding: 20px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nudge-btn {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nudge-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+}
+.nudge-btn-primary:hover { background: var(--primary-light, #7c3aed); }
+
+.nudge-btn-secondary {
+  background: none;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.nudge-btn-secondary:hover { border-color: var(--primary); color: var(--text-primary); }
+
+.nudge-btn-ghost {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 8px 20px;
+}
+.nudge-btn-ghost:hover { color: var(--text-secondary); }
+
+.nudge-reschedule-panel {
+  padding: 0 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nudge-reschedule-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.nudge-date-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 10px 14px;
+}
+.nudge-date-input:focus { outline: none; border-color: var(--primary); }
+
+.nudge-reschedule-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* ── Recording consent modal ────────────────────────────────────────────────── */
 
 .consent-backdrop {
@@ -5547,9 +5694,14 @@ html, body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px 20px;
-  transition: border-color 0.15s;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
-.coach-score-card:hover { border-color: var(--primary); }
+.coach-score-card:hover {
+  border-color: var(--primary);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+}
 
 .coach-score-card-meta {
   display: flex;
