@@ -179,6 +179,7 @@
         format: 'Virtual',
         scheduled_at: _scheduledAt(-5, 11),
         status: 'completed',
+        coach_score: 78,
         created_at: _daysFromNow(-14),
         sessions: (function() {
           var base = Date.now() - 5 * 86400000;
@@ -248,6 +249,7 @@
         format: 'Virtual',
         scheduled_at: _scheduledAt(-14, 13),
         status: 'completed',
+        coach_score: 84,
         created_at: _daysFromNow(-21),
         coach_analysis: `**What You Did Well**
 • Demonstrated solid product knowledge across all three interviewers without being repetitive
