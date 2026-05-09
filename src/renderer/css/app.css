@@ -5648,9 +5648,41 @@ html, body {
   border-radius: var(--radius-lg);
   margin-bottom: 12px;
   overflow: hidden;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.15s;
 }
-.coach-outreach-card:hover { border-color: var(--primary); }
+.coach-outreach-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+.coach-outreach-logo-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg-hover);
+  position: relative;
+  cursor: pointer;
+}
+.coach-outreach-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.coach-outreach-logo-fb {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: rgba(124, 58, 255, 0.15);
+}
+.coach-outreach-company[data-company-nav] {
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.coach-outreach-company[data-company-nav]:hover { color: var(--primary-light); }
 
 .coach-outreach-card-header {
   display: flex;
