@@ -163,6 +163,7 @@ window.CoachPage = (() => {
     ];
 
     list.innerHTML = cards.join('');
+    if (window.wireImgFallbacks) window.wireImgFallbacks(list);
     _wireOutreachEvents(list);
   }
 
@@ -171,12 +172,20 @@ window.CoachPage = (() => {
     const role      = _esc(iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role');
     const isPost    = type === 'post';
     const cardId    = `coach-outreach-${iv.id}-${type}`;
+    const navKey    = _esc(iv.company?.domain || iv.company?.name || '');
+    const initial   = (iv.company?.name || '?')[0].toUpperCase();
+    const logoId    = `co-outreach-logo-${_esc(iv.id)}-${type}`;
     const dateLabel = isPost
       ? (iv.completed_at || iv.scheduled_at ? new Date(iv.completed_at || iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '')
       : (iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '');
 
     const typeLabel = isPost ? 'Post-Interview' : 'Pre-Interview';
     const tagClass  = isPost ? 'coach-outreach-tag-post' : 'coach-outreach-tag-pre';
+
+    const logoHtml = iv.company?.logo_url
+      ? `<img src="${_esc(iv.company.logo_url)}" class="coach-outreach-logo-img" alt="" data-fb="${logoId}">
+         <div class="coach-outreach-logo-fb" data-fb-id="${logoId}" style="display:none">${initial}</div>`
+      : `<div class="coach-outreach-logo-fb">${initial}</div>`;
 
     let contentHtml;
     if (cached?.linkedin_message) {
@@ -191,8 +200,9 @@ window.CoachPage = (() => {
     return `
       <div class="coach-outreach-card" id="${cardId}">
         <div class="coach-outreach-card-header" data-toggle-card="${cardId}">
+          <div class="coach-outreach-logo-wrap" data-company-nav="${navKey}">${logoHtml}</div>
           <div class="coach-outreach-card-meta">
-            <span class="coach-outreach-company">${company}</span>
+            <span class="coach-outreach-company" data-company-nav="${navKey}">${company}</span>
             <span class="coach-outreach-role">${role}</span>
           </div>
           <div class="coach-outreach-card-badges">
@@ -234,6 +244,16 @@ window.CoachPage = (() => {
 
   function _wireOutreachEvents(list) {
     list.addEventListener('click', async e => {
+      const companyNav = e.target.closest('[data-company-nav]');
+      if (companyNav) {
+        const key = companyNav.dataset.companyNav;
+        if (key && window.navigateTo && window.CompaniesPage) {
+          window.navigateTo('companies');
+          window.CompaniesPage.openDetail(key);
+        }
+        return;
+      }
+
       const toggleHdr = e.target.closest('[data-toggle-card]');
       if (toggleHdr && !e.target.closest('button')) {
         const card = document.getElementById(toggleHdr.dataset.toggleCard);
