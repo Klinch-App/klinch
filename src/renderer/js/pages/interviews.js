@@ -876,16 +876,7 @@ window.InterviewsPage = (() => {
   }
 
   function _buildCoachScoreHtml(score) {
-    const s = Math.min(100, Math.max(0, score || 0));
-    return `
-      <div class="ivdp-fit-score-circle ivdp-coach-score-circle">
-        <svg viewBox="0 0 36 36" class="ivdp-fit-donut">
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
-            stroke-dasharray="${s} 100" stroke-dashoffset="25" stroke-linecap="round"/>
-        </svg>
-        <div class="ivdp-fit-pct">${s}</div>
-      </div>`;
+    return window.buildDonut(score, 80, 'ivdp-coach-score-circle');
   }
 
   async function _fireAIAnalysis(iv, only) {
@@ -970,22 +961,13 @@ Keep it concise and actionable. Focus on what's most useful for interview prep.`
   }
 
   function _buildFitHtml(fit, ivId) {
-    const score       = Math.min(100, Math.max(0, fit.keyword_match_score || 0));
-    const circumference = 100;
-    const dashArray   = `${score} ${circumference}`;
-    const strengths   = (fit.keywords_present || []).slice(0, 5);
-    const gaps        = (fit.keywords_missing || []).slice(0, 4);
-    const talking     = (fit.talking_points   || []).slice(0, 3);
+    const score   = Math.min(100, Math.max(0, fit.keyword_match_score || 0));
+    const strengths = (fit.keywords_present || []).slice(0, 5);
+    const gaps      = (fit.keywords_missing || []).slice(0, 4);
+    const talking   = (fit.talking_points   || []).slice(0, 3);
     return `
       <div class="ivdp-fit-score-row">
-        <div class="ivdp-fit-score-circle">
-          <svg viewBox="0 0 36 36" class="ivdp-fit-donut">
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
-            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
-              stroke-dasharray="${dashArray}" stroke-dashoffset="25" stroke-linecap="round"/>
-          </svg>
-          <div class="ivdp-fit-pct">${score}%</div>
-        </div>
+        ${window.buildDonut(score, 80)}
         <div class="ivdp-fit-cols">
           <div class="ivdp-fit-col ivdp-fit-match">
             <div class="ivdp-fit-col-label">Strengths</div>
