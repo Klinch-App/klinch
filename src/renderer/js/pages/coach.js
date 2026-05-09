@@ -793,7 +793,7 @@ window.CoachPage = (() => {
         ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
       return `
-        <div class="coach-score-card">
+        <div class="coach-score-card" data-iv-id="${_esc(iv.id)}">
           ${window.buildDonut(iv.coach_score, 52)}
           <div class="coach-score-card-meta">
             <div class="coach-score-card-company">${company}</div>
@@ -812,6 +812,22 @@ window.CoachPage = (() => {
         </div>
       </div>
       <div class="coach-scores-grid">${cards}</div>`;
+
+    list.querySelectorAll('.coach-score-card[data-iv-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const ivId = card.dataset.ivId;
+        window.navigateTo?.('interviews');
+        setTimeout(() => {
+          window.InterviewsPage?.openDetail(ivId);
+          requestAnimationFrame(() => {
+            const coachSection = [...document.querySelectorAll('.ivdp-section-title')]
+              .find(t => t.textContent.trim() === 'Coach')
+              ?.closest('.ivdp-section');
+            coachSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }, 0);
+      });
+    });
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────

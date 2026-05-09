@@ -330,11 +330,130 @@ backBtn.addEventListener('click', () => {
   goTo(0, null);
 }
 
+// ── Post-interview nudge system ───────────────────────────────────────────────
+
+function _checkInterviewNudges() {
+  const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+  const now = new Date();
+  const queue = all.filter(iv =>
+    iv.status === 'pending' &&
+    iv.scheduled_at &&
+    new Date(iv.scheduled_at) < now &&
+    !(iv.sessions?.length) &&
+    iv.nudge_sent !== true
+  );
+  if (queue.length) setTimeout(() => _processNudgeQueue(queue), 600);
+}
+
+function _processNudgeQueue(queue) {
+  if (!queue.length) return;
+  const [current, ...rest] = queue;
+  _showNudge(current, rest);
+}
+
+function _showNudge(iv, remaining) {
+  const backdrop      = document.getElementById('nudge-backdrop');
+  const panelMain     = document.getElementById('nudge-panel-main');
+  const panelCoaching = document.getElementById('nudge-panel-coaching');
+  const actionBtns    = document.getElementById('nudge-action-btns');
+  const reschedPanel  = document.getElementById('nudge-reschedule-panel');
+  const titleEl       = document.getElementById('nudge-title');
+  const metaEl        = document.getElementById('nudge-meta');
+  const coachMetaEl   = document.getElementById('nudge-coaching-meta');
+  if (!backdrop) return;
+
+  const company = iv.company?.name || 'the company';
+  const stage   = iv.stage || 'Interview';
+  const dateStr = iv.scheduled_at
+    ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+    : '';
+
+  // Reset to initial state
+  panelMain.style.display     = '';
+  panelCoaching.style.display = 'none';
+  actionBtns.style.display    = '';
+  reschedPanel.style.display  = 'none';
+
+  titleEl.textContent = `How did your ${stage} with ${company} go?`;
+  metaEl.textContent  = dateStr ? `Scheduled for ${dateStr}` : '';
+
+  function _patch(patch) {
+    const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const idx = all.findIndex(x => x.id === iv.id);
+    if (idx < 0) return;
+    Object.assign(all[idx], patch);
+    localStorage.setItem('klinch_interviews', JSON.stringify(all));
+  }
+
+  function _dismiss() {
+    backdrop.classList.remove('visible');
+    setTimeout(() => _processNudgeQueue(remaining), 280);
+  }
+
+  document.getElementById('nudge-happened').onclick = () => {
+    _patch({ status: 'completed', nudge_sent: true, updated_at: new Date().toISOString() });
+    window.refreshDashboardStats?.();
+    document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: iv.id } }));
+    // Switch to coaching follow-up panel
+    panelMain.style.display     = 'none';
+    coachMetaEl.textContent     = `${company} — ${stage}`;
+    panelCoaching.style.display = '';
+  };
+
+  document.getElementById('nudge-rescheduled').onclick = () => {
+    actionBtns.style.display   = 'none';
+    reschedPanel.style.display = '';
+    const inp = document.getElementById('nudge-reschedule-input');
+    if (iv.scheduled_at) {
+      const d = new Date(iv.scheduled_at);
+      inp.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
+  };
+
+  document.getElementById('nudge-reschedule-cancel').onclick = () => {
+    reschedPanel.style.display = 'none';
+    actionBtns.style.display   = '';
+  };
+
+  document.getElementById('nudge-reschedule-save').onclick = () => {
+    const val = document.getElementById('nudge-reschedule-input').value;
+    if (!val) return;
+    _patch({ scheduled_at: new Date(val).toISOString(), nudge_sent: true, updated_at: new Date().toISOString() });
+    _dismiss();
+  };
+
+  document.getElementById('nudge-cancelled').onclick = () => {
+    _patch({ status: 'cancelled', nudge_sent: true, updated_at: new Date().toISOString() });
+    window.refreshDashboardStats?.();
+    _dismiss();
+  };
+
+  document.getElementById('nudge-coach-yes').onclick = () => {
+    backdrop.classList.remove('visible');
+    window.navigateTo?.('interviews');
+    setTimeout(() => {
+      window.InterviewsPage?.openDetail(iv.id);
+      requestAnimationFrame(() => {
+        const coachSection = [...document.querySelectorAll('.ivdp-section-title')]
+          .find(t => t.textContent.trim() === 'Coach')
+          ?.closest('.ivdp-section');
+        coachSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      _processNudgeQueue(remaining);
+    }, 0);
+  };
+
+  document.getElementById('nudge-coach-no').onclick = _dismiss;
+
+  backdrop.classList.add('visible');
+}
+
 // Gate: show onboarding if profile not yet completed
 // Called directly on authed launch, or by auth.js after sign-in
 function _klinchInitApp() {
   const p = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
   if (!p.completed) showOnboarding();
+  else _checkInterviewNudges();
 }
 window._klinchInitApp = _klinchInitApp;
 

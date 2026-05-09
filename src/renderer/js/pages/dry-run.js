@@ -34,9 +34,9 @@ window.DryRunPage = (() => {
     'You are an expert SDR interview coach. Analyse this mock interview transcript and return ' +
     'ONLY valid JSON, no preamble, no markdown:\n' +
     '{\n' +
-    '  "overall_score": number,\n' +
+    '  "overall_score": number (0-100),\n' +
     '  "summary": string,\n' +
-    '  "question_feedback": [{ "question": string, "answer": string, "feedback": string, "score": number }],\n' +
+    '  "question_feedback": [{ "question": string, "answer": string, "feedback": string, "score": number (0-100) }],\n' +
     '  "patterns": {\n' +
     '    "strengths": string[],\n' +
     '    "improvements": string[]\n' +
@@ -63,6 +63,98 @@ window.DryRunPage = (() => {
   }
   function _saveDryRuns(list) {
     localStorage.setItem('klinch_dry_runs', JSON.stringify(list));
+  }
+
+  // ── History row helpers ────────────────────────────────────────────────────
+
+  function _historyRowHtml(r) {
+    const score   = r.report?.overall_score ?? '—';
+    const company = r.company || '';
+    return `
+      <div class="dr-history-row" data-run-id="${_esc(r.id)}">
+        <div class="dr-history-row-header">
+          <div class="dr-history-meta">
+            <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+            <span class="dr-history-stage">${_esc(r.stage)}</span>
+            ${company ? `<span class="dr-history-company">${_esc(company)}</span>` : ''}
+            <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
+          </div>
+          <div class="dr-history-row-right">
+            <div class="dr-history-score">${score}</div>
+            <svg class="dr-history-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,4 6,8 10,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _historyExpandHtml(r) {
+    const report = r.report;
+    if (!report) return '<div class="dr-history-expand-body">No report data available.</div>';
+
+    const score        = report.overall_score ?? 0;
+    const strengths    = report.patterns?.strengths    || [];
+    const improvements = report.patterns?.improvements || [];
+    const fillerCount  = report.filler_words?.count    ?? 0;
+    const fillerEx     = report.filler_words?.examples || [];
+    const qFeedback    = report.question_feedback      || [];
+
+    return `
+      <div class="dr-history-expand-body">
+        <div class="dr-history-expand-hero">
+          ${window.buildDonut(score, 72)}
+          <div class="dr-history-expand-summary">${_esc(report.summary || '')}</div>
+        </div>
+
+        <div class="dr-report-cols">
+          <div class="dr-report-col dr-col-strengths">
+            <div class="dr-report-col-label">Strengths</div>
+            ${strengths.length
+              ? strengths.map(s => `<div class="dr-report-col-item">✓ ${_esc(s)}</div>`).join('')
+              : '<div class="dr-report-col-item dr-col-empty">None identified</div>'
+            }
+          </div>
+          <div class="dr-report-col dr-col-improvements">
+            <div class="dr-report-col-label">To Improve</div>
+            ${improvements.length
+              ? improvements.map(s => `<div class="dr-report-col-item">↗ ${_esc(s)}</div>`).join('')
+              : '<div class="dr-report-col-item dr-col-empty">None identified</div>'
+            }
+          </div>
+        </div>
+
+        <div class="dr-report-section">
+          <div class="dr-report-section-title">Filler Words</div>
+          <div class="dr-filler-row">
+            <span class="dr-filler-count">${fillerCount}</span>
+            <span class="dr-filler-label">detected</span>
+            ${fillerEx.length ? `<span class="dr-filler-examples">${fillerEx.map(f => `"${_esc(f)}"`).join(', ')}</span>` : ''}
+          </div>
+          ${report.talk_time_note ? `<div class="dr-talk-time-note">${_esc(report.talk_time_note)}</div>` : ''}
+        </div>
+
+        <div class="dr-report-section">
+          <div class="dr-report-section-title">Question-by-Question</div>
+          <div class="dr-qfeedback-list">
+            ${qFeedback.map((qf, i) => `
+              <details class="dr-qf-item">
+                <summary class="dr-qf-summary">
+                  <span class="dr-qf-num">Q${i + 1}</span>
+                  <span class="dr-qf-question">${_esc(qf.question || '')}</span>
+                  <span class="dr-qf-score">${qf.score ?? '—'}</span>
+                </summary>
+                <div class="dr-qf-body">
+                  <div class="dr-qf-label">Your Answer</div>
+                  <div class="dr-qf-answer">${_esc(qf.answer || '')}</div>
+                  <div class="dr-qf-label" style="margin-top:10px">Feedback</div>
+                  <div class="dr-qf-feedback">${_esc(qf.feedback || '')}</div>
+                </div>
+              </details>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // ── Claude API ─────────────────────────────────────────────────────────────
@@ -127,8 +219,10 @@ window.DryRunPage = (() => {
 
   function _renderSetup() {
     _view = 'setup';
-    const interviews = _getInterviews().filter(iv => iv.jd !== null);
-    const dryRuns    = _getDryRuns()
+    const interviews    = _getInterviews().filter(iv => iv.jd !== null);
+    const allInterviews = _getInterviews();
+    const ivMap         = Object.fromEntries(allInterviews.map(iv => [iv.id, iv]));
+    const dryRuns       = _getDryRuns()
       .filter(r => r.report)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 10);
@@ -138,20 +232,32 @@ window.DryRunPage = (() => {
       return `<option value="${_esc(iv.id)}">${_esc(iv.company.name)} — ${_esc(role)}</option>`;
     }).join('');
 
-    const pastRunsHtml = dryRuns.length ? `
+    const runsWithMeta    = dryRuns.map(r => ({
+      ...r,
+      company: r.interview_id ? (ivMap[r.interview_id]?.company?.name || '') : '',
+    }));
+    const uniqueStages    = [...new Set(runsWithMeta.map(r => r.stage).filter(Boolean))];
+    const uniqueCompanies = [...new Set(runsWithMeta.map(r => r.company).filter(Boolean))];
+
+    const pastRunsHtml = runsWithMeta.length ? `
       <div class="dr-history-section">
-        <div class="dr-field-label" style="margin-bottom:12px">Past Sessions</div>
-        <div class="dr-history-list">
-          ${dryRuns.map(r => `
-            <div class="dr-history-row">
-              <div class="dr-history-meta">
-                <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
-                <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
-              </div>
-              <div class="dr-history-score">${r.report.overall_score}/10</div>
-            </div>
-          `).join('')}
+        <div class="dr-history-header">
+          <div class="dr-field-label">Past Sessions</div>
+          <div class="dr-history-filters">
+            <select class="iv-filter-select" id="dr-filter-stage">
+              <option value="">All Stages</option>
+              ${uniqueStages.map(s => `<option value="${_esc(s)}">${_esc(s)}</option>`).join('')}
+            </select>
+            ${uniqueCompanies.length ? `
+              <select class="iv-filter-select" id="dr-filter-company">
+                <option value="">All Companies</option>
+                ${uniqueCompanies.map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`).join('')}
+              </select>
+            ` : ''}
+          </div>
+        </div>
+        <div class="dr-history-list" id="dr-history-list">
+          ${runsWithMeta.map(r => _historyRowHtml(r)).join('')}
         </div>
       </div>
     ` : '';
@@ -203,6 +309,52 @@ window.DryRunPage = (() => {
         ${pastRunsHtml}
       </div>
     `;
+
+    let expandedRunId = null;
+
+    function _applyHistoryFilters() {
+      const stageVal   = (_el('dr-filter-stage')   || {}).value || '';
+      const companyVal = (_el('dr-filter-company') || {}).value || '';
+      const filtered   = runsWithMeta.filter(r =>
+        (!stageVal   || r.stage   === stageVal) &&
+        (!companyVal || r.company === companyVal)
+      );
+      const list = _el('dr-history-list');
+      if (list) list.innerHTML = filtered.map(r => _historyRowHtml(r)).join('');
+      expandedRunId = null;
+    }
+
+    _el('dr-filter-stage')?.addEventListener('change', _applyHistoryFilters);
+    _el('dr-filter-company')?.addEventListener('change', _applyHistoryFilters);
+
+    const histList = _el('dr-history-list');
+    if (histList) {
+      histList.addEventListener('click', e => {
+        const row = e.target.closest('.dr-history-row[data-run-id]');
+        if (!row) return;
+        const runId = row.dataset.runId;
+        if (expandedRunId === runId) {
+          row.querySelector('.dr-history-expand')?.remove();
+          row.classList.remove('dr-history-row--expanded');
+          expandedRunId = null;
+        } else {
+          if (expandedRunId) {
+            const prev = histList.querySelector('.dr-history-row--expanded');
+            prev?.querySelector('.dr-history-expand')?.remove();
+            prev?.classList.remove('dr-history-row--expanded');
+          }
+          const run = runsWithMeta.find(r => r.id === runId);
+          if (run) {
+            const div = document.createElement('div');
+            div.className = 'dr-history-expand';
+            div.innerHTML = _historyExpandHtml(run);
+            row.appendChild(div);
+            row.classList.add('dr-history-row--expanded');
+            expandedRunId = runId;
+          }
+        }
+      });
+    }
 
     let selectedMode  = 'generic';
     let selectedStage = null;
@@ -630,7 +782,7 @@ window.DryRunPage = (() => {
 
       bodyHtml = `
         <div class="dr-report-hero">
-          <div class="dr-score-badge">${score}<span class="dr-score-denom">/10</span></div>
+          ${window.buildDonut(score, 80)}
           <div class="dr-report-summary">${_esc(report.summary || '')}</div>
         </div>
 
@@ -669,7 +821,7 @@ window.DryRunPage = (() => {
                 <summary class="dr-qf-summary">
                   <span class="dr-qf-num">Q${i + 1}</span>
                   <span class="dr-qf-question">${_esc(qf.question || '')}</span>
-                  <span class="dr-qf-score">${qf.score ?? '—'}/10</span>
+                  <span class="dr-qf-score">${qf.score ?? '—'}</span>
                 </summary>
                 <div class="dr-qf-body">
                   <div class="dr-qf-label">Your Answer</div>
@@ -684,20 +836,16 @@ window.DryRunPage = (() => {
       `;
     }
 
-    const pastRunsHtml = pastRuns.length ? `
+    const reportIvMap  = Object.fromEntries(_getInterviews().map(iv => [iv.id, iv]));
+    const pastRunsMeta = pastRuns.map(r => ({
+      ...r,
+      company: r.interview_id ? (reportIvMap[r.interview_id]?.company?.name || '') : '',
+    }));
+    const pastRunsHtml = pastRunsMeta.length ? `
       <div class="dr-report-section">
         <div class="dr-report-section-title">Past Sessions</div>
-        <div class="dr-history-list">
-          ${pastRuns.map(r => `
-            <div class="dr-history-row">
-              <div class="dr-history-meta">
-                <span class="dr-history-date">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
-                <span class="dr-history-stage">${_esc(r.stage)}</span>
-                <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
-              </div>
-              <div class="dr-history-score">${r.report.overall_score}/10</div>
-            </div>
-          `).join('')}
+        <div class="dr-history-list" id="dr-report-history-list">
+          ${pastRunsMeta.map(r => _historyRowHtml(r)).join('')}
         </div>
       </div>
     ` : '';
@@ -716,6 +864,36 @@ window.DryRunPage = (() => {
     `;
 
     _el('dr-new-btn').addEventListener('click', reset);
+
+    const reportHistList = _el('dr-report-history-list');
+    if (reportHistList) {
+      let expandedRunId = null;
+      reportHistList.addEventListener('click', e => {
+        const row = e.target.closest('.dr-history-row[data-run-id]');
+        if (!row) return;
+        const runId = row.dataset.runId;
+        if (expandedRunId === runId) {
+          row.querySelector('.dr-history-expand')?.remove();
+          row.classList.remove('dr-history-row--expanded');
+          expandedRunId = null;
+        } else {
+          if (expandedRunId) {
+            const prev = reportHistList.querySelector('.dr-history-row--expanded');
+            prev?.querySelector('.dr-history-expand')?.remove();
+            prev?.classList.remove('dr-history-row--expanded');
+          }
+          const run = pastRunsMeta.find(r => r.id === runId);
+          if (run) {
+            const div = document.createElement('div');
+            div.className = 'dr-history-expand';
+            div.innerHTML = _historyExpandHtml(run);
+            row.appendChild(div);
+            row.classList.add('dr-history-row--expanded');
+            expandedRunId = runId;
+          }
+        }
+      });
+    }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
