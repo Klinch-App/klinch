@@ -340,6 +340,7 @@ window.ApplicationsPage = (() => {
     const done     = ivs.filter(iv => iv.scheduled_at && new Date(iv.scheduled_at) < now);
     const upcoming = ivs.filter(iv => iv.scheduled_at && new Date(iv.scheduled_at) >= now);
     const days     = responseDays(app);
+    const appJd    = app.jd || ivs.find(iv => iv.jd)?.jd || null;
 
     const fmtDate = d => d
       ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -379,10 +380,10 @@ window.ApplicationsPage = (() => {
         </div>
       </div>`;
 
-    if (app.jd?.structured || app.jd?.raw) {
-      const jd       = app.jd.structured || {};
-      const raw      = app.jd.raw || '';
-      const hasBoth  = !!(app.jd.structured && app.jd.raw);
+    if (appJd?.structured || appJd?.raw) {
+      const jd       = appJd.structured || {};
+      const raw      = appJd.raw || '';
+      const hasBoth  = !!(appJd.structured && appJd.raw);
 
       html += `
         <div class="co-section">
@@ -391,7 +392,7 @@ window.ApplicationsPage = (() => {
             ${hasBoth ? `<button class="ap-jd-toggle" id="ap-jd-toggle" data-showing="summary">View full text →</button>` : ''}
           </div>
 
-          ${app.jd.structured ? `
+          ${appJd.structured ? `
             <div id="ap-jd-summary">
               ${jd.role_title ? `<div class="ai-jd-role-title" style="margin-bottom:14px">${_esc(jd.role_title)}</div>` : ''}
               ${jd.location || jd.salary ? `
@@ -418,7 +419,7 @@ window.ApplicationsPage = (() => {
           ` : ''}
 
           ${raw ? `
-            <div id="ap-jd-full"${app.jd.structured ? ' style="display:none"' : ''}>
+            <div id="ap-jd-full"${appJd.structured ? ' style="display:none"' : ''}>
               <pre class="ap-jd-raw-text">${_esc(raw)}</pre>
             </div>
           ` : ''}
