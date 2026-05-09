@@ -5686,7 +5686,6 @@ html, body {
 
 .coach-outreach-card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border-subtle);
@@ -5713,6 +5712,7 @@ html, body {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .coach-outreach-company {
