@@ -770,21 +770,6 @@ window.CoachPage = (() => {
 
   // ── Section 4 — Interview Scores ──────────────────────────────────────────
 
-  function _buildScoreDonut(score, size) {
-    const s = Math.min(100, Math.max(0, score || 0));
-    const px = size || 52;
-    const fs = px <= 52 ? 14 : 18;
-    return `
-      <div class="ivdp-fit-score-circle" style="width:${px}px;height:${px}px;flex-shrink:0">
-        <svg viewBox="0 0 36 36" class="ivdp-fit-donut" style="width:${px}px;height:${px}px">
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
-          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
-            stroke-dasharray="${s} 100" stroke-dashoffset="25" stroke-linecap="round"/>
-        </svg>
-        <div class="ivdp-fit-pct" style="font-size:${fs}px">${s}</div>
-      </div>`;
-  }
-
   function _renderInterviewScores() {
     const list = document.getElementById('coach-scores-list');
     if (!list) return;
@@ -809,7 +794,7 @@ window.CoachPage = (() => {
         : '';
       return `
         <div class="coach-score-card">
-          ${_buildScoreDonut(iv.coach_score, 52)}
+          ${window.buildDonut(iv.coach_score, 52)}
           <div class="coach-score-card-meta">
             <div class="coach-score-card-company">${company}</div>
             <div class="coach-score-card-stage">${stage}</div>
@@ -820,7 +805,7 @@ window.CoachPage = (() => {
 
     list.innerHTML = `
       <div class="coach-scores-summary">
-        ${_buildScoreDonut(avg, 64)}
+        ${window.buildDonut(avg, 64)}
         <div class="coach-scores-avg-meta">
           <div class="coach-scores-avg-label">Average score</div>
           <div class="coach-scores-avg-sub">${scored.length} interview${scored.length > 1 ? 's' : ''} scored</div>
