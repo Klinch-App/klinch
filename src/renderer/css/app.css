@@ -3232,7 +3232,6 @@ html, body {
 .ivdp-fit-donut {
   width: 80px;
   height: 80px;
-  transform: rotate(-90deg);
 }
 .ivdp-fit-pct {
   position: absolute;
