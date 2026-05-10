@@ -11,6 +11,13 @@
     location.reload();
   });
 
+  document.getElementById('st-reset-welcome-btn')?.addEventListener('click', () => {
+    localStorage.removeItem('klinch_welcome_seen');
+    localStorage.removeItem('klinch_profile');
+    localStorage.removeItem('klinch_dev_auth_bypass');
+    location.reload();
+  });
+
   function _uuid() { return crypto.randomUUID(); }
 
   function _daysFromNow(n) {

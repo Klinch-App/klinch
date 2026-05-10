@@ -101,7 +101,10 @@ function showOnboarding() {
       salary_range: 'USD $70,000 – $90,000', additional_context: '',
     }));
     overlay.classList.add('ob-fade-out');
-    setTimeout(() => location.reload(), 400);
+    setTimeout(() => {
+      document.querySelector('.app-shell').style.opacity = '0';
+      location.reload();
+    }, 400);
   });
 
   // Hide Q&A chrome while intro screen is shown
@@ -308,7 +311,10 @@ backBtn.addEventListener('click', () => {
     } else {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
       overlay.classList.add('ob-fade-out');
-      setTimeout(() => location.reload(), 400);
+      setTimeout(() => {
+        document.querySelector('.app-shell').style.opacity = '0';
+        location.reload();
+      }, 400);
     }
   });
 
@@ -323,7 +329,10 @@ backBtn.addEventListener('click', () => {
     } else {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
       overlay.classList.add('ob-fade-out');
-      setTimeout(() => location.reload(), 400);
+      setTimeout(() => {
+        document.querySelector('.app-shell').style.opacity = '0';
+        location.reload();
+      }, 400);
     }
   });
 
@@ -448,8 +457,7 @@ function _showNudge(iv, remaining) {
   backdrop.classList.add('visible');
 }
 
-// Gate: show onboarding if profile not yet completed
-// Called directly on authed launch, or by auth.js after sign-in
+// Called by auth.js after successful sign-in
 function _klinchInitApp() {
   const p = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
   if (!p.completed) showOnboarding();
@@ -457,23 +465,76 @@ function _klinchInitApp() {
 }
 window._klinchInitApp = _klinchInitApp;
 
-// Auth gate — check session, sync data from Supabase, then init app
-(async function() {
-  // Dev bypass: persists across reloads so the login screen doesn't re-appear
-  // after onboarding's location.reload() call.
-  if (window.klinch.isDev && localStorage.getItem('klinch_dev_auth_bypass') === '1') {
-    _klinchInitApp();
+// Flow: Welcome → Onboarding → Auth → App
+// Each step is checked in strict order. Dev bypass only skips auth, not welcome or onboarding.
+let _flowStarted = false;
+
+async function _initFlow() {
+  if (_flowStarted) {
+    console.warn('[klinch] _initFlow: duplicate call blocked');
     return;
   }
+  _flowStarted = true;
 
+  // Hide the app shell immediately to prevent dashboard flashing through
+  // while overlays are being decided. Restored at every destination below.
+  const appShell = document.querySelector('.app-shell');
+  if (appShell) appShell.style.opacity = '0';
+
+  console.log('[klinch] _initFlow called');
+
+  // Step 1: Welcome — unconditionally first
+  if (!localStorage.getItem('klinch_welcome_seen')) {
+    console.log('[klinch] step 1 → showing welcome screen');
+    const overlay = document.getElementById('welcome-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    if (appShell) appShell.style.opacity = ''; // overlay covers shell
+    document.getElementById('welcome-cta-btn')?.addEventListener('click', () => {
+      localStorage.setItem('klinch_welcome_seen', '1');
+      if (overlay) overlay.style.display = 'none';
+      _flowStarted = false; // reset so the continuation can proceed
+      _initFlow();
+    }, { once: true });
+    return;
+  }
+  console.log('[klinch] step 1 → welcome already seen, continuing');
+
+  // Step 2: Onboarding — checked before dev bypass so it can never be skipped
+  const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+  console.log('[klinch] step 2 → klinch_profile raw:', localStorage.getItem('klinch_profile'), '| completed:', profile.completed);
+  if (!profile.completed) {
+    console.log('[klinch] step 2 → profile incomplete, showing onboarding');
+    showOnboarding();
+    if (appShell) appShell.style.opacity = ''; // overlay covers shell
+    return;
+  }
+  console.log('[klinch] step 2 → profile complete, continuing');
+
+  // Dev bypass: welcome + onboarding already done; only skips the auth check
+  if (window.klinch.isDev && localStorage.getItem('klinch_dev_auth_bypass') === '1') {
+    console.log('[klinch] step 3 → dev bypass active, skipping auth → going to app');
+    if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
+    _checkInterviewNudges();
+    return;
+  }
+  console.log('[klinch] step 3 → no dev bypass, running auth check');
+
+  // Step 4: Auth check
   const res = await window.klinch.invoke('auth:get-session');
+  console.log('[klinch] step 4 → auth result:', res.ok, '| has session:', !!res.session);
   if (res.ok && res.session) {
-    await window.Sync?.syncAllDown?.(); // Supabase wins on conflict
-    _klinchInitApp();
+    await window.Sync?.syncAllDown?.();
+    console.log('[klinch] step 4 → signed in, going to app');
+    if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
+    _checkInterviewNudges();
   } else {
+    console.log('[klinch] step 4 → not signed in, showing auth screen');
+    if (appShell) appShell.style.opacity = ''; // auth overlay covers shell
     window.Auth?.showAuthScreen();
   }
-})();
+}
+
+_initFlow();
 
 // ── Profile context helper ─────────────────────────────────────────────────────
 window.profileContext = (profile) => `
