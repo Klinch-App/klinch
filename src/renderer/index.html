@@ -1332,7 +1332,29 @@
         </div>
         <div id="nudge-reschedule-panel" class="nudge-reschedule-panel" style="display:none">
           <div class="nudge-reschedule-label">When was it rescheduled to?</div>
-          <input type="datetime-local" id="nudge-reschedule-input" class="nudge-date-input">
+          <div class="nudge-cal-picker">
+            <div class="nudge-cal-nav">
+              <button class="nudge-cal-nav-btn" id="nudge-cal-prev">&#8249;</button>
+              <span class="nudge-cal-month-label" id="nudge-cal-month-label"></span>
+              <button class="nudge-cal-nav-btn" id="nudge-cal-next">&#8250;</button>
+            </div>
+            <div class="nudge-cal-days-hdr">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div class="nudge-cal-grid" id="nudge-cal-grid"></div>
+          </div>
+          <div class="nudge-time-row">
+            <span class="nudge-time-label">Time</span>
+            <div class="nudge-time-ctrls">
+              <select id="nudge-time-hour" class="nudge-time-sel"></select>
+              <span class="nudge-time-sep">:</span>
+              <select id="nudge-time-min" class="nudge-time-sel"></select>
+              <div class="nudge-ampm-toggle">
+                <button class="nudge-ampm-btn" id="nudge-ampm-am">AM</button>
+                <button class="nudge-ampm-btn" id="nudge-ampm-pm">PM</button>
+              </div>
+            </div>
+          </div>
           <div class="nudge-reschedule-actions">
             <button class="nudge-btn nudge-btn-primary" id="nudge-reschedule-save">Save new date</button>
             <button class="nudge-btn nudge-btn-ghost" id="nudge-reschedule-cancel">Back</button>
