@@ -184,8 +184,8 @@ window.CoachPage = (() => {
 
     const logoHtml = iv.company?.logo_url
       ? `<img src="${_esc(iv.company.logo_url)}" class="coach-outreach-logo-img" alt="" data-fb="${logoId}">
-         <div class="coach-outreach-logo-fb" data-fb-id="${logoId}" style="display:none">${initial}</div>`
-      : `<div class="coach-outreach-logo-fb">${initial}</div>`;
+         <div class="coach-outreach-logo-fb" data-fb-id="${logoId}" ${window._fbHiddenStyle(iv.company)}>${initial}</div>`
+      : `<div class="coach-outreach-logo-fb"${window._fbStyle(iv.company)}>${initial}</div>`;
 
     let contentHtml;
     if (cached?.linkedin_message) {

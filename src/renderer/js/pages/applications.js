@@ -195,8 +195,8 @@ window.ApplicationsPage = (() => {
   function buildCardHTML(app) {
     const logoHtml = app.company?.logo_url
       ? `<img src="${_esc(app.company.logo_url)}" class="icard-logo-img" alt="" data-fb="apcard-logo-${app.id}">
-         <div class="icard-logo-fb" data-fb-id="apcard-logo-${app.id}" style="display:none">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
-      : `<div class="icard-logo-fb">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
+         <div class="icard-logo-fb" data-fb-id="apcard-logo-${app.id}" ${window._fbHiddenStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
+      : `<div class="icard-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
 
     const statusClass = STATUS_CLASS[app.status] || 'ap-status-applied';
     const stageBadgeClass = STAGE_BADGE[app.current_stage] || '';
@@ -301,8 +301,8 @@ window.ApplicationsPage = (() => {
   function _renderDetailHero(app) {
     const logoHtml = app.company?.logo_url
       ? `<img src="${_esc(app.company.logo_url)}" class="co-hero-logo-img" alt="" data-fb="apd-logo">
-         <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="apd-logo" style="display:none">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
-      : `<div class="icard-logo-fb co-hero-logo-fb">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
+         <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="apd-logo" ${window._fbHiddenStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
+      : `<div class="icard-logo-fb co-hero-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
 
     const days = responseDays(app);
     const hot  = isHot(app);
@@ -532,7 +532,7 @@ window.ApplicationsPage = (() => {
     if (app.company?.logo_url) {
       logoWrap.innerHTML = `<img src="${_esc(app.company.logo_url)}" class="cel-logo-img" alt="">`;
     } else {
-      logoWrap.innerHTML = `<div class="cel-logo-fb">${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
+      logoWrap.innerHTML = `<div class="cel-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
     }
 
     _el('cel-company-name').textContent = app.company?.name || '';

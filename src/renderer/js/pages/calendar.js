@@ -93,11 +93,13 @@ window.CalendarPage = (() => {
     const name = iv.company?.name || '?';
     const logo = iv.company?.logo_url || '';
     const init = (name[0] || '?').toUpperCase();
-    const fb   = `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px;display:none">${_esc(init)}</span>`;
+    const bc   = iv.company?.brand_color || '';
+    const bcExtra = bc ? `;background:${bc}26;color:${bc}` : '';
+    const fb   = `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px;display:none${bcExtra}">${_esc(init)}</span>`;
     return logo
       ? `<img src="${_esc(logo)}" class="cal-logo" width="${size}" height="${size}" alt=""
              onerror="this.style.display='none';this.nextSibling.style.display='flex'">${fb}`
-      : `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px">${_esc(init)}</span>`;
+      : `<span class="cal-logo-fb" style="width:${size}px;height:${size}px;font-size:${Math.round(size*0.5)}px${bcExtra}">${_esc(init)}</span>`;
   }
 
   // ── Month view ────────────────────────────────────────────────────────────
