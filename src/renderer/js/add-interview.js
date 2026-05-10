@@ -537,10 +537,21 @@ function refreshDashboardStats() {
   const resSubEl   = document.querySelector('[data-stat-sub="resume"]');
 
   if (countEl) countEl.textContent = all.length;
-  if (companyEl) {
-    const uniqueCompanies = new Set(all.map(iv => iv.company?.name).filter(Boolean));
-    companyEl.textContent = uniqueCompanies.size;
+  const ivSubEl = document.querySelector('[data-stat-sub="interviews"]');
+  if (ivSubEl) {
+    if (all.length === 0) {
+      ivSubEl.textContent = 'No interviews yet';
+    } else {
+      const now = new Date();
+      const upcoming = all.filter(iv => iv.status === 'pending' && iv.scheduled_at && new Date(iv.scheduled_at) > now).length;
+      ivSubEl.textContent = upcoming > 0 ? `${upcoming} upcoming` : `${all.length} total`;
+    }
   }
+
+  const uniqueCompanies = new Set(all.map(iv => iv.company?.name).filter(Boolean));
+  if (companyEl) companyEl.textContent = uniqueCompanies.size;
+  const coSubEl = document.querySelector('[data-stat-sub="companies"]');
+  if (coSubEl) coSubEl.textContent = uniqueCompanies.size === 0 ? 'No companies added' : `${uniqueCompanies.size} tracked`;
 
   // Mirror the same merged-app logic as _getMergedApps() in applications.js:
   // interviews not linked to a real application become synthetic "Interviewing" records.
