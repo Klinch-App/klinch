@@ -46,12 +46,13 @@ window.CompaniesPage = (() => {
       const key = _companyKey(co);
       if (!key) return;
       if (!map.has(key)) {
-        map.set(key, { key, name: co.name || key, domain: co.domain || '', logo_url: co.logo_url || null, brand_color: co.brand_color || null, interviews: [], applications: [] });
+        map.set(key, { key, name: co.name || key, domain: co.domain || '', logo_url: co.logo_url || null, brand_color: co.brand_color || null, screenshot_mode: co.screenshot_mode || false, interviews: [], applications: [] });
       }
       const e = map.get(key);
-      if (!e.domain      && co.domain)      e.domain      = co.domain;
-      if (!e.logo_url    && co.logo_url)    e.logo_url    = co.logo_url;
-      if (!e.brand_color && co.brand_color) e.brand_color = co.brand_color;
+      if (!e.domain        && co.domain)        e.domain        = co.domain;
+      if (!e.logo_url      && co.logo_url)      e.logo_url      = co.logo_url;
+      if (!e.brand_color   && co.brand_color)   e.brand_color   = co.brand_color;
+      if (!e.screenshot_mode && co.screenshot_mode) e.screenshot_mode = co.screenshot_mode;
     }
 
     _getInterviews().forEach(iv => {
@@ -113,7 +114,7 @@ window.CompaniesPage = (() => {
     };
 
     grid.innerHTML = companies.map(c => {
-      const logoHtml = c.logo_url
+      const logoHtml = c.logo_url && !c.screenshot_mode
         ? `<img src="${_esc(c.logo_url)}" class="co-card-logo-img" alt="" data-fb="co-logo-${_esc(c.key)}">
            <div class="icard-logo-fb" data-fb-id="co-logo-${_esc(c.key)}" ${window._fbHiddenStyle(c)}>${(c.name || '?')[0].toUpperCase()}</div>`
         : `<div class="icard-logo-fb"${window._fbStyle(c)}>${(c.name || '?')[0].toUpperCase()}</div>`;
@@ -191,7 +192,7 @@ window.CompaniesPage = (() => {
 
     // Hero
     const logoEl  = _el('co-hero-logo');
-    logoEl.innerHTML = company.logo_url
+    logoEl.innerHTML = company.logo_url && !company.screenshot_mode
       ? `<img src="${_esc(company.logo_url)}" class="co-hero-logo-img" alt="" data-fb="co-hero-logo">
          <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="co-hero-logo" ${window._fbHiddenStyle(company)}>${(company.name || '?')[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb co-hero-logo-fb"${window._fbStyle(company)}>${(company.name || '?')[0].toUpperCase()}</div>`;

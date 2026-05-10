@@ -169,7 +169,7 @@ window.InterviewsPage = (() => {
       ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       : '';
 
-    const logoHtml = iv.company?.logo_url
+    const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
       ? `<img src="${iv.company.logo_url}" class="icard-logo-img" alt="" data-fb="ivpg-logo-${iv.id}">
          <div class="icard-logo-fb" data-fb-id="ivpg-logo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb"${window._fbStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
@@ -305,7 +305,7 @@ window.InterviewsPage = (() => {
     const roleTitle        = iv.jd?.structured?.role_title || 'Role TBD';
     const companyName      = iv.company?.name || 'Unknown Company';
 
-    const logoHtml = iv.company?.logo_url
+    const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
       ? `<img src="${iv.company.logo_url}" class="ivdp-logo-img" alt="" data-fb="ivdp-logo-${iv.id}">
          <div class="icard-logo-fb ivdp-logo-fb" data-fb-id="ivdp-logo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${companyName[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb ivdp-logo-fb"${window._fbStyle(iv.company)}>${companyName[0].toUpperCase()}</div>`;

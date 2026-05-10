@@ -628,7 +628,7 @@ function _formatEarTime(iv) {
 
 function _logoHtmlForEar(iv, cls) {
   const initial = (iv.company?.name || '?')[0].toUpperCase();
-  return iv.company?.logo_url
+  return iv.company?.logo_url && !iv.company?.screenshot_mode
     ? `<img src="${iv.company.logo_url}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display=''">${initial}`
     : initial;
 }
@@ -663,7 +663,7 @@ function updateEarContext() {
   const timeEl    = _el('ear-iv-time');
 
   if (logoEl) {
-    if (iv.company?.logo_url) {
+    if (iv.company?.logo_url && !iv.company?.screenshot_mode) {
       logoEl.innerHTML = `<img src="${iv.company.logo_url}" alt="" onerror="this.style.display='none'">`;
       // show initial as fallback if img fails
       const img = logoEl.querySelector('img');
@@ -692,7 +692,7 @@ window.getEarSelectedId = () => _earSelectedId;
 
     dropdownEl.innerHTML = upcoming.map(iv => {
       const initial = (iv.company?.name || '?')[0].toUpperCase();
-      const logoHtml = iv.company?.logo_url
+      const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
         ? `<img src="${iv.company.logo_url}" alt="" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">${initial}`
         : initial;
       return `
@@ -759,7 +759,7 @@ function renderInterviews() {
       ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       : '';
 
-    const logoHtml = iv.company?.logo_url
+    const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
       ? `<img src="${iv.company.logo_url}" class="icard-logo-img" alt="" data-fb="clogo-${iv.id}">
          <div class="icard-logo-fb" data-fb-id="clogo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`
       : `<div class="icard-logo-fb"${window._fbStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
