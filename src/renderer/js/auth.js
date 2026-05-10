@@ -83,7 +83,7 @@ window.Auth = (() => {
     const pwConfirm = document.getElementById('auth-password-confirm-wrap');
 
     if (_mode === 'signup') {
-      if (heading)   heading.textContent   = 'Save your progress.';
+      if (heading)   heading.textContent   = 'Save your work.';
       if (submitBtn) submitBtn.textContent = 'Create Account';
       if (toggleMsg) toggleMsg.textContent = 'Already have an account?';
       if (toggleBtn) toggleBtn.textContent = 'Log In';

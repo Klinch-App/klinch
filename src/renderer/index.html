@@ -682,6 +682,13 @@
               </div>
               <button id="st-seed-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Seed Data →</button>
             </div>
+            <div class="st-toggle-row">
+              <div class="st-toggle-info">
+                <div class="st-toggle-label">Reset Full Flow</div>
+                <div class="st-toggle-sub">Clears welcome, profile, and dev auth bypass so the complete welcome → onboarding → auth flow runs from scratch.</div>
+              </div>
+              <button id="st-reset-welcome-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Reset Full Flow →</button>
+            </div>
           </div>
 
           <div class="st-section-label" style="margin-top:32px">Account</div>
@@ -1165,6 +1172,22 @@
     </div>
   </div>
 
+  <!-- Welcome screen — shown on very first launch -->
+  <div id="welcome-overlay" style="display:none">
+    <div class="welcome-content">
+      <div class="welcome-logo-mark">K</div>
+      <h1 class="welcome-headline"><span style="display:block">Prep smarter.</span><span style="display:block">Interview better.</span><span style="display:block">Get hired.</span></h1>
+      <p class="welcome-sub">Klinch is the OS for SaaS job seekers.</p>
+      <div class="welcome-pills">
+        <span class="welcome-pill">AI Interview Prep</span>
+        <span class="welcome-pill">Live Coaching</span>
+        <span class="welcome-pill">Application Tracking</span>
+      </div>
+      <button class="welcome-cta" id="welcome-cta-btn">Get Started →</button>
+      <p class="welcome-cta-hint">We'll ask you 10 quick questions before signing up to learn about you and your job search.</p>
+    </div>
+  </div>
+
   <!-- Auth overlay — shown when the user is not signed in -->
   <div id="auth-overlay" class="auth-overlay" style="display:none">
     <div class="auth-card">
@@ -1173,8 +1196,8 @@
         <div class="auth-logo-mark">K</div>
         <span class="auth-logo-text">Klinch</span>
       </div>
-      <h1 class="auth-heading" id="auth-heading">Save your progress.</h1>
-      <p class="auth-sub">Sign in to sync your sessions across devices and keep your coaching history.</p>
+      <h1 class="auth-heading" id="auth-heading">Save your work.</h1>
+      <p class="auth-sub">Create a free account to keep your interviews, resume analysis, and coaching history safe.</p>
 
       <button class="auth-google-btn" id="auth-google-btn">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
