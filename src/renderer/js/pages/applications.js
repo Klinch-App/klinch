@@ -193,7 +193,7 @@ window.ApplicationsPage = (() => {
   // ── Card HTML ─────────────────────────────────────────────────────────────────
 
   function buildCardHTML(app) {
-    const logoHtml = app.company?.logo_url
+    const logoHtml = app.company?.logo_url && !app.company?.screenshot_mode
       ? `<img src="${_esc(app.company.logo_url)}" class="icard-logo-img" alt="" data-fb="apcard-logo-${app.id}">
          <div class="icard-logo-fb" data-fb-id="apcard-logo-${app.id}" ${window._fbHiddenStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
       : `<div class="icard-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
@@ -299,7 +299,7 @@ window.ApplicationsPage = (() => {
   }
 
   function _renderDetailHero(app) {
-    const logoHtml = app.company?.logo_url
+    const logoHtml = app.company?.logo_url && !app.company?.screenshot_mode
       ? `<img src="${_esc(app.company.logo_url)}" class="co-hero-logo-img" alt="" data-fb="apd-logo">
          <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="apd-logo" ${window._fbHiddenStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`
       : `<div class="icard-logo-fb co-hero-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;
@@ -529,7 +529,7 @@ window.ApplicationsPage = (() => {
     _cel_appId = app.id;
 
     const logoWrap = _el('cel-company-logo-wrap');
-    if (app.company?.logo_url) {
+    if (app.company?.logo_url && !app.company?.screenshot_mode) {
       logoWrap.innerHTML = `<img src="${_esc(app.company.logo_url)}" class="cel-logo-img" alt="">`;
     } else {
       logoWrap.innerHTML = `<div class="cel-logo-fb"${window._fbStyle(app.company)}>${_esc((app.company?.name || '?')[0].toUpperCase())}</div>`;

@@ -91,7 +91,7 @@ window.CalendarPage = (() => {
 
   function _logoHtml(iv, size) {
     const name = iv.company?.name || '?';
-    const logo = iv.company?.logo_url || '';
+    const logo = iv.company?.logo_url && !iv.company?.screenshot_mode ? iv.company.logo_url : '';
     const init = (name[0] || '?').toUpperCase();
     const bc   = iv.company?.brand_color || '';
     const bcExtra = bc ? `;background:${bc}26;color:${bc}` : '';

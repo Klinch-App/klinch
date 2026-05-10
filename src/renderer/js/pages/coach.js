@@ -182,7 +182,7 @@ window.CoachPage = (() => {
     const typeLabel = isPost ? 'Post-Interview' : 'Pre-Interview';
     const tagClass  = isPost ? 'coach-outreach-tag-post' : 'coach-outreach-tag-pre';
 
-    const logoHtml = iv.company?.logo_url
+    const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
       ? `<img src="${_esc(iv.company.logo_url)}" class="coach-outreach-logo-img" alt="" data-fb="${logoId}">
          <div class="coach-outreach-logo-fb" data-fb-id="${logoId}" ${window._fbHiddenStyle(iv.company)}>${initial}</div>`
       : `<div class="coach-outreach-logo-fb"${window._fbStyle(iv.company)}>${initial}</div>`;

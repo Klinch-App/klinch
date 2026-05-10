@@ -673,6 +673,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       primary_domain: 'vantage.io',
       logo_url: _logo('vantage.io'),
       brand_color: '#7C3AED',
+      screenshot_mode: true,
     };
     const NEXUS = {
       name: 'Nexus',
@@ -680,6 +681,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       primary_domain: 'nexus.ai',
       logo_url: _logo('nexus.ai'),
       brand_color: '#0D9488',
+      screenshot_mode: true,
     };
     const MERIDIAN = {
       name: 'Meridian',
@@ -687,6 +689,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       primary_domain: 'meridian.co',
       logo_url: _logo('meridian.co'),
       brand_color: '#DB2777',
+      screenshot_mode: true,
     };
     const CRESTLINE = {
       name: 'Crestline',
@@ -694,6 +697,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       primary_domain: 'crestline.com',
       logo_url: _logo('crestline.com'),
       brand_color: '#2563EB',
+      screenshot_mode: true,
     };
 
     // ── Interviews ────────────────────────────────────────────────────────────────
