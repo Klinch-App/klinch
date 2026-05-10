@@ -145,6 +145,18 @@ function _wireImgFallbacks(container) {
 // Shared with interviews page
 window.wireImgFallbacks = _wireImgFallbacks;
 
+// Brand-color helpers for fallback avatars — used in all page scripts
+// Returns inline style attr for a directly-visible fallback element
+window._fbStyle = function(co) {
+  const c = co?.brand_color;
+  return c ? ` style="background:${c}26;color:${c}"` : '';
+};
+// Returns full style attr for a hidden fallback (display:none + optional brand color)
+window._fbHiddenStyle = function(co) {
+  const c = co?.brand_color;
+  return c ? `style="display:none;background:${c}26;color:${c}"` : 'style="display:none"';
+};
+
 // Shared radial donut builder — r=15.9 → circumference≈100 units
 // stroke-dasharray="${s} ${100-s}" fills exactly s% of the circle
 window.buildDonut = function(score, sizePx, extraClass) {
@@ -749,8 +761,8 @@ function renderInterviews() {
 
     const logoHtml = iv.company?.logo_url
       ? `<img src="${iv.company.logo_url}" class="icard-logo-img" alt="" data-fb="clogo-${iv.id}">
-         <div class="icard-logo-fb" data-fb-id="clogo-${iv.id}" style="display:none">${(iv.company?.name || '?')[0].toUpperCase()}</div>`
-      : `<div class="icard-logo-fb">${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
+         <div class="icard-logo-fb" data-fb-id="clogo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`
+      : `<div class="icard-logo-fb"${window._fbStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
 
     // Support both old single-interviewer records and new array records
     const interviewers = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);

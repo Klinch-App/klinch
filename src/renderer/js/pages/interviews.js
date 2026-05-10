@@ -171,8 +171,8 @@ window.InterviewsPage = (() => {
 
     const logoHtml = iv.company?.logo_url
       ? `<img src="${iv.company.logo_url}" class="icard-logo-img" alt="" data-fb="ivpg-logo-${iv.id}">
-         <div class="icard-logo-fb" data-fb-id="ivpg-logo-${iv.id}" style="display:none">${(iv.company?.name || '?')[0].toUpperCase()}</div>`
-      : `<div class="icard-logo-fb">${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
+         <div class="icard-logo-fb" data-fb-id="ivpg-logo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`
+      : `<div class="icard-logo-fb"${window._fbStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
 
     const interviewers    = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
     const photoStackHtml  = interviewers.slice(0, 3).map((iw, i) => iw.photo_url
@@ -307,8 +307,8 @@ window.InterviewsPage = (() => {
 
     const logoHtml = iv.company?.logo_url
       ? `<img src="${iv.company.logo_url}" class="ivdp-logo-img" alt="" data-fb="ivdp-logo-${iv.id}">
-         <div class="icard-logo-fb ivdp-logo-fb" data-fb-id="ivdp-logo-${iv.id}" style="display:none">${companyName[0].toUpperCase()}</div>`
-      : `<div class="icard-logo-fb ivdp-logo-fb">${companyName[0].toUpperCase()}</div>`;
+         <div class="icard-logo-fb ivdp-logo-fb" data-fb-id="ivdp-logo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${companyName[0].toUpperCase()}</div>`
+      : `<div class="icard-logo-fb ivdp-logo-fb"${window._fbStyle(iv.company)}>${companyName[0].toUpperCase()}</div>`;
 
     // ── Section 2: Role Intel ──────────────────────────────────────────────────
     const jd = iv.jd?.structured;

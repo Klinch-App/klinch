@@ -46,11 +46,12 @@ window.CompaniesPage = (() => {
       const key = _companyKey(co);
       if (!key) return;
       if (!map.has(key)) {
-        map.set(key, { key, name: co.name || key, domain: co.domain || '', logo_url: co.logo_url || null, interviews: [], applications: [] });
+        map.set(key, { key, name: co.name || key, domain: co.domain || '', logo_url: co.logo_url || null, brand_color: co.brand_color || null, interviews: [], applications: [] });
       }
       const e = map.get(key);
-      if (!e.domain   && co.domain)   e.domain   = co.domain;
-      if (!e.logo_url && co.logo_url) e.logo_url = co.logo_url;
+      if (!e.domain      && co.domain)      e.domain      = co.domain;
+      if (!e.logo_url    && co.logo_url)    e.logo_url    = co.logo_url;
+      if (!e.brand_color && co.brand_color) e.brand_color = co.brand_color;
     }
 
     _getInterviews().forEach(iv => {
@@ -114,8 +115,8 @@ window.CompaniesPage = (() => {
     grid.innerHTML = companies.map(c => {
       const logoHtml = c.logo_url
         ? `<img src="${_esc(c.logo_url)}" class="co-card-logo-img" alt="" data-fb="co-logo-${_esc(c.key)}">
-           <div class="icard-logo-fb" data-fb-id="co-logo-${_esc(c.key)}" style="display:none">${(c.name || '?')[0].toUpperCase()}</div>`
-        : `<div class="icard-logo-fb">${(c.name || '?')[0].toUpperCase()}</div>`;
+           <div class="icard-logo-fb" data-fb-id="co-logo-${_esc(c.key)}" ${window._fbHiddenStyle(c)}>${(c.name || '?')[0].toUpperCase()}</div>`
+        : `<div class="icard-logo-fb"${window._fbStyle(c)}>${(c.name || '?')[0].toUpperCase()}</div>`;
 
       const ivCount  = c.interviews.length;
       const appCount = c.applications.length;
@@ -192,8 +193,8 @@ window.CompaniesPage = (() => {
     const logoEl  = _el('co-hero-logo');
     logoEl.innerHTML = company.logo_url
       ? `<img src="${_esc(company.logo_url)}" class="co-hero-logo-img" alt="" data-fb="co-hero-logo">
-         <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="co-hero-logo" style="display:none">${(company.name || '?')[0].toUpperCase()}</div>`
-      : `<div class="icard-logo-fb co-hero-logo-fb">${(company.name || '?')[0].toUpperCase()}</div>`;
+         <div class="icard-logo-fb co-hero-logo-fb" data-fb-id="co-hero-logo" ${window._fbHiddenStyle(company)}>${(company.name || '?')[0].toUpperCase()}</div>`
+      : `<div class="icard-logo-fb co-hero-logo-fb"${window._fbStyle(company)}>${(company.name || '?')[0].toUpperCase()}</div>`;
     _el('co-hero-name').textContent   = company.name;
     const domainEl = _el('co-hero-domain');
     domainEl.textContent = company.domain || '';
