@@ -341,6 +341,34 @@ backBtn.addEventListener('click', () => {
 
 // ── Post-interview nudge system ───────────────────────────────────────────────
 
+const _nudgePicker = { year: 0, month: 0, day: 0 };
+
+function _nudgeRenderCal() {
+  const grid  = document.getElementById('nudge-cal-grid');
+  const label = document.getElementById('nudge-cal-month-label');
+  if (!grid || !label) return;
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  label.textContent = `${MONTHS[_nudgePicker.month]} ${_nudgePicker.year}`;
+  const firstDay    = new Date(_nudgePicker.year, _nudgePicker.month, 1).getDay();
+  const daysInMonth = new Date(_nudgePicker.year, _nudgePicker.month + 1, 0).getDate();
+  const today = new Date();
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="nudge-cal-cell nudge-cal-cell-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday    = today.getFullYear() === _nudgePicker.year && today.getMonth() === _nudgePicker.month && today.getDate() === d;
+    const isSelected = _nudgePicker.day === d;
+    let cls = 'nudge-cal-cell';
+    if (isToday)    cls += ' is-today';
+    if (isSelected) cls += ' is-selected';
+    html += `<div class="${cls}" data-day="${d}">${d}</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.nudge-cal-cell[data-day]').forEach(cell => {
+    cell.onclick = () => { _nudgePicker.day = +cell.dataset.day; _nudgeRenderCal(); };
+  });
+}
+
+
 function _checkInterviewNudges() {
   const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   const now = new Date();
@@ -412,11 +440,46 @@ function _showNudge(iv, remaining) {
   document.getElementById('nudge-rescheduled').onclick = () => {
     actionBtns.style.display   = 'none';
     reschedPanel.style.display = '';
-    const inp = document.getElementById('nudge-reschedule-input');
-    if (iv.scheduled_at) {
-      const d = new Date(iv.scheduled_at);
-      inp.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+    const src = iv.scheduled_at ? new Date(iv.scheduled_at) : new Date();
+    _nudgePicker.year  = src.getFullYear();
+    _nudgePicker.month = src.getMonth();
+    _nudgePicker.day   = src.getDate();
+    _nudgeRenderCal();
+
+    const hourSel = document.getElementById('nudge-time-hour');
+    hourSel.innerHTML = '';
+    for (let h = 1; h <= 12; h++) {
+      const o = document.createElement('option');
+      o.value = h; o.textContent = h; hourSel.appendChild(o);
     }
+    const rawH = src.getHours();
+    const initPM = rawH >= 12;
+    hourSel.value = rawH % 12 || 12;
+
+    const minSel = document.getElementById('nudge-time-min');
+    minSel.innerHTML = '';
+    for (let m = 0; m < 60; m += 5) {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = String(m).padStart(2, '0'); minSel.appendChild(o);
+    }
+    minSel.value = Math.round(src.getMinutes() / 5) * 5 % 60;
+
+    const amBtn = document.getElementById('nudge-ampm-am');
+    const pmBtn = document.getElementById('nudge-ampm-pm');
+    amBtn.classList.toggle('active', !initPM);
+    pmBtn.classList.toggle('active',  initPM);
+    amBtn.onclick = () => { amBtn.classList.add('active'); pmBtn.classList.remove('active'); };
+    pmBtn.onclick = () => { pmBtn.classList.add('active'); amBtn.classList.remove('active'); };
+
+    document.getElementById('nudge-cal-prev').onclick = () => {
+      if (--_nudgePicker.month < 0) { _nudgePicker.month = 11; _nudgePicker.year--; }
+      _nudgePicker.day = 0; _nudgeRenderCal();
+    };
+    document.getElementById('nudge-cal-next').onclick = () => {
+      if (++_nudgePicker.month > 11) { _nudgePicker.month = 0; _nudgePicker.year++; }
+      _nudgePicker.day = 0; _nudgeRenderCal();
+    };
   };
 
   document.getElementById('nudge-reschedule-cancel').onclick = () => {
@@ -425,9 +488,15 @@ function _showNudge(iv, remaining) {
   };
 
   document.getElementById('nudge-reschedule-save').onclick = () => {
-    const val = document.getElementById('nudge-reschedule-input').value;
-    if (!val) return;
-    _patch({ scheduled_at: new Date(val).toISOString(), nudge_sent: true, updated_at: new Date().toISOString() });
+    if (!_nudgePicker.day) return;
+    const hourSel = document.getElementById('nudge-time-hour');
+    const minSel  = document.getElementById('nudge-time-min');
+    const isPM    = document.getElementById('nudge-ampm-pm').classList.contains('active');
+    let h = parseInt(hourSel.value, 10);
+    if (isPM && h !== 12) h += 12;
+    if (!isPM && h === 12) h = 0;
+    const dt = new Date(_nudgePicker.year, _nudgePicker.month, _nudgePicker.day, h, parseInt(minSel.value, 10));
+    _patch({ scheduled_at: dt.toISOString(), nudge_sent: true, updated_at: new Date().toISOString() });
     _dismiss();
   };
 

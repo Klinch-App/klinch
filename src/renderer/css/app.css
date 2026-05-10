@@ -5163,18 +5163,157 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   color: var(--text-secondary);
 }
 
-.nudge-date-input {
-  width: 100%;
-  box-sizing: border-box;
+.nudge-cal-picker {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.nudge-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.nudge-cal-nav-btn {
+  width: 28px;
+  height: 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, color 0.15s;
+}
+.nudge-cal-nav-btn:hover { border-color: var(--primary); color: var(--primary-light); }
+
+.nudge-cal-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nudge-cal-days-hdr {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.nudge-cal-days-hdr span {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+}
+
+.nudge-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.nudge-cal-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  user-select: none;
+}
+.nudge-cal-cell:not(.nudge-cal-cell-empty):hover {
+  background: rgba(124, 58, 255, 0.12);
+  color: var(--text-primary);
+}
+.nudge-cal-cell-empty { cursor: default; }
+.nudge-cal-cell.is-today {
+  color: var(--primary-light);
+  font-weight: 700;
+}
+.nudge-cal-cell.is-selected {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+.nudge-cal-cell.is-selected:hover { background: var(--primary); }
+
+.nudge-time-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nudge-time-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.nudge-time-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nudge-time-sel {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 14px;
-  padding: 10px 14px;
+  padding: 6px 8px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: center;
+  width: 58px;
 }
-.nudge-date-input:focus { outline: none; border-color: var(--primary); }
+.nudge-time-sel:focus { outline: none; border-color: var(--primary); }
+
+.nudge-time-sep {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.nudge-ampm-toggle {
+  display: flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.nudge-ampm-btn {
+  padding: 6px 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nudge-ampm-btn.active { background: var(--primary); color: #fff; }
+.nudge-ampm-btn:not(.active):hover { color: var(--text-secondary); background: rgba(124, 58, 255, 0.08); }
 
 .nudge-reschedule-actions {
   display: flex;
