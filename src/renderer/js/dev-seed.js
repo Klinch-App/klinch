@@ -203,7 +203,8 @@
             feedback: '**Answer Quality**\nAnswers were consistently structured and grounded in specifics — the 112% quota figure, the January miss with a clear recovery arc, and genuine product knowledge all added real credibility. The objection-handling answer was the standout: it moved cleanly from old behavior to new insight to outcome. The "why Outreach" answer showed authentic product familiarity rather than rehearsed talking points, which is rare at the final-round stage.\n\n**Delivery**\nPacing was confident throughout with minimal filler — a couple of instances of "um" and "I think" but nothing distracting. The failure story came across as well-rehearsed in the right sense: clear, self-aware, no over-hedging. Slight uptick in pace when walking through the prospecting process — worth watching on calls where you want the listener to absorb the detail.\n\n**Answer Length**\nMost answers ran 45–75 seconds, which is the right range for a final round. The objection-handling and failure answers hit the ideal length: specific enough to be credible, concise enough to hold attention. The closing "why Outreach" answer could have used one more concrete example — it ended a beat early and slightly undersold the conviction.\n\n**Clarity & Confidence**\nHigh confidence on metrics, product knowledge, and the failure story. The motivation answer was the clearest of the session — direct and specific with no hedging. The closing question for the interviewer was good but ended as a statement rather than a real exchange; a follow-on check-in would have kept you in control of the close.\n\n**Top Improvements**\n• Quantify the "why Outreach" answer — you described the analytics layer well but never tied it to a personal result. Add one data point: a subject line test, a sequence that outperformed, anything measurable that shows you\'ve already done the thing you\'re selling.\n• Turn your close into a dialogue — after expressing enthusiasm, add a micro-ask: "Is there anything from our conversations today that would give you pause?" That shifts from monologue to closing move.\n• Lead the failure answer with the outcome first ("I missed January by about 20%"), then explain why. You got there, but the inverted structure would have landed with more confidence from the start.',
           }];
         })(),
-        coach_analysis: `**What You Did Well**
+        coach_analysis: `SCORE: 78
+**What You Did Well**
 • Opened with a strong research hook referencing Outreach's recent Series D — showed genuine preparation
 • Handled the "we already have a tool for that" objection confidently with a pivot to ROI
 • Closed clearly by proposing a specific next step rather than leaving it open
@@ -255,7 +256,8 @@
         status: 'completed',
         coach_score: 84,
         created_at: _daysFromNow(-21),
-        coach_analysis: `**What You Did Well**
+        coach_analysis: `SCORE: 84
+**What You Did Well**
 • Demonstrated solid product knowledge across all three interviewers without being repetitive
 • Gave concrete numbers when asked about past performance — this stood out
 • Stayed composed during the panel format, making clear eye contact with each person
