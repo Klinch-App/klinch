@@ -388,33 +388,29 @@ window.InterviewsPage = (() => {
     // ── Section 4: Interview Panel ─────────────────────────────────────────────
     const panelHtml = _buildPanelHtml(iv, interviewers);
 
-    // ── Section 5: Session History ─────────────────────────────────────────────
+    // ── Session Transcript (folded into Coach) ────────────────────────────────
     const sessions = iv.sessions || [];
-    const sessHtml = sessions.length
-      ? sessions
-          .slice()
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .map(s => {
-            const sDateStr = s.created_at
-              ? new Date(s.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-              : '';
-            const raw     = s.feedback || '';
-            const preview = raw.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n+/g, ' ').trim();
-            const excerpt = preview.length > 100 ? preview.slice(0, 100).trimEnd() + '…' : preview || 'No feedback recorded.';
-            return `
-              <div class="ivdp-session-card">
-                ${sDateStr ? `<div class="ivdp-session-date">${_esc(sDateStr)}</div>` : ''}
-                <div class="ivdp-session-preview">${_esc(excerpt)}</div>
-                <button class="ivdp-sf-practice-btn" data-action="retry-dry-run" data-iv-id="${iv.id}" style="margin-top:14px">Practice This Interview →</button>
-              </div>`;
-          }).join('')
-      : `<div class="ivdp-empty-state">
-           <div class="ivdp-empty-icon">🎙️</div>
-           <div class="ivdp-empty-title">No sessions yet</div>
-           <div class="ivdp-empty-sub">Complete a live Klinch Ear session to see feedback here.</div>
-         </div>`;
+    const latestSession = sessions.length
+      ? sessions.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+      : null;
+    let transcriptHtml = '';
+    if (latestSession?.transcript?.length) {
+      const sDateStr = latestSession.created_at
+        ? new Date(latestSession.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '';
+      const lines = latestSession.transcript.map(t => `
+        <div class="ivdp-transcript-line ${t.speaker === 'you' ? 'ivdp-transcript-you' : 'ivdp-transcript-interviewer'}">
+          <span class="ivdp-transcript-speaker">${_esc(t.speaker === 'you' ? 'You' : 'Interviewer')}</span>
+          <span class="ivdp-transcript-text">${_esc(t.text)}</span>
+        </div>`).join('');
+      transcriptHtml = `
+        <details class="ivdp-transcript-section">
+          <summary class="ivdp-transcript-toggle">Session Transcript${sDateStr ? ` — ${_esc(sDateStr)}` : ''}</summary>
+          <div class="ivdp-transcript-body">${lines}</div>
+        </details>`;
+    }
 
-    // ── Section 6 & 7: Coach + Context (cached) ────────────────────────────────
+    // ── Section 5 & 6: Coach + Context (cached) ────────────────────────────────
     const coachCached   = iv.coach_analysis  || null;
     const contextCached = iv.context_summary || null;
 
@@ -426,7 +422,8 @@ window.InterviewsPage = (() => {
     } else if (coachCached) {
       coachHtml = `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
          <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
-         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`;
+         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>
+         ${transcriptHtml}`;
     } else {
       coachHtml = `<div id="ivdp-coach-score"></div>
          <div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
@@ -450,9 +447,6 @@ window.InterviewsPage = (() => {
          </div>
          <div class="ivdp-ai-body" id="ivdp-context-body" style="display:none"></div>
          <button class="ivdp-refresh-btn" id="ivdp-context-refresh" data-action="refresh-context" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
-
-    // ── Section 7: Session Feedback ───────────────────────────────────────────
-    const sessionFeedbackHtml = _buildSessionFeedbackHtml(iv);
 
     // ── Assemble full page ─────────────────────────────────────────────────────
     const container = _el('iv-detail-page');
@@ -530,15 +524,7 @@ window.InterviewsPage = (() => {
         </div>
       </div>` : ''}
 
-      <!-- Section 6: Session History -->
-      <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Session History</div>
-        </div>
-        <div class="ivdp-section-body">${sessHtml}</div>
-      </div>
-
-      <!-- Section 7: Coach -->
+      <!-- Section 6: Coach -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Coach</div>
@@ -546,7 +532,7 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body">${coachHtml}</div>
       </div>
 
-      <!-- Section 8: Prep Notes -->
+      <!-- Section 6: Prep Notes -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Prep Notes</div>
@@ -610,45 +596,6 @@ window.InterviewsPage = (() => {
       _fireCommunityQuestions(iv);
     }
 
-  }
-
-  function _buildSessionFeedbackHtml(iv) {
-    const sessions = (iv.sessions || []).filter(s => s.feedback);
-    if (!sessions.length) return '';
-
-    const sorted = sessions.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const latest = sorted[0];
-    const older  = sorted.slice(1);
-
-    const fmtDate = (iso) => iso
-      ? new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-      : '';
-
-    let html = `
-      <div class="ivdp-sf-card">
-        ${fmtDate(latest.created_at) ? `<div class="ivdp-col-label" style="margin-bottom:10px">${_esc(fmtDate(latest.created_at))}</div>` : ''}
-        <div class="ivdp-ai-body">${_renderMarkdownish(latest.feedback)}</div>
-        <div class="ivdp-sf-practice-cta">
-          <div class="ivdp-sf-practice-hint">Want to improve? Practice the questions from this session.</div>
-          <button class="ivdp-sf-practice-btn" data-action="retry-dry-run" data-iv-id="${_esc(iv.id)}">Practice This Interview →</button>
-        </div>
-      </div>`;
-
-    if (older.length) {
-      html += `
-      <details class="ivdp-raw-jd" style="margin-top:16px">
-        <summary>View Previous Sessions (${older.length})</summary>
-        <div>
-          ${older.map(s => `
-            <div class="ivdp-sf-session" style="margin-bottom:20px;padding-top:16px;border-top:1px solid var(--border-subtle)">
-              ${fmtDate(s.created_at) ? `<div class="ivdp-col-label" style="margin-bottom:10px">${_esc(fmtDate(s.created_at))}</div>` : ''}
-              <div class="ivdp-ai-body">${_renderMarkdownish(s.feedback)}</div>
-            </div>`).join('')}
-        </div>
-      </details>`;
-    }
-
-    return html;
   }
 
   function _buildPanelHtml(iv, interviewers) {

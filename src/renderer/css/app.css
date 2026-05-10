@@ -3441,60 +3441,53 @@ html, body {
   font-style: italic;
 }
 
-/* Session Feedback card */
-.ivdp-sf-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 20px;
-}
-.ivdp-sf-practice-cta {
+/* Session transcript (collapsible, inside Coach) */
+.ivdp-transcript-section {
   margin-top: 20px;
-  padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
+  padding-top: 16px;
 }
-.ivdp-sf-practice-hint {
+.ivdp-transcript-toggle {
   font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 10px;
-}
-.ivdp-sf-practice-btn {
-  display: block;
-  width: 100%;
-  padding: 11px;
-  background: linear-gradient(135deg, var(--primary), var(--accent-pink));
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
   font-weight: 600;
-  font-family: var(--font-sans);
+  color: var(--text-muted);
   cursor: pointer;
-  transition: opacity 0.15s;
-  text-align: center;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
 }
-.ivdp-sf-practice-btn:hover { opacity: 0.88; }
-
-/* Session cards */
-.ivdp-session-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  margin-bottom: 10px;
-  transition: border-color 0.15s;
+.ivdp-transcript-toggle::-webkit-details-marker { display: none; }
+.ivdp-transcript-toggle::before {
+  content: '▶';
+  font-size: 9px;
+  transition: transform 0.15s;
 }
-.ivdp-session-card:hover { border-color: var(--primary); }
-.ivdp-session-date {
-  font-size: 11px;
+details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
+.ivdp-transcript-body {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ivdp-transcript-line {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.ivdp-transcript-speaker {
   font-weight: 600;
-  color: var(--text-muted);
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 6px;
+  letter-spacing: 0.6px;
+  padding-top: 2px;
 }
-.ivdp-session-notes   { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-.ivdp-session-preview { font-size: 13px; color: var(--text-muted); line-height: 1.5; font-style: italic; }
+.ivdp-transcript-you .ivdp-transcript-speaker   { color: var(--primary); }
+.ivdp-transcript-interviewer .ivdp-transcript-speaker { color: var(--text-muted); }
+.ivdp-transcript-text { color: var(--text-secondary); }
 
 /* AI sections */
 .ivdp-ai-skeleton {
