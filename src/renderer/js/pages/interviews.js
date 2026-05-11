@@ -302,7 +302,7 @@ window.InterviewsPage = (() => {
     const interviewers     = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
     const stageBadgeClass  = STAGE_BADGE[iv.stage] || 'badge-recruiter';
     const completed        = isCompleted(iv);
-    const roleTitle        = iv.jd?.structured?.role_title || 'Role TBD';
+    const roleTitle        = window.shortenRoleTitle(iv.jd?.structured?.role_title) || 'Role TBD';
     const companyName      = iv.company?.name || 'Unknown Company';
 
     const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
@@ -381,8 +381,7 @@ window.InterviewsPage = (() => {
           <div class="ivdp-skel-line w70"></div>
           <div class="ivdp-fit-analyzing-note">Analyzing your resume against this role — may take a few moments…</div>
         </div>
-        <div id="ivdp-fit-body" style="display:none"></div>
-        <button class="ivdp-refresh-btn" id="ivdp-fit-refresh" data-action="refresh-fit" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
+        <div id="ivdp-fit-body" style="display:none"></div>`;
     }
 
     // ── Section 4: Interview Panel ─────────────────────────────────────────────
@@ -738,8 +737,7 @@ window.InterviewsPage = (() => {
               <div class="ivdp-skel-line w70"></div>
               <div class="ivdp-fit-analyzing-note">Analyzing your resume against this role — may take a few moments…</div>
             </div>
-            <div id="ivdp-fit-body" style="display:none"></div>
-            <button class="ivdp-refresh-btn" id="ivdp-fit-refresh" data-action="refresh-fit" data-iv-id="${id}" style="display:none">↺ Refresh</button>`;
+            <div id="ivdp-fit-body" style="display:none"></div>`;
           _fireCandidateFit(iv);
         }
       });
@@ -797,17 +795,38 @@ window.InterviewsPage = (() => {
   function _processMarkdownBody(text) {
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/^### (.+)$/gm, '<h4 class="ivdp-ai-h4">$1</h4>')
-      .replace(/^- (.+)$/gm,   '<li>$1</li>')
+      .replace(/^# (.+)$/gm,    '<h3 class="ivdp-ai-h3">$1</h3>')
+      .replace(/^### (.+)$/gm,  '<h4 class="ivdp-ai-h4">$1</h4>')
+      .replace(/^---$/gm,       '<hr class="ivdp-ai-hr">')
+      .replace(/^- (.+)$/gm,    '<li>$1</li>')
       .replace(/(<li>.*<\/li>(\n|$))+/g, m => `<ul>${m}</ul>`)
       .replace(/\n\n/g, '</p><p>')
       .replace(/^(?!<[hul])(.+)$/gm, (m, p) => p ? `<p>${p}</p>` : '')
       .replace(/<p><\/p>/g, '');
   }
 
+  const _ROLE_SHORTEN_PAIRS = [
+    ['Sales Development Representative', 'SDR'],
+    ['Account Executive', 'AE'],
+    ['Customer Success Manager', 'CSM'],
+    ['Account Manager', 'AM'],
+    ['Solutions Engineer', 'SE'],
+    ['Sales Engineer', 'SE'],
+    ['Revenue Operations', 'RevOps'],
+    ['Revenue Ops', 'RevOps'],
+    ['People Operations', 'People'],
+  ];
+  function _shortenRolesInText(text) {
+    let out = text;
+    _ROLE_SHORTEN_PAIRS.forEach(([full, short]) => {
+      out = out.replace(new RegExp(full, 'g'), short);
+    });
+    return out;
+  }
+
   function _renderMarkdownish(text) {
     if (!text) return '';
-    const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escaped = _shortenRolesInText(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const parts   = escaped.split(/^## (.+)$/m);
 
     if (parts.length === 1) return _processMarkdownBody(parts[0]);
@@ -954,7 +973,11 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
           </div>
         </div>
       </div>
-      ${fit.strategic_summary ? `<div class="ivdp-fit-summary">${_esc(fit.strategic_summary)}</div>` : ''}`;
+      ${fit.strategic_summary ? `
+      <div class="ivdp-fit-ai-summary">
+        <div class="ivdp-fit-ai-summary-label">AI Summary</div>
+        <div class="ivdp-fit-summary">${_esc(fit.strategic_summary)}</div>
+      </div>` : ''}`;
   }
 
   async function _fireCandidateFit(iv) {
@@ -969,18 +992,15 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         profile_context: window.profileContext ? window.profileContext(profile) : '',
       });
 
-      const fitSkel    = _el('ivdp-fit-skeleton');
-      const fitBody    = _el('ivdp-fit-body');
-      const fitRefresh = _el('ivdp-fit-refresh');
+      const fitSkel = _el('ivdp-fit-skeleton');
+      const fitBody = _el('ivdp-fit-body');
 
       if (!res?.ok) throw new Error(res?.error || 'Unknown error');
 
       _patchIv(iv.id, { candidate_fit: res.data });
-      if (fitSkel)    fitSkel.style.display    = 'none';
-      if (fitBody)  { fitBody.innerHTML = _buildFitHtml(res.data, iv.id); fitBody.style.display = ''; }
-      if (fitRefresh) fitRefresh.style.display = '';
+      if (fitSkel) fitSkel.style.display = 'none';
+      if (fitBody) { fitBody.innerHTML = _buildFitHtml(res.data, iv.id); fitBody.style.display = ''; }
 
-      // also show the header refresh button
       const headerRefresh = document.querySelector(`.ivdp-section-header [data-action="refresh-fit"]`);
       if (headerRefresh) headerRefresh.style.display = '';
     } catch (err) {
@@ -998,7 +1018,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
     const cqSkel  = _el('ivdp-cq-skeleton');
     if (!domain || !cqBody) return;
 
-    const CQ_STAGE_ORDER = Object.keys(STAGE_BADGE);
+    const CQ_STAGE_ORDER = ['Recruiter Screen', 'Hiring Manager', 'Panel', 'Final Round'];
 
     function _paintCQ(questions, activeStage) {
       const byStage = {};
@@ -1015,9 +1035,9 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
           <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
             All <span class="co-cq-tab-count">${questions.length}</span>
           </button>
-          ${CQ_STAGE_ORDER.map(s => `
+          ${CQ_STAGE_ORDER.filter(s => (byStage[s] || []).length > 0).map(s => `
             <button class="co-cq-tab${current === s ? ' active' : ''}" data-stage="${_esc(s)}">
-              ${_esc(s)} <span class="co-cq-tab-count">${(byStage[s] || []).length}</span>
+              ${_esc(s)} <span class="co-cq-tab-count">${byStage[s].length}</span>
             </button>`).join('')}
         </div>`;
 
