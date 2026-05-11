@@ -6,21 +6,30 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Claude helpers ─────────────────────────────────────────────────────────────
 
-async function analyzeResume(rawText, profileCtx) {
-  const baseSystem = 'You are an expert SDR resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.';
+const ROLE_DIM_KEY = {
+  'SDR': 'sdr_relevance', 'AE': 'ae_relevance', 'CSM': 'csm_relevance',
+  'AM': 'am_relevance', 'SE': 'se_relevance', 'RevOps': 'revops_relevance',
+  'Marketing': 'marketing_relevance', 'Partnerships': 'partnerships_relevance',
+  'Enablement': 'enablement_relevance', 'People': 'people_relevance',
+};
+
+async function analyzeResume(rawText, profileCtx, roleType = 'SDR') {
+  const roleDimKey = ROLE_DIM_KEY[roleType] || 'sdr_relevance';
+  const baseSystem = `You are an expert ${roleType} resume coach and ATS specialist. Return ONLY valid JSON — no markdown, no code fences, no explanation.`;
   const msg = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2500,
     system: profileCtx ? profileCtx + '\n\n' + baseSystem : baseSystem,
     messages: [{
       role: 'user',
-      content: `Analyze this resume for an SDR (Sales Development Representative) role.
+      content: `Analyze this resume for a ${roleType} role.
 Return ONLY valid JSON matching this schema exactly:
-{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"sdr_relevance":<0-100>},"annotations":[{"id":"h1","quote":"<exact verbatim substring>","comment":"<specific feedback>"}],"ats_tips":["<specific actionable tip>"]}
+{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"${roleDimKey}":<0-100>},"annotations":[{"id":"h1","quote":"<exact verbatim substring>","comment":"<specific feedback>","severity":"high|medium"}],"ats_tips":["<specific actionable tip>"]}
 
 Rules:
 - Include 5-8 annotations. Each "quote" must be copied character-for-character from the resume text below — it will be used to find and highlight the exact phrase. Do not paraphrase or summarise.
-- Comments must be specific and actionable for SDR roles, not generic.
+- severity: "high" for major issues that significantly hurt the resume, "medium" for minor improvements.
+- Comments must be specific and actionable for ${roleType} roles, not generic.
 - Include 3-5 ATS tips specific to this resume, not generic advice.
 
 Resume:
@@ -120,9 +129,9 @@ function init() {
     }
   });
 
-  ipcMain.handle('claude:resume-analyze', async (_e, { raw_text, profile_context }) => {
+  ipcMain.handle('claude:resume-analyze', async (_e, { raw_text, profile_context, role_type }) => {
     try {
-      const data = await analyzeResume(raw_text, profile_context || '');
+      const data = await analyzeResume(raw_text, profile_context || '', role_type || 'SDR');
       return { ok: true, data };
     } catch (err) {
       console.error('[claude:resume-analyze]', err.message);

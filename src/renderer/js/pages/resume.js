@@ -41,10 +41,11 @@ window.ResumePage = (() => {
     if (!analysis) return [];
     if (analysis.annotations) return analysis.annotations;
     return (analysis.highlights || []).map(h => ({
-      id:      h.id,
-      quote:   h.original || '',
-      comment: h.reason   || '',
-      rewrite: h.rewrite,
+      id:       h.id,
+      quote:    h.original || '',
+      comment:  h.reason   || '',
+      rewrite:  h.rewrite,
+      severity: h.severity || 'medium',
     }));
   }
 
@@ -71,14 +72,17 @@ window.ResumePage = (() => {
     const matched    = annotations.filter(a => matchedIds.has(a.id));
 
     // Build numbered marks in document order
-    const numMap = {};
+    const numMap     = {};
+    const severityMap = {};
     clean.forEach((p, i) => { numMap[p.id] = i + 1; });
+    annotations.forEach(a => { severityMap[a.id] = a.severity === 'high' ? 'high' : 'medium'; });
 
     let html   = '';
     let cursor = 0;
     for (const pos of clean) {
+      const sev = severityMap[pos.id];
       html += _esc(rawText.slice(cursor, pos.idx));
-      html += `<span class="rs-ann-mark" data-id="${_esc(pos.id)}">` +
+      html += `<span class="rs-ann-mark rs-severity-${sev}" data-id="${_esc(pos.id)}">` +
               `<span class="rs-ann-mark-num">${numMap[pos.id]}</span>` +
               `${_esc(rawText.slice(pos.idx, pos.idx + pos.len))}</span>`;
       cursor = pos.idx + pos.len;
@@ -90,7 +94,7 @@ window.ResumePage = (() => {
 
   function _buildBubbles(matched, numMap) {
     return matched.map(ann => `
-      <div class="rs-ann-bubble" data-id="${_esc(ann.id)}">
+      <div class="rs-ann-bubble rs-severity-${ann.severity === 'high' ? 'high' : 'medium'}" data-id="${_esc(ann.id)}">
         <div class="rs-ann-bubble-top">
           <span class="rs-ann-num">${numMap[ann.id]}</span>
           <span class="rs-ann-comment">${_esc(ann.comment)}</span>
@@ -295,28 +299,38 @@ window.ResumePage = (() => {
 
   function _buildCoachResults(a) {
     const DIM_LABELS = {
-      impact:            'Impact',
-      clarity:           'Clarity',
-      ats_compatibility: 'ATS Compatibility',
-      sdr_relevance:     'SDR Relevance',
+      impact:                 'Impact',
+      clarity:                'Clarity',
+      ats_compatibility:      'ATS Compatibility',
+      sdr_relevance:          'SDR Relevance',
+      ae_relevance:           'AE Relevance',
+      csm_relevance:          'CSM Relevance',
+      am_relevance:           'AM Relevance',
+      se_relevance:           'SE Relevance',
+      revops_relevance:       'RevOps Relevance',
+      marketing_relevance:    'Marketing Relevance',
+      partnerships_relevance: 'Partnerships Relevance',
+      enablement_relevance:   'Enablement Relevance',
+      people_relevance:       'People Relevance',
     };
 
     const score      = Math.min(100, Math.max(0, a.overall_score || 0));
-    const scoreClass = score >= 75 ? 'rs-score-good' : score >= 50 ? 'rs-score-mid' : 'rs-score-low';
+    const scoreClass = score >= 80 ? 'rs-score-good' : score >= 60 ? 'rs-score-mid' : 'rs-score-low';
 
     const dimBars = Object.entries(a.dimensions || {}).map(([key, val]) => {
-      const pct = Math.min(100, Math.max(0, val || 0));
+      const pct      = Math.min(100, Math.max(0, val || 0));
+      const barColor = pct >= 80 ? '#4ADE80' : pct >= 60 ? '#FBBF24' : '#F87171';
       return `
         <div class="rs-dim-row">
           <div class="rs-dim-label">${_esc(DIM_LABELS[key] || key)}</div>
-          <div class="rs-dim-track"><div class="rs-dim-fill" style="width:${pct}%"></div></div>
+          <div class="rs-dim-track"><div class="rs-dim-fill" style="width:${pct}%;background:${barColor}"></div></div>
           <div class="rs-dim-val">${pct}</div>
         </div>`;
     }).join('');
 
     const atsTips = (a.ats_tips || []).map(t => `
       <div class="rs-ats-tip">
-        <span class="rs-ats-check">○</span>
+        <span class="rs-ats-check">•</span>
         <span>${_esc(t)}</span>
       </div>`).join('');
 
@@ -339,7 +353,7 @@ window.ResumePage = (() => {
     const ivs    = getInterviews().filter(iv => iv.jd?.raw);
     const hasIvs = ivs.length > 0;
     const options = hasIvs
-      ? ivs.map(iv => `<option value="${_esc(iv.id)}">${_esc(iv.company?.name || 'Unknown')} — ${_esc(iv.jd?.structured?.role_title || 'Unknown Role')}</option>`).join('')
+      ? ivs.map(iv => `<option value="${_esc(iv.id)}">${_esc(iv.company?.name || 'Unknown')} — ${_esc(window.shortenRoleTitle(iv.jd?.structured?.role_title) || 'Unknown Role')}</option>`).join('')
       : '<option value="">No interviews with a job description yet</option>';
 
     const cachedResult = _selectedIvId && r?.role_fits[_selectedIvId]
@@ -429,13 +443,36 @@ window.ResumePage = (() => {
       });
     }
 
-    // Rewrite button delegation — covers both initial render (cached analysis)
-    // and dynamically injected bubbles from _renderAnnotations.
+    // Rewrite button delegation + hover cross-highlighting (both via rs-content event delegation)
     const content = _el('rs-content');
     if (content) {
       content.addEventListener('click', async e => {
         const btn = e.target.closest('.rs-hl-rewrite-btn');
         if (btn) await _triggerRewrite(btn.dataset.hid, btn);
+      });
+
+      content.addEventListener('mouseover', e => {
+        const mark = e.target.closest('.rs-ann-mark');
+        if (mark) {
+          content.querySelectorAll(`.rs-ann-bubble[data-id="${mark.dataset.id}"]`).forEach(b => b.classList.add('rs-hover'));
+          return;
+        }
+        const bubble = e.target.closest('.rs-ann-bubble');
+        if (bubble) {
+          content.querySelectorAll(`.rs-ann-mark[data-id="${bubble.dataset.id}"]`).forEach(m => m.classList.add('rs-hover'));
+        }
+      });
+
+      content.addEventListener('mouseout', e => {
+        const mark = e.target.closest('.rs-ann-mark');
+        if (mark) {
+          content.querySelectorAll(`.rs-ann-bubble[data-id="${mark.dataset.id}"]`).forEach(b => b.classList.remove('rs-hover'));
+          return;
+        }
+        const bubble = e.target.closest('.rs-ann-bubble');
+        if (bubble) {
+          content.querySelectorAll(`.rs-ann-mark[data-id="${bubble.dataset.id}"]`).forEach(m => m.classList.remove('rs-hover'));
+        }
       });
     }
 
@@ -515,6 +552,7 @@ window.ResumePage = (() => {
     const result = await window.klinch.invoke('claude:resume-analyze', {
       raw_text:        r.raw_text,
       profile_context: window.profileContext ? window.profileContext(profile) : '',
+      role_type:       profile.role_type || 'SDR',
     });
 
     const fresh = getResume();
