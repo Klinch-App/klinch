@@ -344,6 +344,13 @@
           <div id="co-grid-layer">
             <div class="iv-page-header">
               <div class="iv-page-title">Companies</div>
+              <div class="iv-search-wrap">
+                <svg class="iv-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="6.5" cy="6.5" r="5"/>
+                  <path d="M10.5 10.5l3.5 3.5"/>
+                </svg>
+                <input id="co-search" class="iv-search" type="search" placeholder="Search companies...">
+              </div>
             </div>
             <div id="co-grid" class="co-grid"></div>
             <div id="co-empty" class="empty-state" style="display:none">
@@ -433,7 +440,10 @@
 
             <!-- Prep Notes -->
             <div class="co-section" style="margin-bottom:40px">
-              <div class="co-section-title">Prep Notes</div>
+              <div class="co-section-header">
+                <div class="co-section-title" style="margin-bottom:0">Prep Notes</div>
+                <span id="co-notes-saved" class="co-notes-saved"></span>
+              </div>
               <textarea id="co-notes-input" class="co-notes-input" placeholder="Write your prep notes, talking points, or research here…"></textarea>
             </div>
 

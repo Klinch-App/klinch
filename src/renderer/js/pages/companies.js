@@ -14,6 +14,9 @@ window.CompaniesPage = (() => {
   function _slug(name) {
     return String(name || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   }
+  function _titleCase(str) {
+    return String(str || '').replace(/\b\w/g, c => c.toUpperCase());
+  }
 
   // ── Storage ───────────────────────────────────────────────────────────────────
 
@@ -94,15 +97,17 @@ window.CompaniesPage = (() => {
   // ── Layer 1: Grid ─────────────────────────────────────────────────────────────
 
   function _renderGrid() {
-    const companies = _getCompanies();
+    const query     = (_el('co-search')?.value || '').trim().toLowerCase();
+    const all       = _getCompanies();
+    const companies = query
+      ? all.filter(c =>
+          c.name.toLowerCase().includes(query) ||
+          c.domain.toLowerCase().includes(query)
+        )
+      : all;
     const grid  = _el('co-grid');
     const empty = _el('co-empty');
 
-    if (!companies.length) {
-      grid.innerHTML    = '';
-      empty.style.display = '';
-      return;
-    }
     empty.style.display = 'none';
 
     const STATUS_CLASS = {
@@ -112,6 +117,19 @@ window.CompaniesPage = (() => {
       'Withdrawn':    'ap-status-withdrawn',
       'Rejected':     'ap-status-rejected',
     };
+
+    const ghostCard = `
+      <div class="co-add-card" id="co-add-card">
+        <div class="co-add-card-icon">+</div>
+        <div class="co-add-card-label">Add Company</div>
+      </div>`;
+
+    if (!companies.length) {
+      grid.innerHTML = ghostCard;
+      if (window.wireImgFallbacks) window.wireImgFallbacks(grid);
+      _el('co-add-card').addEventListener('click', () => window.AddInterview?.open());
+      return;
+    }
 
     grid.innerHTML = companies.map(c => {
       const logoHtml = c.logo_url && !c.screenshot_mode
@@ -161,7 +179,18 @@ window.CompaniesPage = (() => {
         </div>`;
     }).join('');
 
+    grid.innerHTML += ghostCard;
     if (window.wireImgFallbacks) window.wireImgFallbacks(grid);
+    const addCard = _el('co-add-card');
+    addCard.addEventListener('click', () => window.AddInterview?.open());
+    // Match height of tallest real card (grid only equalizes within the same row)
+    requestAnimationFrame(() => {
+      const realCards = grid.querySelectorAll('.co-card');
+      if (realCards.length) {
+        const maxH = Math.max(...[...realCards].map(c => c.offsetHeight));
+        if (maxH > 0) addCard.style.minHeight = maxH + 'px';
+      }
+    });
   }
 
   // ── Layer 2: Detail ───────────────────────────────────────────────────────────
@@ -229,14 +258,24 @@ window.CompaniesPage = (() => {
     _renderSectionRoles(company);
     _renderSectionNotes(key, cache);
 
-    // Auto-save notes
-    const notesEl = _el('co-notes-input');
+    // Auto-save notes (debounced 1s) with "Saved" confirmation
+    const notesEl  = _el('co-notes-input');
+    const savedEl  = _el('co-notes-saved');
+    let _noteTimer = null;
     notesEl.oninput = null;
     notesEl.addEventListener('input', () => {
-      const c = _getCache();
-      if (!c[key]) c[key] = {};
-      c[key].notes = notesEl.value;
-      _saveCache(c);
+      clearTimeout(_noteTimer);
+      _noteTimer = setTimeout(() => {
+        const c = _getCache();
+        if (!c[key]) c[key] = {};
+        c[key].notes = notesEl.value;
+        _saveCache(c);
+        if (savedEl) {
+          savedEl.textContent = 'Saved';
+          savedEl.classList.add('visible');
+          setTimeout(() => savedEl.classList.remove('visible'), 1500);
+        }
+      }, 1000);
     });
 
     // Lazy sections (skeleton while loading)
@@ -291,8 +330,8 @@ window.CompaniesPage = (() => {
       return `
         <div class="co-iv-row" data-app-id="${_esc(app.id)}">
           <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
-            <span style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(app.role_title || 'Role TBD')}</span>
-            ${days !== null ? `<span class="co-iv-date">${days}d response</span>` : ''}
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(window.shortenRoleTitle ? window.shortenRoleTitle(app.role_title || 'Role TBD') : (app.role_title || 'Role TBD'))}</span>
+            ${days !== null ? `<span class="co-iv-date">${days} day${days !== 1 ? 's' : ''} to respond</span>` : ''}
             ${hot ? `<span class="ap-hot" style="font-size:13px">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying.</span></span>` : ''}
           </div>
           <div class="co-iv-meta">
@@ -349,7 +388,7 @@ window.CompaniesPage = (() => {
           </div>
           <div class="co-iv-meta">
             <span class="co-iv-date">${_esc(dateStr)}</span>
-            ${iwNames ? `<span class="co-iv-iwnames">${_esc(iwNames)}</span>` : ''}
+            ${iwNames ? `<span class="co-iv-iwnames" title="${_esc(iwNames)}">${_esc(iwNames)}</span>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -435,7 +474,7 @@ window.CompaniesPage = (() => {
 
     el.innerHTML = roles.map(r => `
       <div class="co-role-card">
-        <div class="co-role-title">${_esc(r.title)}</div>
+        <div class="co-role-title">${_esc(window.shortenRoleTitle ? window.shortenRoleTitle(r.title) : r.title)}</div>
         ${r.structured.must_have?.length ? `
           <div class="co-role-label">Must-Have</div>
           <ul class="co-role-list">${r.structured.must_have.map(x => `<li>${_esc(x)}</li>`).join('')}</ul>
@@ -452,8 +491,7 @@ window.CompaniesPage = (() => {
   // ── Section: Community Questions ─────────────────────────────────────────────
 
   const _CQ_STAGE_ORDER = [
-    'Recruiter Screen', 'Hiring Manager', 'Executive', 'Peer', 'Culture Fit',
-    'Technical Screen', 'Case Study / Presentation', 'Panel', 'Group', 'Final Round',
+    'Recruiter Screen', 'Hiring Manager', 'Panel', 'Final Round',
   ];
 
   async function _loadSectionCommunityQuestions(domain) {
@@ -523,7 +561,7 @@ window.CompaniesPage = (() => {
         <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
           All <span class="co-cq-tab-count">${questions.length}</span>
         </button>
-        ${_CQ_STAGE_ORDER.map(s => `
+        ${_CQ_STAGE_ORDER.filter(s => (byStage[s] || []).length > 0).map(s => `
           <button class="co-cq-tab${current === s ? ' active' : ''}" data-stage="${_esc(s)}">
             ${_esc(s)} <span class="co-cq-tab-count">${(byStage[s] || []).length}</span>
           </button>`).join('')}
@@ -596,24 +634,42 @@ window.CompaniesPage = (() => {
   }
 
   function _renderOverview(org) {
-    const el    = _el('co-sec-overview-body');
-    const desc  = org.short_description || org.description || '';
+    const el      = _el('co-sec-overview-body');
+    const rawDesc = org.short_description || org.description || '';
+
+    let descHtml = '';
+    if (rawDesc) {
+      const sentences = rawDesc.split(/(?<=[.!?])\s+(?=[A-Z])/);
+      if (sentences.length <= 4) {
+        descHtml = `<p class="co-overview-desc">${_esc(rawDesc)}</p>`;
+      } else {
+        const preview = sentences.slice(0, 4).join(' ');
+        const rest    = sentences.slice(4).join(' ');
+        descHtml = `
+          <p class="co-overview-desc">${_esc(preview)}</p>
+          <details class="co-overview-readmore">
+            <summary>Read more</summary>
+            <p class="co-overview-desc">${_esc(rest)}</p>
+          </details>`;
+      }
+    }
+
     const stats = [
-      { label: 'Industry',  value: org.industry },
+      { label: 'Industry',  value: org.industry ? _titleCase(org.industry) : null },
       { label: 'Employees', value: org.estimated_num_employees ? Number(org.estimated_num_employees).toLocaleString() : null },
       { label: 'Founded',   value: org.founded_year },
       { label: 'HQ',        value: [org.city, org.state, org.country].filter(Boolean).join(', ') || null },
     ].filter(s => s.value);
 
     el.innerHTML = `
-      ${desc ? `<p class="co-overview-desc">${_esc(desc)}</p>` : ''}
+      ${descHtml}
       ${stats.length ? `<div class="co-overview-stats">${stats.map(s =>
         `<div class="co-overview-stat">
            <div class="co-stat-label">${_esc(s.label)}</div>
            <div class="co-stat-value">${_esc(String(s.value))}</div>
          </div>`
       ).join('')}</div>` : ''}
-      ${!desc && !stats.length ? '<div class="co-empty-hint">No data available</div>' : ''}
+      ${!rawDesc && !stats.length ? '<div class="co-empty-hint">No data available</div>' : ''}
     `;
   }
 
@@ -727,6 +783,8 @@ window.CompaniesPage = (() => {
       const card = e.target.closest('.co-card');
       if (card) _openDetail(card.dataset.key);
     });
+
+    _el('co-search')?.addEventListener('input', _renderGrid);
 
     _el('co-back-btn').addEventListener('click', _goBack);
     _el('co-add-iw-btn').addEventListener('click', _openAddIwModal);
