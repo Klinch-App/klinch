@@ -224,7 +224,7 @@ window.ApplicationsPage = (() => {
           <div class="icard-logo-wrap">${logoHtml}</div>
           <div class="icard-company-info">
             <div class="icard-company-name">${_esc(app.company?.name || 'Unknown Company')}</div>
-            <div class="icard-role">${_esc(app.role_title || 'Role TBD')}</div>
+            <div class="icard-role">${_esc(window.shortenRoleTitle(app.role_title) || 'Role TBD')}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
             <span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>
@@ -920,8 +920,9 @@ window.ApplicationsPage = (() => {
       }
     });
 
-    // Add Application button
+    // Add Application button (applications page + dashboard hero)
     _el('ap-add-btn').addEventListener('click', () => openAddModal());
+    document.getElementById('btn-hero-add-application')?.addEventListener('click', () => openAddModal());
 
     // Add Application modal controls
     _el('aa-company-input').addEventListener('input', e => _aaSearch(e.target.value));

@@ -1479,8 +1479,7 @@ html, body {
 .icard-stage-badge {
   font-size: 10px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   padding: 3px 8px;
   border-radius: 4px;
   flex-shrink: 0;
@@ -1795,7 +1794,7 @@ html, body {
   grid-template-columns: 1fr 296px;
   gap: 18px;
   margin-bottom: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 900px) {
   .iv-top-row { grid-template-columns: 1fr; }
@@ -2027,6 +2026,7 @@ html, body {
   color: #fff;
 }
 .iv-filter-select {
+  width: 130px;
   padding: 6px 26px 6px 10px;
   font-size: 12px;
   background: var(--bg-elevated);
@@ -2046,7 +2046,8 @@ html, body {
 .iv-filter-select:focus  { border-color: var(--primary); color: var(--text-primary); }
 .iv-search-wrap {
   flex: 1;
-  min-width: 160px;
+  max-width: 200px;
+  min-width: 120px;
   position: relative;
 }
 .iv-search-icon {
@@ -4037,6 +4038,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   gap: 8px;
 }
 .dr-history-filters .iv-filter-select {
+  width: auto;
   padding: 4px 10px;
   font-size: 12px;
 }
@@ -6917,8 +6919,8 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .welcome-logo-mark {
-  width: 80px;
-  height: 80px;
+  width: 88px;
+  height: 88px;
   border-radius: 20px;
   background: linear-gradient(135deg, var(--primary), var(--accent-pink));
   display: flex;

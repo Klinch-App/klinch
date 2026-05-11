@@ -208,7 +208,7 @@ window.InterviewsPage = (() => {
           <div class="icard-logo-wrap" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${logoHtml}</div>
           <div class="icard-company-info">
             <div class="icard-company-name" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${_esc(iv.company?.name || 'Unknown Company')}</div>
-            <div class="icard-role">${_esc(iv.jd?.structured?.role_title || 'Role TBD')}</div>
+            <div class="icard-role">${_esc(window.shortenRoleTitle(iv.jd?.structured?.role_title) || 'Role TBD')}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
             <span class="icard-stage-badge ${stageBadgeClass}">${_esc(iv.stage)}</span>

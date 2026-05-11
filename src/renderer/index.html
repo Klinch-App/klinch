@@ -108,7 +108,7 @@
         <div id="page-dashboard">
           <div class="dashboard-hero">
             <div class="hero-title">Your job search, supercharged.</div>
-            <div class="hero-subtitle">Klinch is the OS for SaaS job seekers. Add your interviews to get started.</div>
+            <div class="hero-subtitle">Land the job. Not just the interview.</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
               <button class="hero-cta add-interview-trigger" style="margin-top:0">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,12 +116,11 @@
                 </svg>
                 Add Interview
               </button>
-              <button class="hero-cta hero-cta-ear" id="btn-launch-overlay" style="margin-top:0">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="1" y="3" width="12" height="8" rx="2"/>
-                  <circle cx="7" cy="7" r="2"/>
+              <button class="hero-cta hero-cta-ear" id="btn-hero-add-application" style="margin-top:0">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 1v12M1 7h12"/>
                 </svg>
-                Launch Klinch Ear
+                Add Application
               </button>
             </div>
           </div>
@@ -141,30 +140,30 @@
 
           <div class="section-title">Overview</div>
           <div class="card-grid">
-            <div class="card" data-nav="interviews">
-              <div class="card-label">Interviews</div>
-              <div class="card-value" data-stat="interviews">0</div>
-              <div class="card-sub" data-stat-sub="interviews">No interviews yet</div>
+            <div class="card" data-nav="applications">
+              <div class="card-label">Applications</div>
+              <div class="card-value" data-stat="applications">0</div>
+              <div class="card-sub" data-stat-sub="applications">No applications yet</div>
             </div>
             <div class="card" data-nav="companies">
               <div class="card-label">Companies</div>
               <div class="card-value" data-stat="companies">0</div>
               <div class="card-sub" data-stat-sub="companies">No companies added</div>
             </div>
+            <div class="card" data-nav="interviews">
+              <div class="card-label">Interviews</div>
+              <div class="card-value" data-stat="interviews">0</div>
+              <div class="card-sub" data-stat-sub="interviews">No interviews yet</div>
+            </div>
+            <div class="card" data-nav="applications">
+              <div class="card-label">Offers</div>
+              <div class="card-value" data-stat="offers">0</div>
+              <div class="card-sub" data-stat-sub="offers">offers received</div>
+            </div>
             <div class="card" data-nav="coach">
               <div class="card-label">Coach Score</div>
               <div class="card-value" data-stat="coach-score">—</div>
               <div class="card-sub" data-stat-sub="coach-score">Complete an interview to see score</div>
-            </div>
-            <div class="card" data-nav="settings">
-              <div class="card-label">Credits</div>
-              <div class="card-value">3</div>
-              <div class="card-sub">Free trial</div>
-            </div>
-            <div class="card" data-nav="applications">
-              <div class="card-label">Applications</div>
-              <div class="card-value" data-stat="applications">0</div>
-              <div class="card-sub" data-stat-sub="applications">No applications yet</div>
             </div>
             <div class="card" data-nav="resume">
               <div class="card-label">Resume</div>
@@ -185,7 +184,7 @@
                   <span class="ear-iv-dot">·</span>
                   <span class="ear-iv-time" id="ear-iv-time"></span>
                 </div>
-                <button class="ear-iv-change-btn" id="ear-iv-change-btn">change →</button>
+                <button class="ear-iv-change-btn" id="ear-iv-change-btn">Switch interview →</button>
               </div>
               <div class="ear-iv-none" id="ear-iv-none" style="display:none">
                 <span>No upcoming interviews — </span><button class="ear-iv-add-link add-interview-trigger">Add one →</button>
@@ -195,7 +194,7 @@
             <div class="interview-controls">
               <div class="device-status">
                 <span class="device-dot" id="device-dot"></span>
-                <span id="device-label">Audio device: checking…</span>
+                <span id="device-label">Ready to listen. Start your session to begin.</span>
               </div>
               <div style="display:flex;gap:10px">
                 <button class="hero-cta" id="btn-start-interview"
@@ -1190,7 +1189,7 @@
         <span class="welcome-pill">Application Tracking</span>
       </div>
       <button class="welcome-cta" id="welcome-cta-btn">Get Started →</button>
-      <p class="welcome-cta-hint">We'll ask you 10 quick questions before signing up to learn about you and your job search.</p>
+      <p class="welcome-cta-hint">10 quick questions before signup — takes 2 minutes.</p>
     </div>
   </div>
 
