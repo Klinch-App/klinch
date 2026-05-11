@@ -739,6 +739,102 @@ document.getElementById('st-sign-out-btn')?.addEventListener('click', async () =
   backdrop?.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('visible'); });
 })();
 
+// ── Settings — Account section ────────────────────────────────────────────────
+(async function() {
+  // Populate email display
+  const emailEl = document.getElementById('st-account-email');
+  if (emailEl) {
+    const res = await window.klinch.invoke('auth:get-session');
+    if (res.ok && res.session?.user?.email) {
+      emailEl.textContent = res.session.user.email;
+    }
+  }
+
+  // ── Change Password modal ──────────────────────────────────────────────────
+  const cpBackdrop = document.getElementById('change-password-backdrop');
+  const cpOpenBtn  = document.getElementById('st-change-password-btn');
+  const cpCancel   = document.getElementById('cp-cancel-btn');
+  const cpConfirm  = document.getElementById('cp-confirm-btn');
+  const cpError    = document.getElementById('cp-error');
+  const cpCurrent  = document.getElementById('cp-current');
+  const cpNew      = document.getElementById('cp-new');
+  const cpConfirmPw = document.getElementById('cp-confirm-pw');
+
+  function _closeCp() {
+    cpBackdrop?.classList.remove('visible');
+    if (cpCurrent)   cpCurrent.value   = '';
+    if (cpNew)       cpNew.value       = '';
+    if (cpConfirmPw) cpConfirmPw.value = '';
+    if (cpError)    { cpError.textContent = ''; cpError.style.display = 'none'; }
+  }
+  function _cpError(msg) {
+    if (!cpError) return;
+    cpError.textContent = msg;
+    cpError.style.display = '';
+  }
+
+  cpOpenBtn?.addEventListener('click', () => cpBackdrop?.classList.add('visible'));
+  cpCancel?.addEventListener('click', _closeCp);
+  cpBackdrop?.addEventListener('click', e => { if (e.target === cpBackdrop) _closeCp(); });
+
+  cpConfirm?.addEventListener('click', async () => {
+    const current = cpCurrent?.value || '';
+    const newPw   = cpNew?.value     || '';
+    const confirm = cpConfirmPw?.value || '';
+    if (!current)            { _cpError('Please enter your current password.'); return; }
+    if (!newPw)              { _cpError('Please enter a new password.'); return; }
+    if (newPw.length < 8)    { _cpError('New password must be at least 8 characters.'); return; }
+    if (newPw !== confirm)   { _cpError('Passwords do not match.'); return; }
+
+    cpConfirm.disabled     = true;
+    cpConfirm.textContent  = 'Saving…';
+    const res = await window.klinch.invoke('auth:change-password', { currentPassword: current, newPassword: newPw });
+    cpConfirm.disabled     = false;
+    cpConfirm.textContent  = 'Change Password';
+
+    if (!res.ok) { _cpError(res.error || 'Could not change password.'); return; }
+    _closeCp();
+  });
+
+  // ── Delete Account modal ───────────────────────────────────────────────────
+  const daBackdrop = document.getElementById('delete-account-backdrop');
+  const daOpenBtn  = document.getElementById('st-delete-account-btn');
+  const daCancel   = document.getElementById('da-cancel-btn');
+  const daConfirm  = document.getElementById('da-confirm-btn');
+  const daInput    = document.getElementById('da-confirm-input');
+  const daError    = document.getElementById('da-error');
+
+  function _closeDa() {
+    daBackdrop?.classList.remove('visible');
+    if (daInput) daInput.value = '';
+    if (daError) { daError.textContent = ''; daError.style.display = 'none'; }
+    if (daConfirm) daConfirm.disabled = true;
+  }
+
+  daOpenBtn?.addEventListener('click', () => daBackdrop?.classList.add('visible'));
+  daCancel?.addEventListener('click', _closeDa);
+  daBackdrop?.addEventListener('click', e => { if (e.target === daBackdrop) _closeDa(); });
+
+  daInput?.addEventListener('input', () => {
+    if (daConfirm) daConfirm.disabled = daInput.value !== 'DELETE';
+  });
+
+  daConfirm?.addEventListener('click', async () => {
+    if (daInput?.value !== 'DELETE') return;
+    daConfirm.disabled    = true;
+    daConfirm.textContent = 'Deleting…';
+    const res = await window.klinch.invoke('auth:delete-account');
+    if (!res.ok) {
+      daConfirm.disabled    = false;
+      daConfirm.textContent = 'Delete My Account';
+      if (daError) { daError.textContent = res.error || 'Could not delete account.'; daError.style.display = ''; }
+      return;
+    }
+    localStorage.clear();
+    location.reload();
+  });
+})();
+
 // ── Recording consent modal ───────────────────────────────────────────────────
 (function() {
   const backdrop    = document.getElementById('consent-modal-backdrop');

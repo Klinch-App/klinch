@@ -71,6 +71,52 @@ function init({ mainWindow }) {
     }
   });
 
+  ipcMain.handle('auth:change-password', async (_event, { currentPassword, newPassword }) => {
+    const { supabase } = supabaseApi;
+    if (!supabase) return _unavailable();
+    try {
+      const { data: sd } = await supabase.auth.getSession();
+      const email = sd?.session?.user?.email;
+      if (!email) return { ok: false, error: 'Not signed in.' };
+
+      const { error: verifyErr } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+      if (verifyErr) return { ok: false, error: 'Current password is incorrect.' };
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { ok: false, error: error.message };
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
+  ipcMain.handle('auth:delete-account', async () => {
+    const { supabase } = supabaseApi;
+    if (!supabase) return _unavailable();
+    try {
+      const { data: sd } = await supabase.auth.getSession();
+      const userId = sd?.session?.user?.id;
+      if (!userId) return { ok: false, error: 'Not signed in.' };
+
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceKey) {
+        return { ok: false, error: 'Account deletion is not configured. Please contact support at support@tryklinch.com.' };
+      }
+
+      const { createClient } = require('@supabase/supabase-js');
+      const admin = createClient(process.env.SUPABASE_URL, serviceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+      const { error } = await admin.auth.admin.deleteUser(userId);
+      if (error) return { ok: false, error: error.message };
+
+      await supabase.auth.signOut();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('auth:sign-in-google', async () => {
     const { supabase } = supabaseApi;
     if (!supabase) return _unavailable();
