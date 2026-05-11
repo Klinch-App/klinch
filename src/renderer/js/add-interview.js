@@ -587,6 +587,12 @@ function refreshDashboardStats() {
   if (resValEl) resValEl.textContent = resume ? '✓' : '—';
   if (resSubEl) resSubEl.textContent = resume ? 'Resume uploaded' : 'Upload your resume';
 
+  const offersValEl = document.querySelector('.card-value[data-stat="offers"]');
+  const offersSubEl = document.querySelector('[data-stat-sub="offers"]');
+  const offersCount = realApps.filter(a => a.status === 'Offer' || a.status === 'Offer Accepted').length;
+  if (offersValEl) offersValEl.textContent = offersCount;
+  if (offersSubEl) offersSubEl.textContent = 'offers received';
+
   const coachValEl = document.querySelector('.card-value[data-stat="coach-score"]');
   const coachSubEl = document.querySelector('[data-stat-sub="coach-score"]');
   const scored = all.filter(iv => iv.coach_score != null);
@@ -602,6 +608,30 @@ function refreshDashboardStats() {
   }
 }
 window.refreshDashboardStats = refreshDashboardStats;
+
+// ── Role title shortener ──────────────────────────────────────────────────────
+const _ROLE_MAP = {
+  'sales development representative': 'SDR',
+  'account executive':                'AE',
+  'customer success manager':         'CSM',
+  'account manager':                  'AM',
+  'solutions engineer':               'SE',
+  'sales engineer':                   'SE',
+  'revenue operations':               'RevOps',
+  'revenue ops':                      'RevOps',
+  'marketing':                        'Marketing',
+  'partnerships':                     'Partnerships',
+  'enablement':                       'Enablement',
+  'people':                           'People',
+  'people operations':                'People',
+  'hr':                               'People',
+};
+window.shortenRoleTitle = function(title) {
+  if (!title) return title;
+  const match = _ROLE_MAP[title.toLowerCase().trim()];
+  if (match) return match;
+  return title.length > 12 ? title.slice(0, 12) + '…' : title;
+};
 
 // ── Klinch Ear — interview context bar ───────────────────────────────────────
 
@@ -780,8 +810,31 @@ function renderInterviews() {
     const primaryName = interviewers[0]?.name || '';
     const extraCount = interviewers.length - 1;
     const interviewerNameHtml = extraCount > 0
-      ? `${primaryName} <span style="color:var(--text-muted)">+${extraCount}</span>`
+      ? `${primaryName} <button class="icard-extra-toggle" style="color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;font:inherit">+${extraCount}</button>`
       : primaryName;
+
+    const extraInterviewersHtml = extraCount > 0
+      ? `<div class="icard-extra-list" style="display:none">${
+          interviewers.slice(1).map(iw => `
+            <div class="icard-interviewer">
+              <div class="icard-photo-stack">
+                ${iw.photo_url
+                  ? `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)" title="${iw.name || ''}">
+                       <img src="${iw.photo_url}" class="icard-photo" alt="">
+                       <div class="icard-photo-fb" style="display:none">${(iw.name || '?')[0].toUpperCase()}</div>
+                     </div>`
+                  : `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)" title="${iw.name || ''}">
+                       <div class="icard-photo-fb">${(iw.name || '?')[0].toUpperCase()}</div>
+                     </div>`}
+              </div>
+              <div class="icard-interviewer-info">
+                <div class="icard-interviewer-name">${iw.name || ''}</div>
+                <div class="icard-interviewer-title">${iw.title || ''}</div>
+              </div>
+            </div>`
+          ).join('')
+        }</div>`
+      : '';
 
     const stageBadgeClass = {
       'Recruiter Screen':          'badge-recruiter',
@@ -807,10 +860,10 @@ function renderInterviews() {
           <div class="icard-logo-wrap" data-company-nav="${iv.company?.domain || iv.company?.name || ''}">${logoHtml}</div>
           <div class="icard-company-info">
             <div class="icard-company-name" data-company-nav="${iv.company?.domain || iv.company?.name || ''}">${iv.company?.name || 'Unknown Company'}</div>
-            <div class="icard-role">${iv.jd?.structured?.role_title || 'Role TBD'}</div>
+            <div class="icard-role">${window.shortenRoleTitle(iv.jd?.structured?.role_title) || 'Role TBD'}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
-            <span class="icard-stage-badge ${stageBadgeClass}">${iv.stage}</span>
+            <span class="icard-stage-badge ${stageBadgeClass}">${iv.stage === 'Recruiter Screen' ? 'Recruiter' : iv.stage}</span>
             ${formatBadgeHtml}
           </div>
         </div>
@@ -821,7 +874,8 @@ function renderInterviews() {
             <div class="icard-interviewer-name">${interviewerNameHtml}</div>
             <div class="icard-interviewer-title">${interviewers[0]?.title || ''}</div>
           </div>
-        </div>` : ''}
+        </div>
+        ${extraInterviewersHtml}` : ''}
         <div class="icard-footer">
           <div class="icard-date">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
           <span class="icard-status-badge">Upcoming</span>
@@ -911,6 +965,15 @@ renderInterviews();
         const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
         const iv = all.find(x => x.id === id);
         openDeleteModal(id, iv?.company?.name || 'this company');
+        return;
+      }
+
+      // Extra interviewers expand/collapse
+      const toggleBtn = e.target.closest('.icard-extra-toggle');
+      if (toggleBtn) {
+        e.stopPropagation();
+        const extraList = toggleBtn.closest('.icard')?.querySelector('.icard-extra-list');
+        if (extraList) extraList.style.display = extraList.style.display === 'none' ? '' : 'none';
         return;
       }
 
