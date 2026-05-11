@@ -503,14 +503,13 @@
                 <option value="">All Stages</option>
                 <option value="Recruiter Screen">Recruiter Screen</option>
                 <option value="Hiring Manager">Hiring Manager</option>
-                <option value="Executive">Executive</option>
-                <option value="Peer">Peer</option>
-                <option value="Culture Fit">Culture Fit</option>
-                <option value="Technical Screen">Technical Screen</option>
-                <option value="Case Study / Presentation">Case Study / Presentation</option>
                 <option value="Panel">Panel</option>
-                <option value="Group">Group</option>
                 <option value="Final Round">Final Round</option>
+              </select>
+              <select id="ap-sort" class="iv-filter-select">
+                <option value="date_applied">Date Applied</option>
+                <option value="response_time">Response Time</option>
+                <option value="activity">Most Recent Activity</option>
               </select>
               <div class="iv-search-wrap">
                 <svg class="iv-search-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -519,11 +518,6 @@
                 </svg>
                 <input id="ap-search" class="iv-search" type="search" placeholder="Search company or role…">
               </div>
-              <select id="ap-sort" class="iv-filter-select">
-                <option value="date_applied">Date Applied</option>
-                <option value="response_time">Response Time</option>
-                <option value="activity">Most Recent Activity</option>
-              </select>
             </div>
 
             <!-- Application cards -->
@@ -949,16 +943,16 @@
             </div>
             <div class="ai-field-group" style="flex:1">
               <label class="ai-field-label">Time</label>
-              <div class="ai-time-wrap">
-                <select id="ai-time" class="ai-modal-input ai-time-select">
-                  <option value="">-- : -- --</option>
-                </select>
-                <svg class="ai-time-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
-                  <path d="M8 4.5V8l2.5 2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+              <input type="hidden" id="ai-time">
+              <div class="ai-time-picker">
+                <select id="ai-time-hour" class="ai-modal-select ai-time-part"></select>
+                <span class="ai-time-colon">:</span>
+                <select id="ai-time-min" class="ai-modal-select ai-time-part"></select>
+                <div class="ai-ampm-toggle">
+                  <button type="button" class="ai-ampm-btn active" data-value="AM">AM</button>
+                  <button type="button" class="ai-ampm-btn" data-value="PM">PM</button>
+                </div>
               </div>
-              <input type="time" id="ai-time-custom" class="ai-modal-input" style="display:none;margin-top:6px">
             </div>
           </div>
           <div class="ai-field-group">

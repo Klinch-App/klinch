@@ -80,7 +80,7 @@ window.DryRunPage = (() => {
             <span class="dr-history-mode">${r.mode === 'retry' ? 'Retry' : r.mode === 'generic' ? 'Generic' : 'Company-Specific'}</span>
           </div>
           <div class="dr-history-row-right">
-            <div class="dr-history-score">${score}</div>
+            ${typeof score === 'number' ? window.buildDonut(score, 32) : `<div class="dr-history-score">${score}</div>`}
             <svg class="dr-history-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,4 6,8 10,4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
         </div>

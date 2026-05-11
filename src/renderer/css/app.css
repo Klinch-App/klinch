@@ -1065,16 +1065,13 @@ html, body {
 .ai-modal-input:focus { border-color: var(--primary); }
 .ai-modal-input::placeholder { color: var(--text-muted); }
 #ai-date::-webkit-calendar-picker-indicator { filter: invert(1) brightness(2); cursor: pointer; }
-.ai-time-wrap { position: relative; }
-.ai-time-wrap .ai-time-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #fff;
-  pointer-events: none;
-}
-.ai-time-select { padding-right: 36px; appearance: none; -webkit-appearance: none; }
+.ai-time-picker { display: flex; align-items: stretch; gap: 6px; }
+.ai-time-part { width: auto; }
+.ai-time-colon { display: flex; align-items: center; color: var(--text-secondary); font-size: 15px; font-weight: 600; padding: 0 2px; }
+.ai-ampm-toggle { display: flex; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); overflow: hidden; }
+.ai-ampm-btn { background: var(--bg-elevated); border: none; color: var(--text-muted); padding: 0 14px; cursor: pointer; font-size: 13px; font-family: inherit; transition: background 0.15s, color 0.15s; }
+.ai-ampm-btn.active { background: var(--primary); color: #fff; }
+.ai-ampm-btn:hover:not(.active) { background: var(--bg-hover); color: var(--text-primary); }
 
 .ai-modal-textarea {
   width: 100%;
@@ -2786,7 +2783,8 @@ html, body {
   background: rgba(108, 99, 255, 0.18);
   border-color: rgba(108, 99, 255, 0.5);
 }
-.co-iv-meta .ap-add-iv-btn {
+.co-iv-meta .ap-add-iv-btn,
+#ap-detail-hero .ap-add-iv-btn {
   position: static;
 }
 
@@ -4123,8 +4121,8 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   gap: 8px;
 }
 .dr-history-filters .iv-filter-select {
-  width: auto;
-  padding: 4px 10px;
+  width: 148px;
+  padding: 4px 28px 4px 10px;
   font-size: 12px;
 }
 
@@ -6043,7 +6041,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 .coach-stage-recruiter { background: rgba(124,58,255,0.15); color: var(--primary-light); }
 .coach-stage-hiring    { background: rgba(245,158,11,0.15); color: #fbbf24; }
-.coach-stage-any       { background: rgba(100,116,139,0.15); color: var(--text-muted); }
+.coach-stage-any       { background: rgba(16,185,129,0.15);  color: #34d399; }
 
 .coach-tip-body {
   font-size: 13px;

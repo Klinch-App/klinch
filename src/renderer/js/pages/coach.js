@@ -77,7 +77,7 @@ window.CoachPage = (() => {
       },
       {
         label: 'Avg Response Time',
-        value: data.avgResponse !== null ? `${data.avgResponse}d` : '—',
+        value: data.avgResponse !== null ? `${data.avgResponse} days` : '—',
         sub:   'Applied → first interview',
       },
     ];
@@ -169,7 +169,8 @@ window.CoachPage = (() => {
 
   function _buildOutreachCard(iv, type, cached) {
     const company   = _esc(iv.company?.name || 'Unknown Company');
-    const role      = _esc(iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role');
+    const rawRole   = iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role';
+    const role      = _esc(window.shortenRoleTitle?.(rawRole) ?? rawRole);
     const isPost    = type === 'post';
     const cardId    = `coach-outreach-${iv.id}-${type}`;
     const navKey    = _esc(iv.company?.domain || iv.company?.name || '');
@@ -510,19 +511,21 @@ window.CoachPage = (() => {
     } catch (err) {
       console.error('[coach] actions failed:', err);
       const list = document.getElementById('coach-actions-list');
-      if (list) list.innerHTML = '<div class="coach-actions-empty">Could not load recommendations — try refreshing.</div>';
+      if (list) list.innerHTML = '<div class="coach-actions-empty"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M7 1L13 12.5H1L7 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><line x1="7" y1="5" x2="7" y2="8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10.5" r="0.7" fill="currentColor"/></svg>Could not load recommendations — try refreshing.</div>';
     }
   }
 
   // ── Section 3 — Insider Tips ──────────────────────────────────────────────
 
   const TIPS = {
-    sdr: [
+    any: [
       {
         title: 'The first 30 seconds decide everything',
-        stage: 'Recruiter',
+        stage: 'Any',
         body:  'Hiring managers decide within the first 30 seconds whether they can see you on their team. Open with energy, confidence, and a clear one-line summary of who you are and what you bring. Avoid starting with your life story.',
       },
+    ],
+    sdr: [
       {
         title: 'Never recite your cold call script',
         stage: 'Hiring Manager',
@@ -756,7 +759,7 @@ window.CoachPage = (() => {
     const grid = document.getElementById('coach-tips-grid');
     if (!grid) return;
     const key  = _getRoleKey(profile);
-    const tips = TIPS[key] || TIPS.sdr;
+    const tips = [...(TIPS[key] || TIPS.sdr), ...(TIPS.any || [])];
 
     grid.innerHTML = tips.map(t => `
       <div class="coach-tip-card">
