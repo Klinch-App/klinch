@@ -404,7 +404,7 @@ window.InterviewsPage = (() => {
         </div>`).join('');
       transcriptHtml = `
         <details class="ivdp-transcript-section">
-          <summary class="ivdp-transcript-toggle">Session Transcript${sDateStr ? ` — ${_esc(sDateStr)}` : ''}</summary>
+          <summary class="ivdp-transcript-toggle">Interview Transcript${sDateStr ? ` — ${_esc(sDateStr)}` : ''}</summary>
           <div class="ivdp-transcript-body">${lines}</div>
         </details>`;
     }

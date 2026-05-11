@@ -58,7 +58,7 @@ window.CoachPage = (() => {
       {
         label: 'Interviews Completed',
         value: data.completed.length,
-        sub:   data.completed.length === 1 ? '1 session done' : `${data.completed.length} sessions done`,
+        sub:   data.completed.length === 1 ? '1 interview done' : `${data.completed.length} interviews done`,
       },
       {
         label: 'Interviews Upcoming',

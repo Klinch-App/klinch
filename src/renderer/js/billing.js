@@ -283,9 +283,9 @@ window.Billing = (() => {
     }).catch(() => {});
 
     const msgs = {
-      starter:   'Starter plan activated! You have 10 sessions this month.',
+      starter:   'Starter plan activated! You have 10 interviews this month.',
       unlimited: "Unlimited plan activated! You're all set.",
-      pack:      '5 sessions added to your account!',
+      pack:      '5 interviews added to your account!',
     };
     window.klinch.send('notify', { title: 'Klinch', body: msgs[plan_key] || 'Plan activated!' });
   }
@@ -386,7 +386,7 @@ window.Billing = (() => {
       creditsHtml = `<span class="billing-badge billing-badge-unlimited">Unlimited</span>`;
     } else {
       const n = b.credits_remaining || 0;
-      const suffix = b.plan === 'starter' ? ` of ${meta.max_credits} this month` : ` session${n !== 1 ? 's' : ''} remaining`;
+      const suffix = b.plan === 'starter' ? ` of ${meta.max_credits} this month` : ` interview${n !== 1 ? 's' : ''} remaining`;
       creditsHtml = `<span class="billing-badge">${n}${suffix}</span>`;
     }
 
@@ -406,7 +406,7 @@ window.Billing = (() => {
       btns.push(`<button class="billing-action-btn" id="bs-upgrade-btn">Upgrade Plan</button>`);
     }
     if (b.plan !== 'unlimited') {
-      btns.push(`<button class="billing-action-btn billing-action-secondary" id="bs-pack-btn">Buy a 5-Pack — $1.99</button>`);
+      btns.push(`<button class="billing-action-btn billing-action-secondary" id="bs-pack-btn">Buy 5 Interviews — $1.99</button>`);
     }
     if (b.customer_id) {
       btns.push(`<button class="billing-action-btn billing-action-secondary" id="bs-portal-btn">Manage Billing</button>`);
@@ -455,7 +455,7 @@ window.Billing = (() => {
       plan_key:    'pack',
       customer_id: b.customer_id || undefined,
     });
-    if (btn) { btn.disabled = false; btn.textContent = 'Buy a 5-Pack — $1.99'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Buy 5 Interviews — $1.99'; }
     if (!res.ok) { _showError(res.error); return; }
     _pollCheckout(res.session_id, 'pack', () => {});
   }
