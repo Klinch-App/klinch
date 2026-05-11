@@ -847,6 +847,8 @@ if (launchBtn) {
         // Sync the dashboard panel buttons
         if (btnStart) btnStart.style.display = 'none';
         if (btnStop)  btnStop.style.display  = '';
+      } else {
+        await window.klinch.invoke('overlay:close');
       }
       launchBtn.disabled = false;
     });
@@ -918,6 +920,8 @@ if (btnStart) {
         window.Billing?.consumeCredit();
         btnStart.style.display = 'none';
         btnStop.style.display  = '';
+      } else {
+        await window.klinch.invoke('overlay:close');
       }
       btnStart.disabled = false;
       btnStart.textContent = 'Start Klinch Ear';
@@ -928,6 +932,7 @@ if (btnStart) {
 if (btnStop) {
   btnStop.addEventListener('click', async () => {
     await window.STT.stopSession();
+    await window.klinch.invoke('overlay:close');
     btnStop.style.display  = 'none';
     btnStart.style.display = '';
     transcriptLines = [];
