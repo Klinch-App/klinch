@@ -160,15 +160,16 @@ window._fbHiddenStyle = function(co) {
 // Shared radial donut builder — r=15.9 → circumference≈100 units
 // stroke-dasharray="${s} ${100-s}" fills exactly s% of the circle
 window.buildDonut = function(score, sizePx, extraClass) {
-  const s   = Math.min(100, Math.max(0, score || 0));
-  const px  = sizePx || 80;
-  const fs  = px <= 52 ? 14 : 18;
-  const cls = extraClass ? ` ${extraClass}` : '';
+  const s     = Math.min(100, Math.max(0, score || 0));
+  const px    = sizePx || 80;
+  const fs    = px <= 52 ? 14 : 18;
+  const cls   = extraClass ? ` ${extraClass}` : '';
+  const color = s >= 80 ? '#4ADE80' : s >= 60 ? '#FBBF24' : '#F87171';
   return `
     <div class="ivdp-fit-score-circle${cls}" style="width:${px}px;height:${px}px;flex-shrink:0">
       <svg viewBox="0 0 36 36" class="ivdp-fit-donut" style="width:${px}px;height:${px}px">
         <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
-        <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--primary)" stroke-width="3"
+        <circle cx="18" cy="18" r="15.9" fill="none" stroke="${color}" stroke-width="3"
           stroke-dasharray="${s} ${100 - s}" stroke-dashoffset="25" stroke-linecap="round"/>
       </svg>
       <div class="ivdp-fit-pct" style="font-size:${fs}px">${s}</div>
