@@ -29,7 +29,7 @@
       <div class="setup-card">
         <h2 class="setup-heading">Microphone access required</h2>
         <p class="setup-body">Klinch needs your microphone to transcribe your responses in real time. Your audio is processed locally and never stored.</p>
-        <button id="mic-grant-btn" class="setup-continue-btn">Allow Microphone</button>
+        <button id="mic-grant-btn" class="setup-btn-primary" style="width:100%;padding:14px 0;font-size:15px">Allow Microphone</button>
       </div>
     `;
     document.getElementById('mic-grant-btn').addEventListener('click', async () => {
