@@ -44,9 +44,7 @@ function openModal() {
   _state.format = 'Virtual';
 
   // Reset step 4
-  _el('ai-time').value        = '';
-  _el('ai-time-custom').value = '';
-  _el('ai-time-custom').style.display = 'none';
+  _el('ai-time').value = '';
   _el('ai-stage').value = 'Recruiter Screen';
   _el('ai-stage-other').style.display = 'none';
   _el('ai-stage-other').value = '';
@@ -99,9 +97,7 @@ function openModalWithCompany(company, jd) {
   _state.format = 'Virtual';
 
   // Reset step 4
-  _el('ai-time').value        = '';
-  _el('ai-time-custom').value = '';
-  _el('ai-time-custom').style.display = 'none';
+  _el('ai-time').value = '';
   _el('ai-stage').value = 'Recruiter Screen';
   _el('ai-stage-other').style.display = 'none';
   _el('ai-stage-other').value = '';
@@ -193,13 +189,19 @@ function _goToStep(n) {
 
   _stepPanels.forEach((el, i) => { el.style.display = (i + 1 === n) ? '' : 'none'; });
 
+  // Show/hide the JD dot based on whether step 3 is being skipped
+  const jdDot = _modal.querySelector('.ai-step-dot[data-step="3"]');
+  if (jdDot) jdDot.style.display = _state.skipJdStep ? 'none' : '';
+
   _stepDots.forEach((dot, i) => {
     dot.classList.toggle('active', i + 1 === n);
     dot.classList.toggle('done', i + 1 < n);
   });
 
   _backBtn.style.visibility = n === 1 ? 'hidden' : '';
-  _stepLabel.textContent = `Step ${n} of 4 — ${STEP_LABELS[n - 1]}`;
+  const totalSteps  = _state.skipJdStep ? 3 : 4;
+  const displayStep = _state.skipJdStep ? (n < 4 ? n : 3) : n;
+  _stepLabel.textContent = `Step ${displayStep} of ${totalSteps} — ${STEP_LABELS[n - 1]}`;
   _updateNextBtn();
 
   if (n === 2) _renderInterviewerList();
@@ -294,6 +296,20 @@ async function _searchCompanies(query) {
   });
 }
 
+function _findExistingJd(companyName) {
+  const name = (companyName || '').toLowerCase().trim();
+  const ivs  = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+  const ivMatch = ivs.find(iv =>
+    (iv.company?.name || '').toLowerCase().trim() === name && iv.jd?.structured
+  );
+  if (ivMatch) return ivMatch.jd;
+  const apps = JSON.parse(localStorage.getItem('klinch_applications') || '[]');
+  const appMatch = apps.find(app =>
+    (app.company?.name || '').toLowerCase().trim() === name && app.jd?.structured
+  );
+  return appMatch?.jd || null;
+}
+
 function _selectCompany(org) {
   _state.company = {
     name: org.name,
@@ -301,6 +317,10 @@ function _selectCompany(org) {
     domain: org.primary_domain || '',
     apollo_id: org.id,
   };
+
+  const existingJd = _findExistingJd(org.name);
+  _state.jd         = existingJd || null;
+  _state.skipJdStep = !!existingJd;
 
   const inp = _el('ai-company-input');
   const results = _el('ai-company-results');
@@ -331,7 +351,9 @@ function _selectCompany(org) {
 }
 
 _el('ai-company-change').addEventListener('click', () => {
-  _state.company = null;
+  _state.company    = null;
+  _state.jd         = null;
+  _state.skipJdStep = false;
   _el('ai-selected-company').style.display = 'none';
   const inp = _el('ai-company-input');
   inp.style.display = '';
@@ -467,45 +489,63 @@ function _setDefaultDate() {
     d.setDate(d.getDate() + 1);
     dateEl.value = d.toISOString().split('T')[0];
   }
-  _initTimeSelect();
+  _initTimePicker();
+  _resetTimePicker();
 }
 
-function _initTimeSelect() {
-  const sel    = _el('ai-time');
-  const custom = _el('ai-time-custom');
-  if (sel.options.length > 1) return; // already populated
-  for (let h = 8; h <= 17; h++) {
-    for (const m of [0, 30]) {
-      if (h === 17 && m === 30) break;
-      const val   = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-      const ampm  = h < 12 ? 'AM' : 'PM';
-      const hour  = h % 12 || 12;
-      const label = `${hour}:${m === 0 ? '00' : '30'} ${ampm}`;
-      const opt   = document.createElement('option');
-      opt.value   = val;
-      opt.textContent = label;
-      sel.appendChild(opt);
-    }
-  }
-  const otherOpt = document.createElement('option');
-  otherOpt.value = 'other';
-  otherOpt.textContent = 'Other time…';
-  sel.appendChild(otherOpt);
+function _initTimePicker() {
+  const hourSel = _el('ai-time-hour');
+  const minSel  = _el('ai-time-min');
+  if (hourSel.options.length > 0) return;
 
-  sel.addEventListener('change', () => {
-    const isOther = sel.value === 'other';
-    custom.style.display = isOther ? '' : 'none';
-    if (isOther) custom.focus();
+  for (let h = 1; h <= 12; h++) {
+    const opt = document.createElement('option');
+    opt.value = String(h);
+    opt.textContent = String(h);
+    hourSel.appendChild(opt);
+  }
+  for (let m = 0; m < 60; m += 5) {
+    const opt = document.createElement('option');
+    opt.value = String(m).padStart(2, '0');
+    opt.textContent = String(m).padStart(2, '0');
+    minSel.appendChild(opt);
+  }
+
+  hourSel.addEventListener('change', _updateHiddenTime);
+  minSel.addEventListener('change', _updateHiddenTime);
+  _modal.querySelectorAll('.ai-ampm-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _modal.querySelectorAll('.ai-ampm-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _updateHiddenTime();
+    });
   });
+}
+
+function _updateHiddenTime() {
+  const hour = parseInt(_el('ai-time-hour').value, 10);
+  const min  = _el('ai-time-min').value;
+  const ampm = _modal.querySelector('.ai-ampm-btn.active')?.dataset.value || 'AM';
+  let h24 = hour;
+  if (ampm === 'AM' && hour === 12) h24 = 0;
+  if (ampm === 'PM' && hour !== 12) h24 = hour + 12;
+  _el('ai-time').value = `${String(h24).padStart(2, '0')}:${min}`;
+}
+
+function _resetTimePicker() {
+  _el('ai-time-hour').value = '9';
+  _el('ai-time-min').value  = '00';
+  _modal.querySelectorAll('.ai-ampm-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === 'AM');
+  });
+  _updateHiddenTime();
 }
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
 async function _completeInterview() {
   const date = _el('ai-date').value;
-  const time = _el('ai-time').value === 'other'
-    ? _el('ai-time-custom').value
-    : _el('ai-time').value;
+  const time = _el('ai-time').value;
   const stageRaw = _el('ai-stage').value;
   const stage = stageRaw === 'Other'
     ? (_el('ai-stage-other').value.trim() || 'Other')

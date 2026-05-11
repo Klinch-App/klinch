@@ -13,6 +13,8 @@ window.ApplicationsPage = (() => {
     'Final Round':               'badge-final',
   };
 
+  const CORE_STAGES = new Set(['Recruiter Screen', 'Hiring Manager', 'Panel', 'Final Round']);
+
   const STATUS_CLASS = {
     'Applied':        'ap-status-applied',
     'Interviewing':   'ap-status-interviewing',
@@ -226,21 +228,21 @@ window.ApplicationsPage = (() => {
             <div class="icard-company-name">${_esc(app.company?.name || 'Unknown Company')}</div>
             <div class="icard-role">${_esc(window.shortenRoleTitle(app.role_title) || 'Role TBD')}</div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;margin-left:auto">
             <span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>
-            ${app.current_stage ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
+            ${app.current_stage && CORE_STAGES.has(app.current_stage) ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
           </div>
         </div>
         <div class="ap-card-footer">
           <div class="ap-card-meta">
             <span class="icard-date">Applied ${_esc(dateApplied)}</span>
             ${firstIvDate ? `<span class="ap-meta-dot">·</span><span class="icard-date">1st interview ${_esc(firstIvDate)}</span>` : ''}
-            ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days}d response</span>` : ''}
+            ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days} day${days !== 1 ? 's' : ''} to respond</span>` : ''}
             ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
           </div>
           ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
         </div>
-        <button class="ap-add-iv-btn">+ Add Interview</button>
+        ${app.status !== 'Rejected' ? '<button class="ap-add-iv-btn">+ Add Interview</button>' : ''}
       </div>`;
   }
 
@@ -314,7 +316,7 @@ window.ApplicationsPage = (() => {
       <div class="co-hero-logo">${logoHtml}</div>
       <div class="co-hero-info">
         <div class="co-hero-name">${_esc(app.company?.name || '')}</div>
-        <div class="co-hero-domain" style="cursor:default">${_esc(app.role_title || '')}</div>
+        <div class="co-hero-domain" style="cursor:default">${_esc(window.shortenRoleTitle ? window.shortenRoleTitle(app.role_title || '') : (app.role_title || ''))}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap;justify-content:flex-end">
         ${!app._synthetic ? `
@@ -326,9 +328,8 @@ window.ApplicationsPage = (() => {
             <option value="Withdrawn"      ${app.status==='Withdrawn'      ?'selected':''}>Withdrawn</option>
             <option value="Rejected"       ${app.status==='Rejected'       ?'selected':''}>Rejected</option>
           </select>` : `<span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>`}
-        ${app.current_stage ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
+        ${app.current_stage && CORE_STAGES.has(app.current_stage) ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
         ${hot ? `<span class="ap-hot" style="font-size:16px" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
-        <button class="ap-add-iv-btn">+ Add Interview</button>
       </div>`;
 
     if (window.wireImgFallbacks) window.wireImgFallbacks(el);
@@ -394,7 +395,7 @@ window.ApplicationsPage = (() => {
 
           ${appJd.structured ? `
             <div id="ap-jd-summary">
-              ${jd.role_title ? `<div class="ai-jd-role-title" style="margin-bottom:14px">${_esc(jd.role_title)}</div>` : ''}
+              ${jd.role_title ? `<div class="ai-jd-role-title" style="margin-bottom:14px">${_esc(window.shortenRoleTitle ? window.shortenRoleTitle(jd.role_title) : jd.role_title)}</div>` : ''}
               ${jd.location || jd.salary ? `
                 <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;color:var(--text-muted)">
                   ${jd.location ? `<span>📍 ${_esc(jd.location)}</span>` : ''}
@@ -434,14 +435,17 @@ window.ApplicationsPage = (() => {
           : '<div class="co-empty-hint">No completed interviews yet</div>'}
       </div>
       <div class="co-section">
-        <div class="co-section-title">Upcoming Interviews (${upcoming.length})</div>
+        <div class="co-section-header">
+          <div class="co-section-title" style="margin-bottom:0">Upcoming Interviews (${upcoming.length})</div>
+          ${app.status !== 'Rejected' ? '<button class="co-add-btn" data-action="add-iv">+ Add Interview</button>' : ''}
+        </div>
         ${upcoming.length
           ? upcoming.map(_buildIvRow).join('')
           : '<div class="co-empty-hint">No upcoming interviews scheduled</div>'}
       </div>
       ${app._synthetic
         ? `<div class="co-section"><div class="co-section-title">Notes</div><div class="co-empty-hint" style="font-size:12px">Add this as a manual application to save notes.</div></div>`
-        : `<div class="co-section"><div class="co-section-title">Notes</div><textarea id="ap-detail-notes" class="co-notes-input" placeholder="Add your own notes about this role…">${_esc(app.notes || '')}</textarea></div>`
+        : `<div class="co-section"><div class="co-section-header"><div class="co-section-title" style="margin-bottom:0">Notes</div><span id="ap-notes-saved" class="co-notes-saved"></span></div><textarea id="ap-detail-notes" class="co-notes-input" placeholder="Add your own notes about this role…">${_esc(app.notes || '')}</textarea></div>`
       }`;
 
     _el('ap-detail-body').innerHTML = html;
@@ -468,16 +472,26 @@ window.ApplicationsPage = (() => {
     const winBtn = _el('ap-win-share-btn');
     if (winBtn) winBtn.addEventListener('click', () => _showCelebrationModal(_detailApp));
 
-    const notesEl = _el('ap-detail-notes');
+    const notesEl  = _el('ap-detail-notes');
+    const savedEl  = _el('ap-notes-saved');
+    let _notesTimer = null;
     if (notesEl) {
       notesEl.addEventListener('input', () => {
-        const all = getAll();
-        const idx = all.findIndex(a => a.id === app.id);
-        if (idx !== -1) {
-          all[idx].notes      = notesEl.value;
-          all[idx].updated_at = new Date().toISOString();
-          saveAll(all);
-        }
+        clearTimeout(_notesTimer);
+        _notesTimer = setTimeout(() => {
+          const all = getAll();
+          const idx = all.findIndex(a => a.id === app.id);
+          if (idx !== -1) {
+            all[idx].notes      = notesEl.value;
+            all[idx].updated_at = new Date().toISOString();
+            saveAll(all);
+            if (savedEl) {
+              savedEl.textContent = 'Saved';
+              savedEl.classList.add('visible');
+              setTimeout(() => savedEl.classList.remove('visible'), 1500);
+            }
+          }
+        }, 1000);
       });
     }
   }
@@ -911,8 +925,12 @@ window.ApplicationsPage = (() => {
       }
     });
 
-    // Detail: iv-row click opens interview detail
+    // Detail: add-iv button + iv-row click opens interview detail
     _el('ap-detail-body').addEventListener('click', e => {
+      if (e.target.closest('[data-action="add-iv"]') && _detailApp) {
+        window.AddInterview?.openWithCompany(_detailApp.company, _detailApp.jd || null);
+        return;
+      }
       const row = e.target.closest('.ap-iv-row[data-iv-id]');
       if (row && window.InterviewsPage) {
         window.navigateTo?.('interviews');
