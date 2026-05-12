@@ -1,8 +1,10 @@
 (() => {
-  if (!window.klinch?.isDev) return;
-
-  // Show the dev section in Settings
   const devSection = document.getElementById('st-dev-section');
+  if (!window.klinch?.isDev) {
+    devSection?.remove();
+    return;
+  }
+
   if (devSection) devSection.style.display = '';
 
   document.getElementById('st-seed-btn')?.addEventListener('click', () => {
