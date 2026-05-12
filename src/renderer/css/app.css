@@ -5661,6 +5661,12 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   color: var(--primary);
   margin-bottom: 6px;
 }
+.ear-intro-card .consent-footer { justify-content: center; }
+#ear-intro-confirm-btn {
+  flex: none;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, var(--primary), var(--accent-pink));
+}
 
 /* ── Terms of Service modal ─────────────────────────────────────────────────── */
 
@@ -7053,8 +7059,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .welcome-cta {
-  width: 100%;
-  padding: 14px 0;
+  padding: 10px 22px;
   background: linear-gradient(135deg, var(--primary), var(--accent-pink));
   border: none;
   border-radius: 12px;
