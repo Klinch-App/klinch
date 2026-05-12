@@ -739,6 +739,11 @@ document.getElementById('st-sign-out-btn')?.addEventListener('click', async () =
   backdrop?.addEventListener('click', e => { if (e.target === backdrop) backdrop.classList.remove('visible'); });
 })();
 
+// ── Settings — Privacy Policy ─────────────────────────────────────────────────
+document.getElementById('st-pp-btn')?.addEventListener('click', () => {
+  window.klinch.invoke('shell:open-external', { url: 'https://tryklinch.com/privacy' });
+});
+
 // ── Settings — Account section ────────────────────────────────────────────────
 (async function() {
   // Populate email display
