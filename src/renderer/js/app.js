@@ -140,8 +140,10 @@ function showOnboarding() {
     }));
     overlay.classList.add('ob-fade-out');
     setTimeout(() => {
-      document.querySelector('.app-shell').style.opacity = '0';
-      location.reload();
+      overlay.style.display = 'none';
+      overlay.classList.remove('ob-fade-out');
+      _flowStarted = false;
+      _initFlow();
     }, 400);
   });
 
@@ -351,8 +353,10 @@ backBtn.addEventListener('click', () => {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
       overlay.classList.add('ob-fade-out');
       setTimeout(() => {
-        document.querySelector('.app-shell').style.opacity = '0';
-        location.reload();
+        overlay.style.display = 'none';
+        overlay.classList.remove('ob-fade-out');
+        _flowStarted = false;
+        _initFlow();
       }, 400);
     }
   });
@@ -369,8 +373,10 @@ backBtn.addEventListener('click', () => {
       localStorage.setItem('klinch_profile', JSON.stringify({ completed: true, ...answers }));
       overlay.classList.add('ob-fade-out');
       setTimeout(() => {
-        document.querySelector('.app-shell').style.opacity = '0';
-        location.reload();
+        overlay.style.display = 'none';
+        overlay.classList.remove('ob-fade-out');
+        _flowStarted = false;
+        _initFlow();
       }, 400);
     }
   });
