@@ -49,6 +49,18 @@ const OB_STEPS = [
     q: "What's your strongest asset as a candidate?",
     type: 'text',
     placeholder: 'e.g. Consistent quota attainment, strong relationship builder',
+    placeholders: {
+      SDR:          'e.g. Consistent quota attainment, strong relationship builder',
+      AE:           'e.g. Strong discovery skills, closing complex multi-stakeholder deals',
+      CSM:          'e.g. High retention rates, strong executive relationship building',
+      AM:           'e.g. Consistent expansion revenue, deep account relationships',
+      SE:           'e.g. Technical depth, ability to simplify complex concepts',
+      RevOps:       'e.g. Process optimization, strong analytical and systems thinking',
+      Marketing:    'e.g. Pipeline generation, strong content and campaign execution',
+      Partnerships: 'e.g. Channel development, co-sell motion experience',
+      Enablement:   'e.g. Ramp time reduction, strong training program design',
+      People:       'e.g. Strong recruiting pipeline, culture and retention focus',
+    },
     optional: true,
   },
   {
@@ -56,6 +68,18 @@ const OB_STEPS = [
     q: "What's one area you know you need to improve?",
     type: 'text',
     placeholder: 'e.g. Talking too much, weak on compensation conversations',
+    placeholders: {
+      SDR:          'e.g. Talking too much, weak on compensation conversations',
+      AE:           'e.g. Struggling with multi-threader deals, weak on negotiation',
+      CSM:          'e.g. Difficult conversations, proving ROI to executives',
+      AM:           'e.g. Upsell conversations, navigating procurement',
+      SE:           'e.g. Struggling with business case framing, too technical in demos',
+      RevOps:       'e.g. Stakeholder alignment, translating data into strategy',
+      Marketing:    'e.g. Proving attribution, aligning with sales on pipeline',
+      Partnerships: 'e.g. Internal alignment, partner enablement at scale',
+      Enablement:   'e.g. Measuring impact, getting sales buy-in',
+      People:       'e.g. Difficult performance conversations, scaling hiring processes',
+    },
     optional: true,
   },
   {
@@ -63,13 +87,25 @@ const OB_STEPS = [
     q: 'What tools and platforms are you most experienced with?',
     type: 'text',
     placeholder: 'e.g. Salesforce, Outreach, HubSpot, Gong',
+    placeholders: {
+      SDR:          'e.g. Salesforce, Outreach, HubSpot, Gong',
+      AE:           'e.g. Salesforce, Gong, LinkedIn Sales Navigator, Docusign',
+      CSM:          'e.g. Gainsight, Salesforce, Intercom, Zendesk',
+      AM:           'e.g. Salesforce, HubSpot, Gong, ChurnZero',
+      SE:           'e.g. Salesforce, Gong, SQL, AWS, Tableau',
+      RevOps:       'e.g. Salesforce, HubSpot, Looker, Clari, Outreach',
+      Marketing:    'e.g. HubSpot, Marketo, Google Analytics, Salesforce',
+      Partnerships: 'e.g. Salesforce, PartnerStack, Crossbeam, HubSpot',
+      Enablement:   'e.g. Salesforce, Highspot, Gong, LMS platforms',
+      People:       'e.g. Workday, Greenhouse, Lever, BambooHR',
+    },
     optional: true,
   },
   {
     key: 'additional_context',
     q: 'Anything else you want Klinch to know about you?',
     type: 'textarea',
-    placeholder: 'Optional — any context that would help us personalise your experience',
+    placeholder: 'Optional — any context that would help us personalize your experience',
     optional: true,
   },
 ];
@@ -90,6 +126,8 @@ function showOnboarding() {
   const userSkipBtn      = document.getElementById('ob-user-skip');
 
   overlay.style.display = 'flex';
+
+  if (!window.klinch?.isDev) devSkipBtn?.remove();
 
   devSkipBtn?.addEventListener('click', () => {
     localStorage.setItem('klinch_profile', JSON.stringify({
@@ -254,7 +292,8 @@ function showOnboarding() {
       });
     } else {
       inputWrap.style.cssText = 'flex-direction:column;gap:0';
-      inputWrap.innerHTML = `<input class="ob-input" type="text" placeholder="${s.placeholder}" value="${answers[s.key] || ''}">`;
+      const ph = s.placeholders?.[answers.role_type] || s.placeholder;
+      inputWrap.innerHTML = `<input class="ob-input" type="text" placeholder="${ph}" value="${answers[s.key] || ''}">`;
       const inp = inputWrap.querySelector('input');
       inp.addEventListener('input', e => { answers[s.key] = e.target.value; updateNext(); });
       inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !nextBtn.disabled) nextBtn.click(); });
@@ -275,7 +314,7 @@ function showOnboarding() {
     fill.style.width          = ((idx + 1) / OB_STEPS.length * 100) + '%';
     stepCount.textContent     = `${idx + 1} of ${OB_STEPS.length}`;
     backBtn.style.visibility  = idx === 0 ? 'hidden' : '';
-    devSkipBtn.style.display  = idx <= 2 ? '' : 'none';
+    if (devSkipBtn?.isConnected) devSkipBtn.style.display = idx <= 2 ? '' : 'none';
     userSkipBtn.style.display = idx >= 3 ? '' : 'none';
 
     if (dir === null) {
