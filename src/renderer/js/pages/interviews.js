@@ -661,9 +661,12 @@ window.InterviewsPage = (() => {
     const completeBtn = _el('ivdp-complete-btn');
     if (completeBtn) {
       completeBtn.addEventListener('click', () => {
-        if (confirm('Mark this interview as complete?')) {
-          window._completeInterview?.(ivId);
-        }
+        window.KModal.confirm(
+          'Mark as complete?',
+          'Mark this interview as complete?',
+          () => window._completeInterview?.(ivId),
+          { confirmLabel: 'Mark Complete' }
+        );
       });
     }
 

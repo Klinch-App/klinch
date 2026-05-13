@@ -8,15 +8,21 @@
   if (devSection) devSection.style.display = '';
 
   document.getElementById('st-seed-btn')?.addEventListener('click', () => {
-    if (!confirm('This will wipe all existing Klinch data and load seed data. Continue?')) return;
-    _load();
-    location.reload();
+    window.KModal.confirm(
+      'Load seed data?',
+      'This will wipe all existing Klinch data and replace it with seed data.',
+      () => { _load(); location.reload(); },
+      { confirmLabel: 'Continue' }
+    );
   });
 
   document.getElementById('st-screenshot-btn')?.addEventListener('click', () => {
-    if (!confirm('This will wipe all existing Klinch data and load screenshot data. Continue?')) return;
-    _loadScreenshot();
-    location.reload();
+    window.KModal.confirm(
+      'Load screenshot data?',
+      'This will wipe all existing Klinch data and replace it with screenshot data.',
+      () => { _loadScreenshot(); location.reload(); },
+      { confirmLabel: 'Continue' }
+    );
   });
 
   document.getElementById('st-reset-welcome-btn')?.addEventListener('click', () => {
