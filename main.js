@@ -15,8 +15,12 @@ app.setAsDefaultProtocolClient('klinch');
 
 nativeTheme.themeSource = 'dark';
 
-let mainWindow = null;
+let mainWindow    = null;
 let overlayWindow = null;
+
+// Full-screen Ear mode state
+let earFsReturnTo    = null; // 'dashboard' | 'interviews'
+let earFsInterviewId = null;
 
 
 // ─── Main window ────────────────────────────────────────────────────────────
@@ -172,6 +176,122 @@ ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
       overlayWindow.setIgnoreMouseEvents(false);
     }
   }
+});
+
+// ─── Full-screen Ear mode ─────────────────────────────────────────────────────
+
+// Renderer → launch overlay in full-screen Ear mode
+ipcMain.handle('ear:fullscreen-launch', (_event, { interviewId, returnTo, roleType } = {}) => {
+  earFsReturnTo    = returnTo    || 'dashboard';
+  earFsInterviewId = interviewId || null;
+
+  // Tell the cue engine which role type to use
+  interview.setEarFsMode(true, roleType || '');
+
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    // Overlay already open — activate full-screen mode on the existing window
+    overlayWindow.webContents.send('ear:fs-mode');
+    overlayWindow.webContents.send('ear:fs-session-state', 'idle');
+    return;
+  }
+
+  _createFullscreenOverlay();
+});
+
+function _createFullscreenOverlay() {
+  const { width, height } = screen.getPrimaryDisplay().bounds;
+
+  overlayWindow = new BrowserWindow({
+    width, height, x: 0, y: 0,
+    transparent:  true,
+    frame:        false,
+    alwaysOnTop:  true,
+    skipTaskbar:  false,
+    resizable:    false,
+    focusable:    false,
+    hasShadow:    false,
+    show:         false,
+    webPreferences: {
+      preload:          path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration:  false,
+    },
+  });
+
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  overlayWindow.loadFile(path.join(__dirname, 'src/renderer/overlay.html'));
+
+  // setOpacity() does not work on macOS for transparent windows — use CSS fade instead
+  overlayWindow.webContents.once('did-finish-load', () => {
+    overlayWindow.show();
+    overlayWindow.webContents.send('ear:fs-mode');
+    overlayWindow.webContents.send('ear:fs-session-state', 'idle');
+  });
+
+  overlayWindow.on('closed', () => {
+    overlayWindow = null;
+    unregisterOverlayShortcuts();
+    mainWindow?.webContents.send('overlay:closed');
+  });
+
+  registerOverlayShortcuts();
+}
+
+function _fadeOutOverlay(callback) {
+  if (!overlayWindow || overlayWindow.isDestroyed()) { callback?.(); return; }
+  // setOpacity() does not work on macOS for transparent windows — CSS handles the fade
+  overlayWindow.webContents.send('ear:fs-fade-out');
+  setTimeout(() => callback?.(), 500);
+}
+
+// Overlay → user clicked Start button
+ipcMain.on('ear:fs-start', () => {
+  mainWindow?.webContents.send('ear:do-start', { interviewId: earFsInterviewId });
+  overlayWindow?.webContents.send('ear:fs-session-state', 'recording');
+});
+
+// Overlay → user clicked Pause
+ipcMain.on('ear:fs-pause', () => {
+  overlayWindow?.webContents.send('ear:fs-session-state', 'paused');
+  // interview.js registers its own ear:fs-pause handler to pause cue generation
+});
+
+// Overlay → user clicked Resume
+ipcMain.on('ear:fs-resume', () => {
+  overlayWindow?.webContents.send('ear:fs-session-state', 'recording');
+  // interview.js registers its own ear:fs-resume handler to resume cue generation
+});
+
+// Overlay → user confirmed End session
+ipcMain.on('ear:fs-end', () => {
+  overlayWindow?.webContents.send('ear:fs-session-state', 'stopped');
+
+  // Stop STT and generate feedback in main window before fading out
+  mainWindow?.webContents.send('ear:do-stop', { interviewId: earFsInterviewId });
+
+  const returnTo    = earFsReturnTo;
+  const interviewId = earFsInterviewId;
+  earFsReturnTo    = null;
+  earFsInterviewId = null;
+  interview.setEarFsMode(false, '');
+
+  // Fade out overlay, then close and notify main window
+  _fadeOutOverlay(() => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.close();
+    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId });
+  });
+});
+
+// Overlay → user clicked Minimize (no exit modal, session may continue from dashboard)
+ipcMain.on('ear:fs-minimize', () => {
+  earFsReturnTo    = null;
+  earFsInterviewId = null;
+  interview.setEarFsMode(false, '');
+  if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.close();
+  mainWindow?.webContents.send('ear:fs-minimized');
 });
 
 

@@ -1123,3 +1123,149 @@ document.addEventListener('stt:device-status', (e) => {
     if (deviceLabel) deviceLabel.textContent = 'Audio device: Error — check microphone permissions';
   }
 });
+
+// ── Full-screen Ear mode ──────────────────────────────────────────────────────
+
+const btnExpand      = document.getElementById('btn-expand-ear');
+const earFsActiveBadge = document.getElementById('ear-fs-active-badge');
+
+function _setEarPanelPassive(passive) {
+  if (btnStart)       btnStart.style.display  = passive ? 'none' : '';
+  if (btnStop)        btnStop.style.display   = 'none';
+  if (btnExpand)      btnExpand.style.display = passive ? 'none' : '';
+  if (earFsActiveBadge) earFsActiveBadge.style.display = passive ? '' : 'none';
+}
+
+if (btnExpand) {
+  btnExpand.addEventListener('click', async () => {
+    if (!window.Billing?.canStartSession()) {
+      window.Billing?.showUpgradeModal();
+      return;
+    }
+    const profile     = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+    const interviewId = window.getEarSelectedId?.() || null;
+    await window.klinch.invoke('ear:fullscreen-launch', {
+      interviewId,
+      returnTo: 'dashboard',
+      roleType: profile.role_type || '',
+    });
+    _setEarPanelPassive(true);
+    window.Billing?.consumeCredit();
+  });
+}
+
+// Main process → start STT for full-screen Ear session
+window.klinch.on('ear:do-start', async ({ interviewId } = {}) => {
+  await window.STT?.startSession(interviewId || null);
+});
+
+// Main process → stop STT and generate feedback for full-screen Ear session
+window.klinch.on('ear:do-stop', async ({ interviewId } = {}) => {
+  await window.STT?.stopSession();
+  window.klinch.invoke('interview:feedback', { interviewId: interviewId || null }).catch(console.error);
+});
+
+// Main process → overlay minimized (no exit modal — just restore panel)
+window.klinch.on('ear:fs-minimized', () => {
+  _setEarPanelPassive(false);
+});
+
+// Main process → full-screen session ended: navigate back + show exit modal
+window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
+  _setEarPanelPassive(false);
+  transcriptLines = [];
+  renderTranscript();
+
+  if (returnTo === 'interviews' && interviewId) {
+    window.navigateTo?.('interviews');
+    // Small delay lets the page render before opening detail + modal
+    setTimeout(() => {
+      window.InterviewsPage?.openDetail(interviewId);
+      window._showEarExitModal?.(interviewId);
+    }, 80);
+  } else {
+    window.navigateTo?.('dashboard');
+    window._showEarExitModal?.(interviewId);
+  }
+});
+
+// ── Post-session exit modal ───────────────────────────────────────────────────
+
+(function() {
+  const backdrop      = document.getElementById('ear-exit-backdrop');
+  const subtitle      = document.getElementById('ear-exit-subtitle');
+  const completeLabel = document.getElementById('ear-exit-complete-label');
+  const completeTitle = document.getElementById('ear-exit-complete-title');
+  const completeBox   = document.getElementById('ear-exit-complete-box');
+  const notesInput    = document.getElementById('ear-exit-notes');
+  const saveBtn       = document.getElementById('ear-exit-save-btn');
+  const skipBtn       = document.getElementById('ear-exit-skip-btn');
+
+  let _activeInterviewId = null;
+  let _markedComplete    = false;
+
+  function _close() {
+    backdrop?.classList.remove('visible');
+    _activeInterviewId = null;
+    _markedComplete    = false;
+    if (notesInput)  notesInput.value = '';
+    if (completeLabel) completeLabel.classList.remove('checked');
+  }
+
+  window._showEarExitModal = function(interviewId) {
+    if (!backdrop) return;
+    _activeInterviewId = interviewId || null;
+    _markedComplete    = false;
+    if (notesInput) notesInput.value = '';
+    if (completeLabel) completeLabel.classList.remove('checked');
+
+    // Populate context if interview ID is known
+    if (interviewId) {
+      const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+      const iv = interviews.find(x => x.id === interviewId);
+      if (iv) {
+        const company = iv.company?.name || 'your interview';
+        const stage   = iv.stage   || 'Interview';
+        if (subtitle)      subtitle.textContent      = `${company} — ${stage}`;
+        if (completeTitle) completeTitle.textContent = `Mark "${stage} at ${company}" as complete`;
+      }
+    }
+
+    backdrop.classList.add('visible');
+    setTimeout(() => notesInput?.focus(), 180);
+  };
+
+  completeLabel?.addEventListener('click', () => {
+    _markedComplete = !_markedComplete;
+    completeLabel.classList.toggle('checked', _markedComplete);
+  });
+
+  function _save() {
+    if (_activeInterviewId) {
+      const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+      const idx = all.findIndex(x => x.id === _activeInterviewId);
+      if (idx !== -1) {
+        if (_markedComplete && all[idx].status !== 'completed') {
+          all[idx].status     = 'completed';
+          all[idx].updated_at = new Date().toISOString();
+          document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: _activeInterviewId } }));
+          window.refreshDashboardStats?.();
+        }
+        const notes = notesInput?.value?.trim();
+        if (notes) {
+          all[idx].post_session_notes = notes;
+          all[idx].updated_at = new Date().toISOString();
+        }
+        localStorage.setItem('klinch_interviews', JSON.stringify(all));
+      }
+    }
+    _close();
+  }
+
+  saveBtn?.addEventListener('click', _save);
+  skipBtn?.addEventListener('click', _close);
+  backdrop?.addEventListener('click', e => { if (e.target === backdrop) _close(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && backdrop?.classList.contains('visible')) _close();
+  });
+})();

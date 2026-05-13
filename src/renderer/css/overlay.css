@@ -5,6 +5,22 @@ html, body {
   overflow: hidden;
   user-select: none;
   -webkit-app-region: no-drag;
+  opacity: 0;
+  animation: overlay-fade-in 0.5s ease forwards;
+}
+
+body.fading-out {
+  animation: overlay-fade-out 0.5s ease forwards;
+}
+
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlay-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 .cue-wrap {
@@ -48,4 +64,254 @@ html, body {
 @keyframes cue-out {
   from { opacity: 1; transform: translateY(0) scale(1); }
   to   { opacity: 0; transform: translateY(-6px) scale(1.02); }
+}
+
+/* ── Full-screen Ear: top-right HUD ─────────────────────────────────────── */
+
+.ear-fs-topbar {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+
+.ear-fs-topbar.visible { display: flex; }
+
+.ear-fs-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.ear-fs-dot.recording {
+  background: #22C55E;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: ear-dot-pulse 1.8s ease-in-out infinite;
+}
+
+.ear-fs-dot.paused {
+  background: #F59E0B;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  animation: none;
+}
+
+.ear-fs-dot.stopped {
+  background: #EF4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+  animation: none;
+}
+
+@keyframes ear-dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70%  { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.ear-fs-minimize-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.48);
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.ear-fs-minimize-btn:hover {
+  background: rgba(0, 0, 0, 0.68);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+/* ── Full-screen Ear: purple bottom glow ────────────────────────────────── */
+
+.ear-fs-bottom-glow {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 25vh;
+  background: linear-gradient(to top, rgba(124, 58, 255, 0.22) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+.ear-fs-bottom-glow.visible { display: block; }
+
+/* ── Full-screen Ear: attention toast ───────────────────────────────────── */
+
+.ear-fs-toast {
+  position: fixed;
+  bottom: 136px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgb(20, 14, 50);
+  border: 1px solid rgba(124, 58, 255, 0.55);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  padding: 9px 18px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 90;
+}
+
+.ear-fs-toast.active {
+  animation: ear-toast-show 4.5s ease forwards;
+}
+
+@keyframes ear-toast-show {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  72%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+}
+
+/* ── Full-screen Ear: bottom controls ──────────────────────────────────── */
+
+.ear-fs-bottombar {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 14px;
+  z-index: 100;
+}
+
+.ear-fs-bottombar.visible { display: flex; }
+
+.ear-fs-btn {
+  height: 52px;
+  padding: 0 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgb(14, 10, 38);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.1px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ear-fs-btn:hover {
+  background: rgb(26, 18, 60);
+  border-color: rgba(155, 107, 255, 0.6);
+}
+
+.ear-fs-btn-start {
+  background: rgb(109, 40, 217);
+  border-color: rgba(124, 58, 255, 0.7);
+  color: #fff;
+}
+
+.ear-fs-btn-start:hover {
+  background: rgb(124, 58, 255);
+  border-color: rgba(155, 107, 255, 0.9);
+}
+
+.ear-fs-btn-end {
+  background: rgb(127, 29, 29);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.ear-fs-btn-end:hover {
+  background: rgb(153, 27, 27);
+  border-color: rgba(239, 68, 68, 0.75);
+  color: #fecaca;
+}
+
+/* ── End confirmation dialog ─────────────────────────────────────────────── */
+
+.ear-fs-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.ear-fs-confirm-backdrop.visible { display: flex; }
+
+.ear-fs-confirm-card {
+  background: rgba(16, 13, 46, 0.96);
+  border: 1px solid rgba(124, 58, 255, 0.28);
+  border-radius: 14px;
+  padding: 28px 32px;
+  min-width: 320px;
+  max-width: 400px;
+  text-align: center;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+.ear-fs-confirm-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  line-height: 1.4;
+  margin-bottom: 22px;
+}
+
+.ear-fs-confirm-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.ear-fs-confirm-btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ear-fs-confirm-cancel {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.ear-fs-confirm-cancel:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.ear-fs-confirm-ok {
+  background: rgba(239, 68, 68, 0.22);
+  border: 1px solid rgba(239, 68, 68, 0.42);
+  color: #fca5a5;
+}
+
+.ear-fs-confirm-ok:hover {
+  background: rgba(239, 68, 68, 0.38);
+  border-color: rgba(239, 68, 68, 0.62);
+  color: #fecaca;
 }
