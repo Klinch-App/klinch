@@ -315,3 +315,43 @@ body.fading-out {
   border-color: rgba(239, 68, 68, 0.62);
   color: #fecaca;
 }
+
+.ear-fs-complete-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  justify-content: center;
+}
+
+.ear-fs-complete-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(124, 58, 255, 0.5);
+  background: rgba(124, 58, 255, 0.08);
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.ear-fs-complete-box.checked {
+  background: rgb(124, 58, 255);
+  border-color: rgb(124, 58, 255);
+}
+
+.ear-fs-complete-box.checked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat;
+}
+
+.ear-fs-complete-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  user-select: none;
+}

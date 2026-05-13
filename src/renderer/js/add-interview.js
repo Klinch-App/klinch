@@ -236,7 +236,7 @@ _nextBtn.addEventListener('click', async () => {
     if (!raw) return _showError('Please paste a job description.');
     await _processJd(raw);
   } else if (n === 4) {
-    await _completeInterview();
+    await _completeAddInterview();
   }
 });
 
@@ -532,7 +532,7 @@ function _resetTimePicker() {
 
 // ── Complete ──────────────────────────────────────────────────────────────────
 
-async function _completeInterview() {
+async function _completeAddInterview() {
   const date = _el('ai-date').value;
   const time = _el('ai-time').value;
   const stageRaw = _el('ai-stage').value;

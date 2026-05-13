@@ -335,10 +335,12 @@ function registerHandlers() {
 
 async function contributeToPool(transcript, interviewRecord) {
   const { supabase } = supabaseApi;
-  if (!supabase) return;
+  if (!supabase) { console.log('[interview] contributeToPool: no supabase client, skipping'); return; }
 
   try {
+    console.log('[interview] inferring questions from transcript…');
     const questions = await inferQuestions(transcript);
+    console.log('[interview] inferred', questions.length, 'questions');
     if (!questions.length) return;
 
     const domain = interviewRecord?.company?.domain || null;
@@ -355,9 +357,13 @@ async function contributeToPool(transcript, interviewRecord) {
     }));
 
     const { error } = await supabase.from('community_questions').insert(rows);
-    if (error) console.error('[interview] community_questions insert:', error.message);
+    if (error) {
+      console.error('[interview] community_questions insert failed:', error.message, error.code);
+    } else {
+      console.log('[interview] contributed', rows.length, 'questions for domain:', domain);
+    }
   } catch (err) {
-    console.error('[interview] contributeToPool:', err.message);
+    console.error('[interview] contributeToPool error:', err.message);
   }
 }
 

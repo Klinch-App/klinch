@@ -481,7 +481,10 @@ window.InterviewsPage = (() => {
             </svg>
             ${_esc(timeStr ? `${dateStr} · ${timeStr}` : dateStr)}
           </div>
-          ${iv.status === 'pending' ? '<button class="ivdp-complete-btn" id="ivdp-complete-btn">✓ Mark as Complete</button>' : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            ${iv.status === 'pending' ? '<button class="ivdp-complete-btn" id="ivdp-complete-btn" style="margin-top:0">✓ Mark as Complete</button>' : ''}
+            <button class="ivdp-reschedule-btn" id="ivdp-reschedule-btn">Reschedule</button>
+          </div>
         </div>
       </div>
 
@@ -634,6 +637,77 @@ window.InterviewsPage = (() => {
     }).join('');
   }
 
+  function _openRescheduleModal(ivId) {
+    const iv = getAll().find(x => x.id === ivId);
+    if (!iv) return;
+
+    const backdrop = document.getElementById('reschedule-backdrop');
+    const dateInput = document.getElementById('reschedule-date');
+    const hourSel   = document.getElementById('reschedule-hour');
+    const minSel    = document.getElementById('reschedule-min');
+    const saveBtn   = document.getElementById('reschedule-save');
+    const cancelBtn = document.getElementById('reschedule-cancel');
+    if (!backdrop || !dateInput || !hourSel || !minSel) return;
+
+    // Populate selects once
+    if (!hourSel.options.length) {
+      for (let h = 1; h <= 12; h++) {
+        hourSel.add(new Option(String(h), String(h)));
+      }
+    }
+    if (!minSel.options.length) {
+      ['00','15','30','45'].forEach(m => minSel.add(new Option(m, m)));
+    }
+
+    // Pre-fill from existing scheduled_at
+    if (iv.scheduled_at) {
+      const d = new Date(iv.scheduled_at);
+      const yyyy = d.getFullYear();
+      const mm   = String(d.getMonth() + 1).padStart(2, '0');
+      const dd   = String(d.getDate()).padStart(2, '0');
+      dateInput.value = `${yyyy}-${mm}-${dd}`;
+
+      const h24 = d.getHours();
+      const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+      hourSel.value = String(h12);
+
+      const mins = d.getMinutes();
+      const snapMin = ['00','15','30','45'].reduce((best, v) =>
+        Math.abs(parseInt(v) - mins) < Math.abs(parseInt(best) - mins) ? v : best, '00');
+      minSel.value = snapMin;
+    } else {
+      dateInput.value = '';
+      hourSel.value = '9';
+      minSel.value  = '00';
+    }
+
+    backdrop.classList.add('visible');
+
+    function _close() { backdrop.classList.remove('visible'); }
+
+    cancelBtn?.addEventListener('click', _close, { once: true });
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) _close(); }, { once: true });
+
+    saveBtn?.addEventListener('click', () => {
+      const dateVal = dateInput.value;
+      if (!dateVal) { dateInput.focus(); return; }
+
+      const h   = parseInt(hourSel.value, 10);
+      const m   = parseInt(minSel.value, 10);
+      const isPm = h < 9 || h === 12;
+      const h24  = isPm && h !== 12 ? h + 12 : h;
+      const pad  = n => String(n).padStart(2, '0');
+      const scheduled_at = `${dateVal}T${pad(h24)}:${pad(m)}:00`;
+
+      _patchIv(ivId, { scheduled_at });
+      _close();
+      const updated = getAll().find(x => x.id === ivId);
+      if (updated) _renderDetail(updated);
+      renderCalendar();
+      renderFeed();
+    }, { once: true });
+  }
+
   function _wireDetailEvents(ivId) {
     // Breadcrumb back
     const backBtn = _el('ivdp-back');
@@ -661,13 +735,26 @@ window.InterviewsPage = (() => {
     const completeBtn = _el('ivdp-complete-btn');
     if (completeBtn) {
       completeBtn.addEventListener('click', () => {
-        window.KModal.confirm(
-          'Mark as complete?',
-          'Mark this interview as complete?',
-          () => window._completeInterview?.(ivId),
-          { confirmLabel: 'Mark Complete' }
-        );
+        const all = getAll();
+        const idx = all.findIndex(x => String(x.id) === String(ivId));
+        if (idx >= 0 && all[idx].status !== 'completed') {
+          all[idx].status     = 'completed';
+          all[idx].updated_at = new Date().toISOString();
+          saveAll(all);
+        }
+        const updated = getAll().find(x => String(x.id) === String(ivId));
+        if (updated) {
+          _renderDetail(updated);
+          document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: updated.id } }));
+          window.refreshDashboardStats?.();
+        }
       });
+    }
+
+    // Reschedule
+    const rescheduleBtn = _el('ivdp-reschedule-btn');
+    if (rescheduleBtn) {
+      rescheduleBtn.addEventListener('click', () => _openRescheduleModal(ivId));
     }
 
     // React to completion (manual or auto-scheduler)
@@ -675,10 +762,10 @@ window.InterviewsPage = (() => {
       document.removeEventListener('interview:completed', _completionListener);
     }
     _completionListener = (e) => {
-      if (e.detail.id !== ivId) return;
+      if (String(e.detail.id) !== String(ivId)) return;
       document.removeEventListener('interview:completed', _completionListener);
       _completionListener = null;
-      const iv = getAll().find(x => x.id === ivId);
+      const iv = getAll().find(x => String(x.id) === String(ivId));
       if (iv) _renderDetail(iv);
     };
     document.addEventListener('interview:completed', _completionListener);

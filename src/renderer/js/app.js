@@ -745,14 +745,18 @@ window.klinchNotify = function(title, body) {
 
 window._completeInterview = function(id) {
   const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-  const idx = all.findIndex(x => x.id === id);
-  if (idx < 0 || all[idx].status === 'completed') return;
-  all[idx].status     = 'completed';
-  all[idx].updated_at = new Date().toISOString();
-  localStorage.setItem('klinch_interviews', JSON.stringify(all));
-  const company = all[idx].company?.name || 'your interview';
-  window.klinchNotify('Klinch', `How did your ${company} interview go? Your follow-up prompts are ready.`);
-  document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id } }));
+  const idx = all.findIndex(x => String(x.id) === String(id));
+  if (idx < 0) return;
+  const alreadyDone = all[idx].status === 'completed';
+  if (!alreadyDone) {
+    all[idx].status     = 'completed';
+    all[idx].updated_at = new Date().toISOString();
+    localStorage.setItem('klinch_interviews', JSON.stringify(all));
+    const company = all[idx].company?.name || 'your interview';
+    window.klinchNotify('Klinch', `How did your ${company} interview go? Your follow-up prompts are ready.`);
+  }
+  // Always dispatch so listeners (Coach, UI) sync regardless of prior state
+  document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: all[idx].id } }));
 };
 
 const _notifToggle = document.getElementById('st-notif-toggle');
@@ -1114,6 +1118,8 @@ if (btnStart) {
 
 if (btnStop) {
   btnStop.addEventListener('click', async () => {
+    const earInterviewId = window.getEarSelectedId?.() || null;
+
     await window.STT.stopSession();
     await window.klinch.invoke('overlay:close');
     btnStop.style.display  = 'none';
@@ -1121,12 +1127,15 @@ if (btnStop) {
     transcriptLines = [];
     renderTranscript();
 
+    console.log('[Stop] earInterviewId:', earInterviewId, '_showEarExitModal:', typeof window._showEarExitModal);
+    if (earInterviewId) window._showEarExitModal?.(earInterviewId);
+
     if (feedbackStatus) {
       feedbackStatus.textContent = 'Generating feedback…';
       feedbackStatus.style.display = '';
     }
 
-    await window.klinch.invoke('interview:feedback', { interviewId: window.getEarSelectedId?.() || null });
+    await window.klinch.invoke('interview:feedback', { interviewId: earInterviewId });
 
     if (feedbackStatus) {
       feedbackStatus.textContent = 'Feedback ready — view in Interviews';
@@ -1208,24 +1217,26 @@ window.klinch.on('ear:fs-minimized', () => {
 });
 
 // Main process → full-screen session ended: navigate back + show exit modal
-window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
+window.klinch.on('ear:fs-closed', ({ returnTo, interviewId, markComplete } = {}) => {
   _setEarPanelPassive(false);
   transcriptLines = [];
   renderTranscript();
 
+  if (markComplete && interviewId) {
+    window._completeInterview?.(interviewId);
+  }
+
   if (returnTo === 'interviews' && interviewId) {
     window.navigateTo?.('interviews');
-    // Small delay lets the page render before opening detail + modal
-    setTimeout(() => {
-      window.InterviewsPage?.openDetail(interviewId);
-      window._showEarExitModal?.(interviewId);
-    }, 80);
-  } else if (returnTo === 'calendar') {
-    window.navigateTo?.('calendar');
-    window._showEarExitModal?.(interviewId);
+    setTimeout(() => window.InterviewsPage?.openDetail(interviewId), 80);
+  } else if (returnTo === 'calendar' && interviewId) {
+    window.navigateTo?.('interviews');
+    setTimeout(() => window.InterviewsPage?.openDetail(interviewId), 80);
+  } else if (interviewId) {
+    window.navigateTo?.('interviews');
+    setTimeout(() => window.InterviewsPage?.openDetail(interviewId), 80);
   } else {
     window.navigateTo?.('dashboard');
-    window._showEarExitModal?.(interviewId);
   }
 });
 
@@ -1244,11 +1255,24 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
   let _activeInterviewId = null;
   let _markedComplete    = false;
 
+  function _saveNotes() {
+    if (!_activeInterviewId) return;
+    const notes = notesInput?.value?.trim();
+    if (!notes) return;
+    const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const idx = all.findIndex(x => String(x.id) === String(_activeInterviewId));
+    if (idx < 0) return;
+    all[idx].post_session_notes = notes;
+    all[idx].updated_at = new Date().toISOString();
+    localStorage.setItem('klinch_interviews', JSON.stringify(all));
+  }
+
   function _close() {
+    _saveNotes();
     backdrop?.classList.remove('visible');
     _activeInterviewId = null;
     _markedComplete    = false;
-    if (notesInput)  notesInput.value = '';
+    if (notesInput)    notesInput.value = '';
     if (completeLabel) completeLabel.classList.remove('checked');
   }
 
@@ -1259,10 +1283,9 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
     if (notesInput) notesInput.value = '';
     if (completeLabel) completeLabel.classList.remove('checked');
 
-    // Populate context if interview ID is known
     if (interviewId) {
       const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-      const iv = interviews.find(x => x.id === interviewId);
+      const iv = interviews.find(x => String(x.id) === String(interviewId));
       if (iv) {
         const company = iv.company?.name || 'your interview';
         const stage   = iv.stage   || 'Interview';
@@ -1278,31 +1301,21 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
   completeLabel?.addEventListener('click', () => {
     _markedComplete = !_markedComplete;
     completeLabel.classList.toggle('checked', _markedComplete);
-  });
-
-  function _save() {
-    if (_activeInterviewId) {
+    if (_markedComplete && _activeInterviewId) {
       const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-      const idx = all.findIndex(x => x.id === _activeInterviewId);
-      if (idx !== -1) {
-        if (_markedComplete && all[idx].status !== 'completed') {
-          all[idx].status     = 'completed';
-          all[idx].updated_at = new Date().toISOString();
-          document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: _activeInterviewId } }));
-          window.refreshDashboardStats?.();
-        }
-        const notes = notesInput?.value?.trim();
-        if (notes) {
-          all[idx].post_session_notes = notes;
-          all[idx].updated_at = new Date().toISOString();
-        }
+      const idx = all.findIndex(x => String(x.id) === String(_activeInterviewId));
+      if (idx !== -1 && all[idx].status !== 'completed') {
+        all[idx].status     = 'completed';
+        all[idx].updated_at = new Date().toISOString();
         localStorage.setItem('klinch_interviews', JSON.stringify(all));
+        document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: _activeInterviewId } }));
+        window.refreshDashboardStats?.();
       }
     }
-    _close();
-  }
+  });
 
-  saveBtn?.addEventListener('click', _save);
+  notesInput?.addEventListener('blur', _saveNotes);
+
   skipBtn?.addEventListener('click', _close);
   backdrop?.addEventListener('click', e => { if (e.target === backdrop) _close(); });
   document.addEventListener('keydown', e => {
