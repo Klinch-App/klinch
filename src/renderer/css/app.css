@@ -7310,3 +7310,93 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   color: var(--text-secondary);
   line-height: 1.5;
 }
+
+/* ── Klinch Ear full-screen: exit modal ────────────────────────────────── */
+
+.ear-exit-card {
+  width: 480px;
+}
+
+.ear-exit-body {
+  gap: 20px;
+}
+
+.ear-exit-complete-check {
+  cursor: pointer;
+}
+
+.ear-exit-complete-check.checked .consent-check-box {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ear-exit-complete-check.checked .consent-check-box::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+  margin: 1px auto 0;
+}
+
+.ear-exit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ear-exit-field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ear-exit-textarea {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 14px;
+  resize: vertical;
+  min-height: 88px;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.ear-exit-textarea:focus {
+  border-color: rgba(124, 58, 255, 0.5);
+}
+
+.ear-exit-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Interview detail: Launch Ear button ───────────────────────────────── */
+
+.ivdp-launch-ear-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(124, 58, 255, 0.38);
+  background: rgba(124, 58, 255, 0.12);
+  color: var(--primary-light);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.ivdp-launch-ear-btn:hover {
+  background: rgba(124, 58, 255, 0.22);
+  border-color: rgba(124, 58, 255, 0.6);
+}

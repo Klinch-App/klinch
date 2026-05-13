@@ -1,29 +1,136 @@
-const cueEl = document.getElementById('cue-text');
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const cueEl           = document.getElementById('cue-text');
+const topbar          = document.getElementById('ear-fs-topbar');
+const bottombar       = document.getElementById('ear-fs-bottombar');
+const dot             = document.getElementById('ear-fs-dot');
+const minimizeBtn     = document.getElementById('ear-fs-minimize-btn');
+const startBtn        = document.getElementById('ear-fs-start');
+const pauseBtn        = document.getElementById('ear-fs-pause');
+const resumeBtn       = document.getElementById('ear-fs-resume');
+const endBtn          = document.getElementById('ear-fs-end');
+const confirmBackdrop = document.getElementById('ear-fs-confirm-backdrop');
+const confirmCancel   = document.getElementById('ear-fs-confirm-cancel');
+const confirmOk       = document.getElementById('ear-fs-confirm-ok');
+
+// ── Cue display (passive + full-screen modes) ─────────────────────────────────
+
 let dismissTimer = null;
 
 window.klinch.on('overlay:coaching-cue', (cue) => {
   if (!cue?.trim()) return;
 
-  // Clear any in-progress auto-dismiss
   if (dismissTimer !== null) {
     clearTimeout(dismissTimer);
     dismissTimer = null;
   }
 
-  // Reset classes and text, force reflow so animation restarts on replacement cues
   cueEl.className = 'cue-text';
   cueEl.textContent = cue.trim();
-  void cueEl.offsetWidth;
+  void cueEl.offsetWidth; // force reflow so animation restarts on replacement cues
   cueEl.classList.add('visible');
 
-  // Fade out after 5 seconds
+  dismissTimer = setTimeout(_dismissCue, 5000);
+});
+
+function _dismissCue() {
+  if (dismissTimer !== null) { clearTimeout(dismissTimer); dismissTimer = null; }
+  cueEl.classList.remove('visible');
+  cueEl.classList.add('fading');
   dismissTimer = setTimeout(() => {
-    cueEl.classList.remove('visible');
-    cueEl.classList.add('fading');
-    dismissTimer = setTimeout(() => {
-      cueEl.className = 'cue-text';
-      cueEl.textContent = '';
-      dismissTimer = null;
-    }, 600); // matches cue-out animation duration
-  }, 5000);
+    cueEl.className = 'cue-text';
+    cueEl.textContent = '';
+    dismissTimer = null;
+  }, 600);
+}
+
+// Escape: dismiss current cue — does NOT exit full-screen
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (confirmBackdrop.classList.contains('visible')) {
+    _closeConfirm();
+    return;
+  }
+  if (cueEl.textContent.trim()) _dismissCue();
+});
+
+// ── Full-screen mode activation / deactivation ───────────────────────────────
+
+window.klinch.on('ear:fs-mode', () => {
+  topbar.classList.add('visible');
+  bottombar.classList.add('visible');
+  document.getElementById('ear-fs-bottom-glow').classList.add('visible');
+  document.getElementById('ear-fs-toast').classList.add('active');
+});
+
+window.klinch.on('ear:fs-fade-out', () => {
+  document.body.classList.add('fading-out');
+});
+
+// ── Session state → status dot ────────────────────────────────────────────────
+
+window.klinch.on('ear:fs-session-state', (state) => {
+  dot.className = 'ear-fs-dot';
+  if (state === 'recording') dot.classList.add('recording');
+  else if (state === 'paused')  dot.classList.add('paused');
+  else if (state === 'stopped') dot.classList.add('stopped');
+  // 'idle' leaves dot dim (no class added)
+});
+
+// ── Mouse event pass-through management ──────────────────────────────────────
+// When mouse is over interactive UI elements, disable click-through so buttons
+// receive clicks. Otherwise clicks fall through to the video call underneath.
+
+function _enableMouse()  { window.klinch.send('overlay:set-ignore-mouse', false); }
+function _disableMouse() { window.klinch.send('overlay:set-ignore-mouse', true); }
+
+topbar.addEventListener('mouseenter',          _enableMouse);
+topbar.addEventListener('mouseleave',          _disableMouse);
+bottombar.addEventListener('mouseenter',       _enableMouse);
+bottombar.addEventListener('mouseleave',       _disableMouse);
+confirmBackdrop.addEventListener('mouseenter', _enableMouse);
+confirmBackdrop.addEventListener('mouseleave', _disableMouse);
+
+// ── Control buttons ───────────────────────────────────────────────────────────
+
+startBtn.addEventListener('click', () => {
+  window.klinch.send('ear:fs-start');
+  startBtn.style.display  = 'none';
+  pauseBtn.style.display  = '';
+});
+
+pauseBtn.addEventListener('click', () => {
+  window.klinch.send('ear:fs-pause');
+  pauseBtn.style.display  = 'none';
+  resumeBtn.style.display = '';
+});
+
+resumeBtn.addEventListener('click', () => {
+  window.klinch.send('ear:fs-resume');
+  resumeBtn.style.display = 'none';
+  pauseBtn.style.display  = '';
+});
+
+endBtn.addEventListener('click', _showConfirm);
+
+minimizeBtn.addEventListener('click', () => {
+  window.klinch.send('ear:fs-minimize');
+});
+
+// ── End confirmation ──────────────────────────────────────────────────────────
+
+function _showConfirm() {
+  confirmBackdrop.classList.add('visible');
+  _enableMouse();
+}
+
+function _closeConfirm() {
+  confirmBackdrop.classList.remove('visible');
+  _disableMouse();
+}
+
+confirmCancel.addEventListener('click', _closeConfirm);
+
+confirmOk.addEventListener('click', () => {
+  _closeConfirm();
+  window.klinch.send('ear:fs-end');
 });

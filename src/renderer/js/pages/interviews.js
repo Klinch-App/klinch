@@ -455,6 +455,12 @@ window.InterviewsPage = (() => {
         <button class="ivdp-bc-link" id="ivdp-back">Interviews</button>
         <span class="ivdp-bc-sep">›</span>
         <span class="ivdp-bc-current">${_esc(companyName)} — ${_esc(roleTitle)}</span>
+        <button class="ivdp-launch-ear-btn" id="ivdp-launch-ear">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 1h4v4M5 13H1V9M14 1l-6 6M1 13l6-6"/>
+          </svg>
+          Launch Ear
+        </button>
       </div>
 
       <!-- Section 1: Hero -->
@@ -632,6 +638,24 @@ window.InterviewsPage = (() => {
     // Breadcrumb back
     const backBtn = _el('ivdp-back');
     if (backBtn) backBtn.addEventListener('click', hideDetail);
+
+    // Launch Ear in full-screen mode from detail page
+    const launchEarBtn = _el('ivdp-launch-ear');
+    if (launchEarBtn) {
+      launchEarBtn.addEventListener('click', async () => {
+        if (!window.Billing?.canStartSession()) {
+          window.Billing?.showUpgradeModal();
+          return;
+        }
+        const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+        await window.klinch.invoke('ear:fullscreen-launch', {
+          interviewId: ivId,
+          returnTo:    'interviews',
+          roleType:    profile.role_type || '',
+        });
+        window.Billing?.consumeCredit();
+      });
+    }
 
     // Mark as Complete
     const completeBtn = _el('ivdp-complete-btn');

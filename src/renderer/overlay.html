@@ -7,9 +7,48 @@
   <link rel="stylesheet" href="css/overlay.css">
 </head>
 <body>
+
+  <!-- Full-screen Ear: top-right HUD (hidden in passive mode) -->
+  <div class="ear-fs-topbar" id="ear-fs-topbar">
+    <span class="ear-fs-dot" id="ear-fs-dot"></span>
+    <button class="ear-fs-minimize-btn" id="ear-fs-minimize-btn" title="Minimize">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 10L10 1"/>
+        <path d="M10 10H5M1 5V10"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Cue text — center screen (shared between passive and full-screen modes) -->
   <div class="cue-wrap">
     <div class="cue-text" id="cue-text"></div>
   </div>
+
+  <!-- Full-screen Ear: purple bottom glow (hidden in passive mode) -->
+  <div class="ear-fs-bottom-glow" id="ear-fs-bottom-glow"></div>
+
+  <!-- Full-screen Ear: attention toast -->
+  <div class="ear-fs-toast" id="ear-fs-toast">Klinch Ear is live — tap Start when ready</div>
+
+  <!-- Full-screen Ear: bottom controls (hidden in passive mode) -->
+  <div class="ear-fs-bottombar" id="ear-fs-bottombar">
+    <button class="ear-fs-btn ear-fs-btn-start" id="ear-fs-start">Start</button>
+    <button class="ear-fs-btn ear-fs-btn-pause" id="ear-fs-pause" style="display:none">Pause</button>
+    <button class="ear-fs-btn ear-fs-btn-resume" id="ear-fs-resume" style="display:none">Resume</button>
+    <button class="ear-fs-btn ear-fs-btn-end" id="ear-fs-end">End</button>
+  </div>
+
+  <!-- End session confirmation dialog -->
+  <div class="ear-fs-confirm-backdrop" id="ear-fs-confirm-backdrop">
+    <div class="ear-fs-confirm-card">
+      <div class="ear-fs-confirm-title">Are you sure you want to end this session?</div>
+      <div class="ear-fs-confirm-btns">
+        <button class="ear-fs-confirm-btn ear-fs-confirm-cancel" id="ear-fs-confirm-cancel">Cancel</button>
+        <button class="ear-fs-confirm-btn ear-fs-confirm-ok" id="ear-fs-confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/overlay.js"></script>
 </body>
 </html>
