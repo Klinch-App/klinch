@@ -4619,11 +4619,43 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 
 .plan-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   width: 100%;
   margin-bottom: 16px;
 }
+
+.starter-overage-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(124, 58, 255, 0.07);
+  border: 1px solid rgba(124, 58, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: 11px 16px;
+  margin-bottom: 14px;
+}
+
+.starter-overage-prompt-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.starter-overage-prompt-btn {
+  background: none;
+  border: none;
+  color: var(--primary-light);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.starter-overage-prompt-btn:hover { color: var(--primary); }
 
 .plan-card {
   background: var(--bg-surface);

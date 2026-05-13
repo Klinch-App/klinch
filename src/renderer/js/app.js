@@ -1183,6 +1183,9 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId } = {}) => {
       window.InterviewsPage?.openDetail(interviewId);
       window._showEarExitModal?.(interviewId);
     }, 80);
+  } else if (returnTo === 'calendar') {
+    window.navigateTo?.('calendar');
+    window._showEarExitModal?.(interviewId);
   } else {
     window.navigateTo?.('dashboard');
     window._showEarExitModal?.(interviewId);
