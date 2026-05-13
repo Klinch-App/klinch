@@ -73,6 +73,7 @@ window.Billing = (() => {
     _bindCancelModal();
     _bindTrialBanner();
     _bindSettingsPlanButtons();
+    _bindOveragePrompts();
     refreshBanner();
     refreshSettings();
     _maybeSyncSubscription(); // fire-and-forget
@@ -365,6 +366,7 @@ window.Billing = (() => {
     _renderBillingStatus();
     _updatePlanCardHighlight();
     _updateTrialCard();
+    _updateOveragePrompt();
   }
 
   function _updateTrialCard() {
@@ -405,9 +407,6 @@ window.Billing = (() => {
     if (b.plan !== 'unlimited') {
       btns.push(`<button class="billing-action-btn" id="bs-upgrade-btn">Upgrade Plan</button>`);
     }
-    if (b.plan !== 'unlimited') {
-      btns.push(`<button class="billing-action-btn billing-action-secondary" id="bs-pack-btn">Buy 5 Interviews — $1.99</button>`);
-    }
     if (b.customer_id) {
       btns.push(`<button class="billing-action-btn billing-action-secondary" id="bs-portal-btn">Manage Billing</button>`);
     }
@@ -432,7 +431,6 @@ window.Billing = (() => {
 
     // Bind freshly rendered buttons
     document.getElementById('bs-upgrade-btn')?.addEventListener('click', showUpgradeModal);
-    document.getElementById('bs-pack-btn')?.addEventListener('click', () => _startPackCheckout());
     document.getElementById('bs-portal-btn')?.addEventListener('click', openBillingPortal);
     document.getElementById('bs-cancel-btn')?.addEventListener('click', () => {
       const modal  = document.getElementById('billing-cancel-modal');
@@ -447,33 +445,63 @@ window.Billing = (() => {
     });
   }
 
-  async function _startPackCheckout() {
-    const btn = document.getElementById('bs-pack-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Opening checkout…'; }
-    const b   = _getBilling();
-    const res = await window.klinch.invoke('billing:create-checkout', {
-      plan_key:    'pack',
-      customer_id: b.customer_id || undefined,
-    });
-    if (btn) { btn.disabled = false; btn.textContent = 'Buy 5 Interviews — $1.99'; }
-    if (!res.ok) { _showError(res.error); return; }
-    _pollCheckout(res.session_id, 'pack', () => {});
-  }
-
   function _updatePlanCardHighlight() {
-    const b = _getBilling();
-    document.querySelectorAll('.plan-card[data-plan-id]').forEach(card => {
-      const isCurrent = card.dataset.planId === b.plan;
-      card.classList.toggle('plan-card-current', isCurrent);
-      let badge = card.querySelector('.plan-current-badge');
-      if (isCurrent && !badge) {
+    const b    = _getBilling();
+    const plan = b.plan;
+
+    // Starter card — highlighted only when it's the current plan
+    const starterCard = document.querySelector('.plan-card[data-plan-id="starter"]');
+    if (starterCard) {
+      const isCurrent = plan === 'starter';
+      starterCard.classList.toggle('plan-card-current', isCurrent);
+      let badge = starterCard.querySelector('.plan-current-badge');
+      const btn = starterCard.querySelector('.plan-upgrade-btn');
+      if (isCurrent) {
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'plan-current-badge';
+          starterCard.prepend(badge);
+        }
+        badge.textContent = 'CURRENT PLAN';
+        if (btn) btn.style.display = 'none';
+      } else {
+        if (badge) badge.remove();
+        if (btn) btn.style.display = '';
+      }
+    }
+
+    // Unlimited card — always highlighted; badge text toggles between BEST VALUE / CURRENT PLAN
+    const unlimitedCard = document.querySelector('.plan-card[data-plan-id="unlimited"]');
+    if (unlimitedCard) {
+      const isCurrent = plan === 'unlimited';
+      unlimitedCard.classList.add('plan-card-current');
+      let badge = unlimitedCard.querySelector('.plan-current-badge');
+      if (!badge) {
         badge = document.createElement('div');
         badge.className = 'plan-current-badge';
-        badge.textContent = 'Current Plan';
-        card.prepend(badge);
-      } else if (!isCurrent && badge) {
-        badge.remove();
+        unlimitedCard.prepend(badge);
       }
+      badge.textContent = isCurrent ? 'CURRENT PLAN' : 'BEST VALUE';
+      const btn = unlimitedCard.querySelector('.plan-upgrade-btn');
+      if (btn) btn.style.display = isCurrent ? 'none' : '';
+    }
+  }
+
+  function _updateOveragePrompt() {
+    const b    = _getBilling();
+    const show = b.plan === 'starter' && (b.credits_remaining || 0) <= 2;
+    ['starter-overage-prompt', 'starter-overage-prompt-dash'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? '' : 'none';
+    });
+  }
+
+  function _bindOveragePrompts() {
+    ['starter-overage-prompt', 'starter-overage-prompt-dash'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', e => {
+        const btn = e.target.closest('[data-checkout="pack"]');
+        if (btn) _handleCheckoutBtn(btn);
+      });
     });
   }
 

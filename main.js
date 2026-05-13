@@ -189,7 +189,8 @@ ipcMain.handle('ear:fullscreen-launch', (_event, { interviewId, returnTo, roleTy
   interview.setEarFsMode(true, roleType || '');
 
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    // Overlay already open — activate full-screen mode on the existing window
+    // Overlay already open — drop passive-mode shortcuts before activating full-screen
+    unregisterOverlayShortcuts();
     overlayWindow.webContents.send('ear:fs-mode');
     overlayWindow.webContents.send('ear:fs-session-state', 'idle');
     return;
@@ -233,11 +234,9 @@ function _createFullscreenOverlay() {
 
   overlayWindow.on('closed', () => {
     overlayWindow = null;
-    unregisterOverlayShortcuts();
     mainWindow?.webContents.send('overlay:closed');
   });
-
-  registerOverlayShortcuts();
+  // No global shortcuts in full-screen Ear mode — keys must stay available for the video call
 }
 
 function _fadeOutOverlay(callback) {

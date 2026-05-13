@@ -226,6 +226,11 @@
             </div>
           </div>
 
+          <div id="starter-overage-prompt-dash" class="starter-overage-prompt" style="display:none;margin-top:14px">
+            <span class="starter-overage-prompt-text">Need more interviews this month?</span>
+            <button class="starter-overage-prompt-btn" data-checkout="pack">Buy 5 for $4.99 →</button>
+          </div>
+
           <div class="section-title" style="margin-top:28px">Upcoming Interviews</div>
           <div id="upcoming-interviews-grid" class="interview-cards-grid"></div>
           <div id="upcoming-empty-state" class="empty-state">
@@ -614,17 +619,12 @@
           <!-- Billing status — populated dynamically by billing.js -->
           <div id="billing-status-section"></div>
 
-          <div class="plan-grid">
+          <div id="starter-overage-prompt" class="starter-overage-prompt" style="display:none">
+            <span class="starter-overage-prompt-text">Need more interviews this month?</span>
+            <button class="starter-overage-prompt-btn" data-checkout="pack">Buy 5 for $4.99 →</button>
+          </div>
 
-            <div class="plan-card" data-plan-id="free_trial">
-              <div class="plan-name">Free Trial</div>
-              <div class="plan-price">Free</div>
-              <div class="plan-features">
-                <div class="plan-feature">3 interviews or 7 days</div>
-                <div class="plan-feature">No credit card required</div>
-                <div class="plan-feature" id="trial-days-remaining-feature"></div>
-              </div>
-            </div>
+          <div class="plan-grid">
 
             <div class="plan-card" data-plan-id="starter">
               <div class="plan-name">Starter</div>
@@ -637,7 +637,8 @@
               <button class="plan-upgrade-btn" data-checkout="starter">Upgrade →</button>
             </div>
 
-            <div class="plan-card" data-plan-id="unlimited">
+            <div class="plan-card plan-card-current" data-plan-id="unlimited">
+              <div class="plan-current-badge">BEST VALUE</div>
               <div class="plan-name">Unlimited</div>
               <div class="plan-price">$19.99<span class="plan-price-period">/month</span></div>
               <div class="plan-features">
@@ -646,16 +647,6 @@
                 <div class="plan-feature">Cancel at any time</div>
               </div>
               <button class="plan-upgrade-btn" data-checkout="unlimited">Upgrade →</button>
-            </div>
-
-            <div class="plan-card" data-plan-id="pay_per_use">
-              <div class="plan-name">Pay-per-use</div>
-              <div class="plan-price">$1.99<span class="plan-price-period"> per 5 interviews</span></div>
-              <div class="plan-features">
-                <div class="plan-feature">Buy credits as you need them</div>
-                <div class="plan-feature">Unlimited Dry Runs</div>
-              </div>
-              <button class="plan-upgrade-btn" data-checkout="pack">Buy Credits →</button>
             </div>
 
           </div>
@@ -1507,7 +1498,7 @@
             <li><strong>Free Trial</strong> — 3 interviews, no credit card required</li>
             <li><strong>Starter</strong> — $9.99/month (10 interviews)</li>
             <li><strong>Unlimited</strong> — $19.99/month</li>
-            <li><strong>Pay-per-use</strong> — $1.99 per 5-interview pack</li>
+            <li><strong>5-Interview Pack</strong> — $4.99 one-time add-on</li>
           </ul>
           <p>Plans are billed monthly in advance via Stripe. You may cancel at any time — access continues through the end of your current billing period. No prorated refunds are issued. Unused Starter credits do not roll over. Price changes will be communicated with 30 days' notice. Taxes are collected where required by law.</p>
         </div>
@@ -1632,7 +1623,7 @@
 
         <div class="upgrade-plan">
           <div class="upgrade-plan-name">5-Interview Pack</div>
-          <div class="upgrade-plan-price">$1.99<span class="upgrade-plan-per"> one-time</span></div>
+          <div class="upgrade-plan-price">$4.99<span class="upgrade-plan-per"> one-time</span></div>
           <div class="upgrade-plan-sessions">5 interviews, no subscription</div>
           <ul class="upgrade-plan-features">
             <li>No commitment</li>

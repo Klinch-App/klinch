@@ -8,6 +8,8 @@ const supabaseApi        = require('../api/supabase');
 const PRICES = {
   starter:   process.env.STRIPE_PRICE_STARTER   || null,
   unlimited: process.env.STRIPE_PRICE_UNLIMITED || null,
+  // TODO: Create a new one-time price of $4.99 for a 5-interview pack in the Stripe Dashboard,
+  //       then set STRIPE_PRICE_PACK to the new price ID (price_xxxxx) in .env
   pack:      process.env.STRIPE_PRICE_PACK      || null,
 };
 

@@ -419,7 +419,14 @@ window.CalendarPage = (() => {
 
     _el('cal-pop-x').onclick = _closePopover;
     _el('cal-pop-ear').onclick = async () => {
-      await window.klinch.invoke('overlay:launch');
+      if (!window.Billing?.canStartSession()) { window.Billing?.showUpgradeModal(); return; }
+      const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+      await window.klinch.invoke('ear:fullscreen-launch', {
+        interviewId: iv.id || null,
+        returnTo:    'calendar',
+        roleType:    profile.role_type || '',
+      });
+      window.Billing?.consumeCredit();
       _closePopover();
     };
 
@@ -496,7 +503,16 @@ window.CalendarPage = (() => {
       }).join('')}`;
 
     sb.querySelectorAll('.cal-sb-ear').forEach(btn => {
-      btn.addEventListener('click', () => window.klinch.invoke('overlay:launch'));
+      btn.addEventListener('click', async () => {
+        if (!window.Billing?.canStartSession()) { window.Billing?.showUpgradeModal(); return; }
+        const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+        await window.klinch.invoke('ear:fullscreen-launch', {
+          interviewId: btn.dataset.iv || null,
+          returnTo:    'calendar',
+          roleType:    profile.role_type || '',
+        });
+        window.Billing?.consumeCredit();
+      });
     });
   }
 
