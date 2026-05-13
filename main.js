@@ -265,7 +265,7 @@ ipcMain.on('ear:fs-resume', () => {
 });
 
 // Overlay → user confirmed End session
-ipcMain.on('ear:fs-end', () => {
+ipcMain.on('ear:fs-end', (_event, { markComplete } = {}) => {
   overlayWindow?.webContents.send('ear:fs-session-state', 'stopped');
 
   // Stop STT and generate feedback in main window before fading out
@@ -280,7 +280,9 @@ ipcMain.on('ear:fs-end', () => {
   // Fade out overlay, then close and notify main window
   _fadeOutOverlay(() => {
     if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.close();
-    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId });
+    mainWindow?.show();
+    mainWindow?.focus();
+    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId, markComplete: !!markComplete });
   });
 });
 

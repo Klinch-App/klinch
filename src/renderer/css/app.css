@@ -3127,6 +3127,25 @@ html, body {
   border-color: rgba(52, 211, 153, 0.55);
 }
 
+.ivdp-reschedule-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  width: fit-content;
+}
+.ivdp-reschedule-btn:hover {
+  background: var(--bg-hover);
+  border-color: rgba(124, 58, 255, 0.4);
+  color: var(--text-primary);
+}
+
 /* Sections */
 .ivdp-section {
   background: var(--bg-surface);

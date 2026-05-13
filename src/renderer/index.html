@@ -1633,6 +1633,31 @@
     </div>
   </div>
 
+  <!-- ── Reschedule interview modal ───────────────────────────────────────── -->
+  <div id="reschedule-backdrop" class="kmodal-backdrop">
+    <div class="kmodal-card" style="width:420px">
+      <div class="kmodal-title">Reschedule Interview</div>
+      <div class="ai-field-row" style="gap:14px">
+        <div class="ai-field-group" style="flex:1">
+          <label class="ai-field-label">Date</label>
+          <input type="date" id="reschedule-date" class="ai-modal-input">
+        </div>
+        <div class="ai-field-group" style="flex:1">
+          <label class="ai-field-label">Time</label>
+          <div class="ai-time-picker">
+            <select id="reschedule-hour" class="ai-modal-select ai-time-part"></select>
+            <span class="ai-time-colon">:</span>
+            <select id="reschedule-min" class="ai-modal-select ai-time-part"></select>
+          </div>
+        </div>
+      </div>
+      <div class="kmodal-actions">
+        <button class="kmodal-btn-cancel" id="reschedule-cancel">Cancel</button>
+        <button class="kmodal-btn-confirm" id="reschedule-save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Cancel subscription confirm modal ────────────────────────────────── -->
   <div id="billing-cancel-modal" class="delete-confirm-backdrop">
     <div class="delete-confirm-card" style="width:420px">
@@ -1745,8 +1770,7 @@
 
       </div>
       <div class="consent-footer" style="gap:10px">
-        <button class="consent-launch-btn" id="ear-exit-save-btn">Save</button>
-        <button class="nudge-btn nudge-btn-ghost" id="ear-exit-skip-btn" style="margin-top:0">Skip</button>
+        <button class="nudge-btn nudge-btn-ghost" id="ear-exit-skip-btn" style="margin-top:0">Done</button>
       </div>
     </div>
   </div>

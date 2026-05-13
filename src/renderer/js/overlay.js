@@ -118,7 +118,13 @@ minimizeBtn.addEventListener('click', () => {
 
 // ── End confirmation ──────────────────────────────────────────────────────────
 
+const completeLabel = document.getElementById('ear-fs-complete-label');
+const completeBox   = document.getElementById('ear-fs-complete-box');
+let _markComplete = false;
+
 function _showConfirm() {
+  _markComplete = false;
+  completeBox?.classList.remove('checked');
   confirmBackdrop.classList.add('visible');
   _enableMouse();
 }
@@ -128,9 +134,15 @@ function _closeConfirm() {
   _disableMouse();
 }
 
+completeLabel?.addEventListener('click', () => {
+  _markComplete = !_markComplete;
+  completeBox.classList.toggle('checked', _markComplete);
+});
+
 confirmCancel.addEventListener('click', _closeConfirm);
 
 confirmOk.addEventListener('click', () => {
+  const markComplete = _markComplete;
   _closeConfirm();
-  window.klinch.send('ear:fs-end');
+  window.klinch.send('ear:fs-end', { markComplete });
 });
