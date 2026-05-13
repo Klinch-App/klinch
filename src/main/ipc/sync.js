@@ -5,6 +5,7 @@ const supabaseApi  = require('../api/supabase');
 
 // Maps localStorage keys to Supabase table names
 const TABLE = {
+  klinch_processes:    'processes',
   klinch_interviews:   'interviews',
   klinch_applications: 'applications',
   klinch_dry_runs:     'dry_runs',
@@ -12,8 +13,10 @@ const TABLE = {
   klinch_profile:      'profiles',
 };
 
-// Keys whose value is an array of objects each with an `id` field
+// Keys using the data-blob pattern { id, user_id, data, updated_at }
 const ARRAY_KEYS  = new Set(['klinch_interviews', 'klinch_applications', 'klinch_dry_runs']);
+// Keys using named columns (no data blob)
+const NAMED_KEYS  = new Set(['klinch_processes']);
 // Keys whose value is a single object keyed per-user
 const SINGLE_KEYS = new Set(['klinch_resume', 'klinch_profile']);
 
@@ -28,6 +31,55 @@ async function _userId() {
   } catch { return null; }
 }
 
+// PostgREST requires .is() for null comparisons, not .eq()
+function _whereUser(query, userId) {
+  return userId ? query.eq('user_id', userId) : query.is('user_id', null);
+}
+
+// ── Processes table sync (named columns — no data blob) ───────────────────────
+
+async function _processesUp(supabase, userId, arr) {
+  if (!Array.isArray(arr)) return;
+  const now = new Date().toISOString();
+
+  if (arr.length > 0) {
+    const rows = arr.map(item => ({
+      id:           item.id,
+      user_id:      userId,
+      company_name: item.company_name || '',
+      company_logo: item.company_logo || null,
+      role_title:   item.role_title   || '',
+      status:       item.status       || 'Active',
+      notes:        item.notes        || null,
+      created_at:   item.created_at   || now,
+      updated_at:   now,
+    }));
+    const { error } = await supabase.from('processes').upsert(rows, { onConflict: 'id' });
+    if (error) throw error;
+  }
+
+  const ids = arr.map(item => item.id).filter(Boolean);
+  if (ids.length > 0) {
+    const { error } = await _whereUser(supabase.from('processes').delete(), userId)
+      .not('id', 'in', `(${ids.join(',')})`);
+    if (error) throw error;
+  } else {
+    const { error } = await _whereUser(supabase.from('processes').delete(), userId);
+    if (error) throw error;
+  }
+}
+
+async function _processesDown(supabase, userId) {
+  const { data, error } = await _whereUser(
+    supabase.from('processes').select('id, company_name, company_logo, role_title, status, notes, created_at, updated_at'),
+    userId
+  ).order('created_at', { ascending: true });
+
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
+  return data; // named columns — return rows directly, no unwrapping needed
+}
+
 // ── Array table sync ──────────────────────────────────────────────────────────
 
 async function _arrayUp(supabase, table, userId, arr) {
@@ -39,6 +91,7 @@ async function _arrayUp(supabase, table, userId, arr) {
     const rows = arr.map(item => {
       const row = { id: item.id, user_id: userId, data: item };
       if (hasUpdatedAt) row.updated_at = now;
+      if (table === 'interviews') row.process_id = item.process_id || null;
       return row;
     });
 
@@ -49,22 +102,20 @@ async function _arrayUp(supabase, table, userId, arr) {
   // Delete rows that are no longer in the array (handles deletes)
   const ids = arr.map(item => item.id).filter(Boolean);
   if (ids.length > 0) {
-    const { error } = await supabase.from(table).delete()
-      .eq('user_id', userId)
+    const { error } = await _whereUser(supabase.from(table).delete(), userId)
       .not('id', 'in', `(${ids.join(',')})`);
     if (error) throw error;
   } else {
-    const { error } = await supabase.from(table).delete().eq('user_id', userId);
+    const { error } = await _whereUser(supabase.from(table).delete(), userId);
     if (error) throw error;
   }
 }
 
 async function _arrayDown(supabase, table, userId) {
-  const { data, error } = await supabase
-    .from(table)
-    .select('data')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true });
+  const { data, error } = await _whereUser(
+    supabase.from(table).select('data'),
+    userId
+  ).order('created_at', { ascending: true });
 
   if (error) throw error;
   if (!data || data.length === 0) return null; // no remote data → keep localStorage
@@ -74,6 +125,7 @@ async function _arrayDown(supabase, table, userId) {
 // ── Single-object table sync ──────────────────────────────────────────────────
 
 async function _profileUp(supabase, userId, data) {
+  if (!userId) return; // profiles table PK is user UUID — skip if no auth session
   const row = {
     id:                 userId,
     role_type:          data.role_type          || null,
@@ -93,11 +145,10 @@ async function _profileUp(supabase, userId, data) {
 }
 
 async function _profileDown(supabase, userId) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  const query = userId
+    ? supabase.from('profiles').select('*').eq('id', userId)
+    : supabase.from('profiles').select('*').is('id', null);
+  const { data, error } = await query.single();
 
   if (error?.code === 'PGRST116') return { profile: null, billing: null }; // row not found
   if (error) throw error;
@@ -126,17 +177,17 @@ async function _profileDown(supabase, userId) {
 }
 
 async function _resumeUp(supabase, userId, data) {
+  if (!userId) return; // resumes conflict key is user_id — skip if no auth session
   const row = { user_id: userId, data, updated_at: new Date().toISOString() };
   const { error } = await supabase.from('resumes').upsert(row, { onConflict: 'user_id' });
   if (error) throw error;
 }
 
 async function _resumeDown(supabase, userId) {
-  const { data, error } = await supabase
-    .from('resumes')
-    .select('data')
-    .eq('user_id', userId)
-    .single();
+  const { data, error } = await _whereUser(
+    supabase.from('resumes').select('data'),
+    userId
+  ).single();
 
   if (error?.code === 'PGRST116') return null;
   if (error) throw error;
@@ -148,19 +199,19 @@ async function _resumeDown(supabase, userId) {
 function init() {
   // supabase:sync-up — write-through after any localStorage write to a synced key
   ipcMain.handle('supabase:sync-up', async (_event, { key, data }) => {
-    const { supabase } = supabaseApi;
-    if (!supabase) return { ok: true }; // dev bypass — no-op
+    const { supabaseAdmin } = supabaseApi;
+    if (!supabaseAdmin) return { ok: true }; // service role key not set — skip
 
     const table  = TABLE[key];
     if (!table)  return { ok: true }; // not a synced key
 
-    const userId = await _userId();
-    if (!userId) return { ok: true }; // no session — skip silently
+    const userId = await _userId(); // may be null in dev / no-auth mode
 
     try {
-      if (ARRAY_KEYS.has(key))        await _arrayUp(supabase, table, userId, data);
-      else if (key === 'klinch_profile') await _profileUp(supabase, userId, data);
-      else if (key === 'klinch_resume')  await _resumeUp(supabase, userId, data);
+      if (key === 'klinch_processes')    await _processesUp(supabaseAdmin, userId, data);
+      else if (ARRAY_KEYS.has(key))      await _arrayUp(supabaseAdmin, table, userId, data);
+      else if (key === 'klinch_profile') await _profileUp(supabaseAdmin, userId, data);
+      else if (key === 'klinch_resume')  await _resumeUp(supabaseAdmin, userId, data);
       return { ok: true };
     } catch (err) {
       console.error(`[sync] sync-up "${key}":`, err.message);
@@ -172,23 +223,26 @@ function init() {
   // Returns: { ok, data } where data is the localStorage-ready value, or null if no remote data.
   // For klinch_profile also returns billing sub-object.
   ipcMain.handle('supabase:sync-down', async (_event, { key }) => {
-    const { supabase } = supabaseApi;
-    if (!supabase) return { ok: true, data: null }; // dev bypass
+    const { supabaseAdmin } = supabaseApi;
+    if (!supabaseAdmin) return { ok: true, data: null }; // service role key not set — skip
 
-    const userId = await _userId();
-    if (!userId) return { ok: true, data: null };
+    const userId = await _userId(); // may be null in dev / no-auth mode
 
     try {
+      if (key === 'klinch_processes') {
+        const data = await _processesDown(supabaseAdmin, userId);
+        return { ok: true, data };
+      }
       if (ARRAY_KEYS.has(key)) {
-        const data = await _arrayDown(supabase, TABLE[key], userId);
+        const data = await _arrayDown(supabaseAdmin, TABLE[key], userId);
         return { ok: true, data };
       }
       if (key === 'klinch_profile') {
-        const { profile, billing } = await _profileDown(supabase, userId);
+        const { profile, billing } = await _profileDown(supabaseAdmin, userId);
         return { ok: true, data: profile, billing };
       }
       if (key === 'klinch_resume') {
-        const data = await _resumeDown(supabase, userId);
+        const data = await _resumeDown(supabaseAdmin, userId);
         return { ok: true, data };
       }
       return { ok: true, data: null };

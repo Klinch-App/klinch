@@ -1127,7 +1127,6 @@ if (btnStop) {
     transcriptLines = [];
     renderTranscript();
 
-    console.log('[Stop] earInterviewId:', earInterviewId, '_showEarExitModal:', typeof window._showEarExitModal);
     if (earInterviewId) window._showEarExitModal?.(earInterviewId);
 
     if (feedbackStatus) {

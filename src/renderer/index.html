@@ -907,6 +907,29 @@
 
       <div class="ai-modal-body" style="position:relative">
 
+        <!-- Step 0: New vs Existing -->
+        <div id="ai-step-0" style="display:none">
+          <h2 class="ai-step-title">What type of interview is this?</h2>
+          <p class="ai-step-sub">Start fresh or add another round to an existing application.</p>
+          <div class="ai-flow-choice">
+            <button class="ai-flow-btn" id="ai-flow-new">
+              <div class="ai-flow-btn-title">New Application</div>
+              <div class="ai-flow-btn-sub">First round at a new company</div>
+            </button>
+            <button class="ai-flow-btn" id="ai-flow-existing">
+              <div class="ai-flow-btn-title">Additional Round</div>
+              <div class="ai-flow-btn-sub">Another round for an active application</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 0b: Pick Process (additional round) -->
+        <div id="ai-step-0b" style="display:none">
+          <h2 class="ai-step-title">Which application is this for?</h2>
+          <p class="ai-step-sub">Select the active application to add a new interview round.</p>
+          <div id="ai-process-list" class="ai-process-list"></div>
+        </div>
+
         <!-- Step 1: Company -->
         <div id="ai-step-1">
           <h2 class="ai-step-title">Which company is this for?</h2>
@@ -925,6 +948,10 @@
               <div class="ai-entity-sub" id="ai-sel-company-domain"></div>
             </div>
             <button class="ai-entity-change" id="ai-company-change">Change</button>
+          </div>
+          <div class="ai-field-group" style="margin-top:16px">
+            <label class="ai-field-label">Role Title</label>
+            <input type="text" id="ai-role-title" class="ai-modal-input" placeholder="e.g. Sales Development Representative">
           </div>
         </div>
 
