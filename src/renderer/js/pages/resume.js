@@ -493,7 +493,7 @@ window.ResumePage = (() => {
   async function _handleFile(file) {
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     if (!['pdf', 'docx'].includes(ext)) {
-      alert('Please upload a PDF or DOCX file.');
+      window.KModal.alert('Unsupported file type', 'Please upload a PDF or DOCX file.');
       return;
     }
 
@@ -507,7 +507,7 @@ window.ResumePage = (() => {
       const ab = await file.arrayBuffer();
       data = Array.from(new Uint8Array(ab));
     } catch (e) {
-      alert('Could not read the file. Please try again.');
+      window.KModal.alert('File read error', 'Could not read the file. Please try again.');
       render();
       return;
     }

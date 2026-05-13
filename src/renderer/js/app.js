@@ -1,3 +1,40 @@
+// ── Generic modal utility (replaces native confirm / alert / prompt) ──────────
+// KModal.alert(title, body)
+// KModal.confirm(title, body, onConfirm, { confirmLabel, cancelLabel, onCancel })
+
+window.KModal = (() => {
+  const backdrop  = document.getElementById('kmodal-backdrop');
+  const titleEl   = document.getElementById('kmodal-title');
+  const bodyEl    = document.getElementById('kmodal-body');
+  const actionsEl = document.getElementById('kmodal-actions');
+
+  function _close() { backdrop.classList.remove('visible'); }
+
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) _close(); });
+
+  function alert(title, body) {
+    titleEl.textContent  = title;
+    bodyEl.textContent   = body;
+    actionsEl.innerHTML  = `<button class="kmodal-btn-confirm" id="kmodal-ok">OK</button>`;
+    document.getElementById('kmodal-ok').addEventListener('click', _close, { once: true });
+    backdrop.classList.add('visible');
+  }
+
+  function confirm(title, body, onConfirm, { confirmLabel = 'Confirm', cancelLabel = 'Cancel', onCancel } = {}) {
+    titleEl.textContent = title;
+    bodyEl.textContent  = body;
+    actionsEl.innerHTML = `
+      <button class="kmodal-btn-cancel"  id="kmodal-cancel">${cancelLabel}</button>
+      <button class="kmodal-btn-confirm" id="kmodal-confirm">${confirmLabel}</button>
+    `;
+    document.getElementById('kmodal-cancel').addEventListener('click',  () => { _close(); onCancel?.();  }, { once: true });
+    document.getElementById('kmodal-confirm').addEventListener('click', () => { _close(); onConfirm?.(); }, { once: true });
+    backdrop.classList.add('visible');
+  }
+
+  return { alert, confirm };
+})();
+
 // ── Onboarding ────────────────────────────────────────────────────────────────
 
 const OB_STEPS = [

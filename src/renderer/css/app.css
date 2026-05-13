@@ -7432,3 +7432,97 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   background: rgba(124, 58, 255, 0.22);
   border-color: rgba(124, 58, 255, 0.6);
 }
+
+/* ── Generic Klinch modal (replaces native confirm/alert/prompt) ─────────── */
+
+.kmodal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 26, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.kmodal-backdrop.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.kmodal-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 380px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: translateY(10px) scale(0.97);
+  transition: transform 0.2s ease;
+}
+
+.kmodal-backdrop.visible .kmodal-card {
+  transform: translateY(0) scale(1);
+}
+
+.kmodal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.kmodal-body {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.kmodal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.kmodal-btn-cancel {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.kmodal-btn-cancel:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.kmodal-btn-confirm {
+  padding: 9px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-sans);
+  transition: background 0.15s;
+}
+
+.kmodal-btn-confirm:hover { background: var(--primary-dark); }
