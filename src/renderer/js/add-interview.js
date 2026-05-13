@@ -513,31 +513,20 @@ function _initTimePicker() {
 
   hourSel.addEventListener('change', _updateHiddenTime);
   minSel.addEventListener('change', _updateHiddenTime);
-  _modal.querySelectorAll('.ai-ampm-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _modal.querySelectorAll('.ai-ampm-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      _updateHiddenTime();
-    });
-  });
 }
 
 function _updateHiddenTime() {
   const hour = parseInt(_el('ai-time-hour').value, 10);
   const min  = _el('ai-time-min').value;
-  const ampm = _modal.querySelector('.ai-ampm-btn.active')?.dataset.value || 'AM';
-  let h24 = hour;
-  if (ampm === 'AM' && hour === 12) h24 = 0;
-  if (ampm === 'PM' && hour !== 12) h24 = hour + 12;
+  // 9, 10, 11 → AM; everything else (1–8, 12) → PM
+  const isPm = hour < 9 || hour === 12;
+  const h24  = isPm && hour !== 12 ? hour + 12 : hour;
   _el('ai-time').value = `${String(h24).padStart(2, '0')}:${min}`;
 }
 
 function _resetTimePicker() {
   _el('ai-time-hour').value = '9';
   _el('ai-time-min').value  = '00';
-  _modal.querySelectorAll('.ai-ampm-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.value === 'AM');
-  });
   _updateHiddenTime();
 }
 
