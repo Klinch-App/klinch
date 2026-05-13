@@ -6,10 +6,12 @@ function _emptyInterviewer() {
 
 const _state = {
   step: 1,
-  company: null,       // { name, logo_url, domain, apollo_id }
+  flowType: 'new',          // 'new' | 'existing'
+  selectedProcessId: null,  // set when flowType === 'existing'
+  company: null,            // { name, logo_url, domain, apollo_id }
   interviewers: [_emptyInterviewer()],
-  jd: null,            // { raw, structured }
-  format: 'Virtual',   // 'Virtual' | 'Phone Screen'
+  jd: null,                 // { raw, structured }
+  format: 'Virtual',        // 'Virtual' | 'Phone Screen'
 };
 
 let _searchTimeout = null;
@@ -28,6 +30,8 @@ const _stepPanels   = [1, 2, 3, 4].map(n => document.getElementById(`ai-step-${n
 
 function openModal() {
   _state.step = 1;
+  _state.flowType = 'new';
+  _state.selectedProcessId = null;
   _state.company = null;
   _state.jd = null;
   _state.skipJdStep = false;
@@ -38,6 +42,7 @@ function openModal() {
   _el('ai-company-results').style.display = 'none';
   _el('ai-company-results').innerHTML = '';
   _el('ai-selected-company').style.display = 'none';
+  if (_el('ai-role-title')) _el('ai-role-title').value = '';
 
   // Reset step 2
   _state.interviewers = [_emptyInterviewer()];
@@ -55,7 +60,7 @@ function openModal() {
   _el('ai-jd-structured').style.display = 'none';
 
   _modal.style.display = 'flex';
-  _goToStep(1);
+  _showIntro('choice');
 }
 
 function closeModal() {
@@ -64,6 +69,8 @@ function closeModal() {
 
 function openModalWithCompany(company, jd) {
   _state.step = 1;
+  _state.flowType = 'new';
+  _state.selectedProcessId = null;
   _state.company = company;
   _state.jd = jd || null;
   _state.skipJdStep = !!jd;
@@ -180,12 +187,79 @@ function _showError(msg) {
   _showError._t = setTimeout(() => { toast.style.display = 'none'; }, 3500);
 }
 
+// ── Intro panels (step 0 / 0b) ────────────────────────────────────────────────
+
+let _introPanel = null; // 'choice' | 'pick' | null
+
+function _showIntro(panel) {
+  _introPanel = panel;
+  _el('ai-step-0').style.display  = panel === 'choice' ? '' : 'none';
+  _el('ai-step-0b').style.display = panel === 'pick'   ? '' : 'none';
+  _stepPanels.forEach(el => { el.style.display = 'none'; });
+  _modal.querySelector('.ai-step-dots').style.visibility = 'hidden';
+  _stepLabel.style.visibility = 'hidden';
+  _backBtn.style.visibility = panel === 'pick' ? '' : 'hidden';
+  _nextBtn.style.display = 'none';
+  if (panel === 'pick') _renderProcessList();
+}
+
+function _renderProcessList() {
+  const list = _el('ai-process-list');
+  if (!list) return;
+
+  const processes = JSON.parse(localStorage.getItem('klinch_processes') || '[]');
+  const active = processes.filter(p => p.status === 'Active' || p.status === undefined);
+
+  if (active.length === 0) {
+    list.innerHTML = '<p class="ai-process-empty">No active applications yet. <button class="ai-link-btn" id="ai-no-process-btn">Start a new one →</button></p>';
+    document.getElementById('ai-no-process-btn')?.addEventListener('click', () => {
+      _state.flowType = 'new';
+      _showIntro('choice');
+    });
+    return;
+  }
+
+  list.innerHTML = active.map(p => {
+    const initial = (p.company_name || '?')[0].toUpperCase();
+    const logo = p.company_logo
+      ? `<img class="ai-process-logo-img" src="${p.company_logo}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<div class="ai-process-logo-fb" style="display:none">${initial}</div>`
+      : `<div class="ai-process-logo-fb">${initial}</div>`;
+    return `
+      <div class="ai-process-item" data-id="${p.id}">
+        <div class="ai-process-logo">${logo}</div>
+        <div class="ai-process-info">
+          <div class="ai-process-company">${p.company_name}</div>
+          <div class="ai-process-role">${p.role_title}</div>
+        </div>
+        <span class="ai-process-arrow">→</span>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.ai-process-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const p = active.find(x => x.id === item.dataset.id);
+      _state.selectedProcessId = item.dataset.id;
+      if (p) _state.company = { name: p.company_name, logo_url: p.company_logo || null };
+      _goToStep(4);
+    });
+  });
+}
+
 // ── Step navigation ───────────────────────────────────────────────────────────
 
 const STEP_LABELS = ['Company', 'Interviewer', 'Job Description', 'Details'];
 
 function _goToStep(n) {
+  _introPanel = null;
   _state.step = n;
+
+  // Restore header elements hidden during intro panels
+  _el('ai-step-0').style.display  = 'none';
+  _el('ai-step-0b').style.display = 'none';
+  _modal.querySelector('.ai-step-dots').style.visibility = '';
+  _stepLabel.style.visibility = '';
+  _nextBtn.style.display = '';
 
   _stepPanels.forEach((el, i) => { el.style.display = (i + 1 === n) ? '' : 'none'; });
 
@@ -241,6 +315,9 @@ _nextBtn.addEventListener('click', async () => {
 });
 
 _backBtn.addEventListener('click', () => {
+  if (_introPanel === 'pick') { _showIntro('choice'); return; }
+  if (_state.step === 1)      { _showIntro('choice'); return; }
+  if (_state.step === 4 && _state.flowType === 'existing') { _showIntro('pick'); return; }
   if (_state.step > 1) {
     const prev = _state.step - 1;
     _goToStep(_state.skipJdStep && prev === 3 ? 2 : prev);
@@ -248,6 +325,16 @@ _backBtn.addEventListener('click', () => {
 });
 _closeBtn.addEventListener('click', closeModal);
 _modal.addEventListener('click', (e) => { if (e.target === _modal) closeModal(); });
+
+_el('ai-flow-new')?.addEventListener('click', () => {
+  _state.flowType = 'new';
+  _goToStep(1);
+});
+
+_el('ai-flow-existing')?.addEventListener('click', () => {
+  _state.flowType = 'existing';
+  _showIntro('pick');
+});
 
 // ── Step 1: Company Search ────────────────────────────────────────────────────
 
@@ -438,6 +525,9 @@ async function _processJd(raw) {
 
   _el('ai-jd-textarea').style.display = 'none';
   _el('ai-jd-role-title').textContent = res.data.role_title || '';
+  // Auto-fill role title field if not already set
+  const roleInput = _el('ai-role-title');
+  if (roleInput && !roleInput.value.trim()) roleInput.value = res.data.role_title || '';
 
   function renderList(id, items) {
     _el(id).innerHTML = (items || []).map(item => `<li>${item}</li>`).join('');
@@ -543,16 +633,41 @@ async function _completeAddInterview() {
   if (!date) return _showError('Please select a date.');
   if (stageRaw === 'Other' && !_el('ai-stage-other').value.trim()) return _showError('Please enter a stage name.');
 
+  const now = new Date().toISOString();
+  let processId = _state.selectedProcessId || null;
+
+  if (_state.flowType === 'new') {
+    const roleTitle = (_el('ai-role-title')?.value.trim())
+      || _state.jd?.structured?.role_title
+      || stage;
+
+    processId = crypto.randomUUID();
+    const process = {
+      id:           processId,
+      company_name: _state.company?.name   || '',
+      company_logo: _state.company?.logo_url || null,
+      role_title:   roleTitle,
+      status:       'Active',
+      notes:        null,
+      created_at:   now,
+      updated_at:   now,
+    };
+    const allProcesses = JSON.parse(localStorage.getItem('klinch_processes') || '[]');
+    allProcesses.push(process);
+    localStorage.setItem('klinch_processes', JSON.stringify(allProcesses));
+  }
+
   const record = {
-    id: crypto.randomUUID(),
-    company: _state.company,
+    id:           crypto.randomUUID(),
+    process_id:   processId,
+    company:      _state.company,
     interviewers: _state.interviewers.filter(iv => iv.name.trim()),
-    jd: _state.jd,
+    jd:           _state.jd,
     stage,
-    format: _state.format,
+    format:       _state.format,
     scheduled_at: time ? `${date}T${time}` : date,
-    status: 'pending',
-    created_at: new Date().toISOString(),
+    status:       'pending',
+    created_at:   now,
   };
 
   const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');

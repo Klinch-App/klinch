@@ -11,6 +11,7 @@
 window.Sync = (() => {
 
   const SYNC_KEYS = new Set([
+    'klinch_processes',
     'klinch_interviews',
     'klinch_applications',
     'klinch_dry_runs',
@@ -82,7 +83,7 @@ window.Sync = (() => {
   // ── On-launch sync-down: Supabase wins on conflict ─────────────────────────
 
   async function syncAllDown() {
-    const keys = ['klinch_interviews', 'klinch_applications', 'klinch_dry_runs', 'klinch_resume', 'klinch_profile'];
+    const keys = ['klinch_processes', 'klinch_interviews', 'klinch_applications', 'klinch_dry_runs', 'klinch_resume', 'klinch_profile'];
 
     const results = await Promise.allSettled(keys.map(k => _down(k)));
 
@@ -95,7 +96,7 @@ window.Sync = (() => {
     });
 
     // Merge billing fields from profiles into klinch_settings.billing
-    const profileResult = results[4]; // index 4 = klinch_profile
+    const profileResult = results[5]; // index 5 = klinch_profile (was 4 before klinch_processes added)
     if (profileResult.status === 'fulfilled' && profileResult.value?.billing) {
       _mergeBillingFromProfile(profileResult.value.billing);
     }

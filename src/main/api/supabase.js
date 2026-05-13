@@ -87,11 +87,13 @@
 const path = require('path');
 const fs   = require('fs');
 
-let supabase = null;
+let supabase      = null; // anon client — used for auth flows
+let supabaseAdmin = null; // service-role client — bypasses RLS, used for data sync
 
 function init() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
+  const url        = process.env.SUPABASE_URL;
+  const key        = process.env.SUPABASE_ANON_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
     console.warn('[auth] SUPABASE_URL or SUPABASE_ANON_KEY not set — auth running in dev bypass mode');
@@ -129,7 +131,20 @@ function init() {
     },
   });
 
+  if (serviceKey) {
+    supabaseAdmin = createClient(url, serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    console.log('[auth] Supabase admin client initialized (service role)');
+  } else {
+    console.warn('[auth] SUPABASE_SERVICE_ROLE_KEY not set — data sync will be blocked by RLS when unauthenticated');
+  }
+
   console.log('[auth] Supabase client initialized');
 }
 
-module.exports = { get supabase() { return supabase; }, init };
+module.exports = {
+  get supabase()      { return supabase; },
+  get supabaseAdmin() { return supabaseAdmin; },
+  init,
+};
