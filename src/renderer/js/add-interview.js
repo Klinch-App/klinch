@@ -131,6 +131,30 @@ function openModalWithCompany(company, jd) {
   _goToStep(2);
 }
 
+function openForProcess(processId) {
+  const processes = JSON.parse(localStorage.getItem('klinch_processes') || '[]');
+  const proc = processes.find(p => p.id === processId);
+
+  _state.step = 4;
+  _state.flowType = 'existing';
+  _state.selectedProcessId = processId;
+  _state.company = proc ? { name: proc.company_name, logo_url: proc.company_logo || null } : null;
+  _state.interviewers = [_emptyInterviewer()];
+  _state.jd = null;
+  _state.skipJdStep = false;
+
+  _el('ai-time').value = '';
+  _el('ai-stage').value = 'Recruiter Screen';
+  _el('ai-stage-other').style.display = 'none';
+  _el('ai-stage-other').value = '';
+  _el('ai-jd-textarea').value = '';
+  _el('ai-jd-textarea').style.display = '';
+  _el('ai-jd-structured').style.display = 'none';
+
+  _modal.style.display = 'flex';
+  _goToStep(4);
+}
+
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 function _el(id) { return document.getElementById(id); }
@@ -905,6 +929,7 @@ function renderInterviews() {
 
   refreshDashboardStats();
   updateEarContext();
+  window.InterviewsPage?.refresh?.();
 
   if (!grid) return;
 
@@ -1154,4 +1179,4 @@ renderInterviews();
   });
 })();
 
-window.AddInterview = { open: openModal, openWithCompany: openModalWithCompany };
+window.AddInterview = { open: openModal, openWithCompany: openModalWithCompany, openForProcess };

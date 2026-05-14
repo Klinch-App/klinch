@@ -268,7 +268,11 @@ function registerHandlers() {
   ipcMain.on('ear:fs-resume', () => { earFsPaused = false; });
 
   // Post-interview feedback — full Claude analysis returned to renderer
-  ipcMain.handle('interview:feedback', async () => {
+  ipcMain.handle('interview:feedback', async (_event, { interviewId: callerInterviewId } = {}) => {
+    // Use session-state interviewId; fall back to caller-supplied if session was reset
+    const resolvedInterviewId = currentInterviewId || callerInterviewId || null;
+    if (!currentInterviewId && resolvedInterviewId) currentInterviewId = resolvedInterviewId;
+
     if (sessionTranscript.length === 0) {
       return 'No transcript recorded for this session.';
     }
@@ -334,8 +338,9 @@ function registerHandlers() {
 }
 
 async function contributeToPool(transcript, interviewRecord) {
-  const { supabase } = supabaseApi;
-  if (!supabase) { console.log('[interview] contributeToPool: no supabase client, skipping'); return; }
+  // Use admin client (service role) — community_questions inserts need to bypass RLS
+  const { supabaseAdmin } = supabaseApi;
+  if (!supabaseAdmin) { console.log('[interview] contributeToPool: no supabase admin client, skipping'); return; }
 
   try {
     console.log('[interview] inferring questions from transcript…');
@@ -356,7 +361,7 @@ async function contributeToPool(transcript, interviewRecord) {
       created_at:       now,
     }));
 
-    const { error } = await supabase.from('community_questions').insert(rows);
+    const { error } = await supabaseAdmin.from('community_questions').insert(rows);
     if (error) {
       console.error('[interview] community_questions insert failed:', error.message, error.code);
     } else {

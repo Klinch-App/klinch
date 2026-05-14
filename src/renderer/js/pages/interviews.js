@@ -15,7 +15,16 @@ window.InterviewsPage = (() => {
     'Final Round':               'badge-final',
   };
 
-  let _filter = { view: 'upcoming', company: '', stage: '', format: '', search: '' };
+  const PROCESS_STATUS_CLS = {
+    'Active':         'proc-status-active',
+    'Offer Received': 'proc-status-offer-received',
+    'Offer Accepted': 'proc-status-offer-accepted',
+    'Rejected':       'proc-status-rejected',
+    'Withdrawn':      'proc-status-withdrawn',
+  };
+
+  let _filter = { view: 'active', status: '', company: '', search: '' };
+  let _expanded = new Set();
   let _layer  = 'list'; // 'list' | 'detail'
   let _completionListener = null;
 
@@ -38,38 +47,53 @@ window.InterviewsPage = (() => {
     localStorage.setItem('klinch_interviews', JSON.stringify(list));
   }
 
+  function getProcesses() {
+    return JSON.parse(localStorage.getItem('klinch_processes') || '[]');
+  }
+
+  function saveProcesses(list) {
+    localStorage.setItem('klinch_processes', JSON.stringify(list));
+  }
+
   function isCompleted(iv) {
     if (iv.status === 'completed') return true;
     if (!iv.scheduled_at) return false;
     return new Date(iv.scheduled_at) < new Date();
   }
 
-  function isThisWeek(iv) {
+  function isWithinDays(iv, days) {
     if (!iv.scheduled_at) return false;
     const d = new Date(iv.scheduled_at);
     const now = new Date();
     const end = new Date(now);
-    end.setDate(now.getDate() + 7);
+    end.setDate(now.getDate() + days);
     return d >= now && d <= end;
   }
 
   // ── Stats ─────────────────────────────────────────────────────────────────────
 
   function renderStats() {
-    const all       = getAll();
-    const upcoming  = all.filter(iv => !isCompleted(iv));
-    const completed = all.filter(isCompleted);
-    const thisWeek  = all.filter(iv => !isCompleted(iv) && isThisWeek(iv));
+    const processes  = getProcesses();
+    const interviews = getAll();
 
-    _el('iv-stat-total').textContent     = all.length;
-    _el('iv-stat-upcoming').textContent  = upcoming.length;
-    _el('iv-stat-week').textContent      = thisWeek.length;
-    _el('iv-stat-completed').textContent = completed.length;
+    const activeProcs  = processes.filter(p => p.status === 'Active' || p.status === 'Offer Received').length;
+    const upcoming7d   = interviews.filter(iv => !isCompleted(iv) && isWithinDays(iv, 7)).length;
+    const allIvs       = interviews.length;
+    const completedIvs = interviews.filter(isCompleted).length;
 
+    _el('iv-stat-total').textContent     = activeProcs;
+    _el('iv-stat-upcoming').textContent  = upcoming7d;
+    _el('iv-stat-week').textContent      = allIvs;
+    _el('iv-stat-completed').textContent = completedIvs;
+
+    // Pipeline: stage counts from active-process interviews
+    const activeIds = new Set(processes.filter(p => p.status === 'Active' || p.status === 'Offer Received').map(p => p.id));
     const stageCounts = {};
-    upcoming.forEach(iv => {
-      if (iv.stage) stageCounts[iv.stage] = (stageCounts[iv.stage] || 0) + 1;
-    });
+    interviews
+      .filter(iv => !isCompleted(iv) && activeIds.has(iv.process_id))
+      .forEach(iv => {
+        if (iv.stage) stageCounts[iv.stage] = (stageCounts[iv.stage] || 0) + 1;
+      });
     const sorted   = Object.entries(stageCounts).sort((a, b) => b[1] - a[1]);
     const maxCount = sorted[0]?.[1] || 1;
 
@@ -147,131 +171,320 @@ window.InterviewsPage = (() => {
     _el('iv-calendar-grid').innerHTML = html;
   }
 
-  // ── Company filter options ─────────────────────────────────────────────────────
+  // ── Company filter ─────────────────────────────────────────────────────────────
 
   function updateCompanyFilter() {
-    const all       = getAll();
-    const companies = [...new Set(all.map(iv => iv.company?.name).filter(Boolean))].sort();
+    const companies = [...new Set(getProcesses().map(p => p.company_name).filter(Boolean))].sort();
     const sel       = _el('iv-filter-company');
     const current   = sel.value;
     sel.innerHTML   = `<option value="">All Companies</option>` +
       companies.map(c => `<option value="${_esc(c)}"${c === current ? ' selected' : ''}>${_esc(c)}</option>`).join('');
   }
 
-  // ── Card HTML ─────────────────────────────────────────────────────────────────
+  // ── Process row HTML ──────────────────────────────────────────────────────────
 
-  function buildCardHTML(iv) {
-    const dateObj = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
-    const dateStr = dateObj
-      ? dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  function _buildProcessRowHTML(proc, stages) {
+    const isOpen = _expanded.has(proc.id);
+
+    const logoHtml = proc.company_logo
+      ? `<img src="${_esc(proc.company_logo)}" class="proc-logo-img" alt="" data-fb="proc-logo-${proc.id}">
+         <div class="proc-logo-fb" data-fb-id="proc-logo-${proc.id}" style="display:none">${(proc.company_name || '?')[0].toUpperCase()}</div>`
+      : `<div class="proc-logo-fb">${(proc.company_name || '?')[0].toUpperCase()}</div>`;
+
+    const statusCls = PROCESS_STATUS_CLS[proc.status] || 'proc-status-active';
+
+    const sorted = [...stages].sort((a, b) => {
+      const da = a.scheduled_at ? new Date(a.scheduled_at) : new Date(0);
+      const db = b.scheduled_at ? new Date(b.scheduled_at) : new Date(0);
+      return da - db;
+    });
+
+    const nextIdx = sorted.findIndex(iv => !isCompleted(iv));
+
+    const stagesHtml = isOpen ? `
+      <div class="proc-stages">
+        ${sorted.map((iv, i) => _buildStageRowHTML(iv, i === nextIdx)).join('')}
+        <button class="proc-add-round" data-process-id="${proc.id}">+ Add another round</button>
+      </div>` : '';
+
+    return `
+      <div class="proc-row" data-process-id="${proc.id}">
+        <div class="proc-header" data-process-id="${proc.id}">
+          <div class="proc-logo-wrap">${logoHtml}</div>
+          <div class="proc-info">
+            <div class="proc-company">${_esc(proc.company_name || 'Unknown')}</div>
+            <div class="proc-role">${_esc(proc.role_title || 'Role TBD')}</div>
+          </div>
+          <div class="proc-header-right">
+            <span class="proc-status-badge ${statusCls}">${_esc(proc.status || 'Active')}</span>
+            <button class="proc-kebab" data-process-id="${proc.id}" title="More options">⋮</button>
+            <span class="proc-chevron ${isOpen ? 'is-open' : ''}">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
+            </span>
+          </div>
+        </div>
+        ${stagesHtml}
+      </div>`;
+  }
+
+  function _buildStageRowHTML(iv, isNext) {
+    const dateObj  = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
+    const dateStr  = dateObj
+      ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       : 'TBD';
-    const timeStr = (dateObj && iv.scheduled_at.includes('T'))
+    const timeStr  = (dateObj && iv.scheduled_at?.includes('T'))
       ? dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
       : '';
 
-    const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
-      ? `<img src="${iv.company.logo_url}" class="icard-logo-img" alt="" data-fb="ivpg-logo-${iv.id}">
-         <div class="icard-logo-fb" data-fb-id="ivpg-logo-${iv.id}" ${window._fbHiddenStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`
-      : `<div class="icard-logo-fb"${window._fbStyle(iv.company)}>${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
+    const done = isCompleted(iv);
+    const icon = done ? '✓' : (isNext ? '→' : '·');
+    const iconCls = done ? 'icon-done' : (isNext ? 'icon-next' : 'icon-dot');
 
-    const interviewers    = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
-    const photoStackHtml  = interviewers.slice(0, 3).map((iw, i) => iw.photo_url
-      ? `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
-           <img src="${iw.photo_url}" class="icard-photo" alt="" data-fb="ivpg-photo-${iv.id}-${i}">
-           <div class="icard-photo-fb" data-fb-id="ivpg-photo-${iv.id}-${i}" style="display:none">${(iw.name || '?')[0].toUpperCase()}</div>
-         </div>`
-      : `<div class="icard-photo-wrap" style="border:2px solid var(--bg-surface)">
-           <div class="icard-photo-fb">${(iw.name || '?')[0].toUpperCase()}</div>
-         </div>`
-    ).join('');
-
-    const primaryName  = interviewers[0]?.name || '';
-    const extraCount   = interviewers.length - 1;
-    const iwNameHtml   = extraCount > 0
-      ? `${_esc(primaryName)} <span style="color:var(--text-muted)">+${extraCount}</span>`
-      : _esc(primaryName);
-
-    const stageBadgeClass = STAGE_BADGE[iv.stage] || 'badge-recruiter';
-    const formatBadgeHtml = iv.format
-      ? `<span class="icard-format-badge ${iv.format === 'Virtual' ? 'badge-virtual' : 'badge-phone'}">${_esc(iv.format)}</span>`
-      : '';
-
-    const completed  = isCompleted(iv);
-    const statusHtml = completed
-      ? `<span class="icard-status-badge iv-status-done">Completed</span>`
-      : `<span class="icard-status-badge">Upcoming</span>`;
+    let statusLabel = 'Scheduled';
+    let statusCls   = isNext ? 'proc-ss-upcoming' : '';
+    if (iv.status === 'completed')  { statusLabel = 'Completed'; statusCls = 'proc-ss-done'; }
+    if (iv.status === 'cancelled')  { statusLabel = 'Cancelled'; statusCls = ''; }
+    if (iv.status === 'no_show')    { statusLabel = 'No Show';   statusCls = 'proc-ss-noshow'; }
+    if (!iv.scheduled_at && iv.status !== 'completed') { statusLabel = 'TBD'; statusCls = ''; }
 
     return `
-      <div class="icard" data-id="${iv.id}">
-        <button class="icard-delete-btn" aria-label="Delete interview">✕</button>
-        <div class="icard-top">
-          <div class="icard-logo-wrap" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${logoHtml}</div>
-          <div class="icard-company-info">
-            <div class="icard-company-name" data-company-nav="${_esc(iv.company?.domain || iv.company?.name || '')}">${_esc(iv.company?.name || 'Unknown Company')}</div>
-            <div class="icard-role">${_esc(window.shortenRoleTitle(iv.jd?.structured?.role_title) || 'Role TBD')}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
-            <span class="icard-stage-badge ${stageBadgeClass}">${_esc(iv.stage)}</span>
-            ${formatBadgeHtml}
-          </div>
+      <div class="proc-stage ${done ? 'is-completed' : ''} ${isNext ? 'is-next' : ''}" data-interview-id="${iv.id}">
+        <span class="proc-stage-icon ${iconCls}">${icon}</span>
+        <div class="proc-stage-info">
+          <span class="proc-stage-name">${_esc(iv.stage || 'Interview')}</span>
+          <span class="proc-stage-date">${dateStr}${timeStr ? ' · ' + timeStr : ''}</span>
         </div>
-        ${interviewers.length ? `
-        <div class="icard-interviewer">
-          <div class="icard-photo-stack">${photoStackHtml}</div>
-          <div class="icard-interviewer-info">
-            <div class="icard-interviewer-name">${iwNameHtml}</div>
-            <div class="icard-interviewer-title">${_esc(interviewers[0]?.title || '')}</div>
-          </div>
-        </div>` : ''}
-        <div class="icard-footer">
-          <div class="icard-date">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
-          ${statusHtml}
-        </div>
+        <span class="proc-stage-status ${statusCls}">${statusLabel}</span>
       </div>`;
   }
 
   // ── Feed ──────────────────────────────────────────────────────────────────────
 
   function renderFeed() {
-    const feed  = _el('iv-feed');
-    const empty = _el('iv-empty');
+    const feed      = _el('iv-feed');
+    const empty     = _el('iv-empty');
+    const processes = getProcesses();
+    const interviews= getAll();
 
-    let filtered = getAll().filter(iv => {
-      if (_filter.view === 'upcoming'   && isCompleted(iv))                       return false;
-      if (_filter.view === 'completed'  && !isCompleted(iv))                      return false;
-      if (_filter.view === 'this-week'  && (!isThisWeek(iv) || isCompleted(iv)))  return false;
-      if (_filter.company && iv.company?.name !== _filter.company) return false;
-      if (_filter.stage   && iv.stage   !== _filter.stage)  return false;
-      if (_filter.format  && iv.format  !== _filter.format) return false;
+    // Group interviews by process_id
+    const byProcess = {};
+    interviews.forEach(iv => {
+      const pid = iv.process_id || '__orphan__';
+      if (!byProcess[pid]) byProcess[pid] = [];
+      byProcess[pid].push(iv);
+    });
+
+    // Filter processes
+    let filtered = processes.filter(proc => {
+      const isActive = proc.status === 'Active' || proc.status === 'Offer Received';
+      if (_filter.view === 'active' && !isActive) return false;
+      if (_filter.status && proc.status !== _filter.status) return false;
+      if (_filter.company && proc.company_name !== _filter.company) return false;
       if (_filter.search) {
-        const q   = _filter.search.toLowerCase();
-        const iws = iv.interviewers || (iv.interviewer ? [iv.interviewer] : []);
-        if (!iv.company?.name?.toLowerCase().includes(q) &&
-            !iws.some(iw => iw.name?.toLowerCase().includes(q))) return false;
+        const q = _filter.search.toLowerCase();
+        if (!proc.company_name?.toLowerCase().includes(q) &&
+            !proc.role_title?.toLowerCase().includes(q)) return false;
       }
       return true;
     });
 
+    // Sort: active first, then by most recent updated_at
     filtered.sort((a, b) => {
-      const da = a.scheduled_at ? new Date(a.scheduled_at) : new Date(0);
-      const db = b.scheduled_at ? new Date(b.scheduled_at) : new Date(0);
-      return _filter.view === 'completed' ? db - da : da - db;
+      const aActive = a.status === 'Active' || a.status === 'Offer Received';
+      const bActive = b.status === 'Active' || b.status === 'Offer Received';
+      if (aActive !== bActive) return aActive ? -1 : 1;
+      return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
     });
 
-    if (!filtered.length) {
+    // Auto-expand on first render: expand all processes with upcoming interviews
+    if (_expanded.size === 0 && filtered.length > 0) {
+      filtered.forEach(proc => {
+        const stages = byProcess[proc.id] || [];
+        if (stages.some(iv => !isCompleted(iv))) _expanded.add(proc.id);
+      });
+      // If nothing to expand, expand first
+      if (_expanded.size === 0) _expanded.add(filtered[0].id);
+    }
+
+    // Orphaned interviews (no process_id or process not found)
+    const knownIds = new Set(processes.map(p => p.id));
+    const orphans  = (byProcess['__orphan__'] || []).concat(
+      interviews.filter(iv => iv.process_id && !knownIds.has(iv.process_id))
+    );
+
+    if (!filtered.length && !orphans.length) {
       feed.innerHTML      = '';
       empty.style.display = '';
       return;
     }
+
     empty.style.display = 'none';
-    feed.innerHTML      = filtered.map(buildCardHTML).join('');
+
+    let html = filtered.map(proc => _buildProcessRowHTML(proc, byProcess[proc.id] || [])).join('');
+
+    if (orphans.length) {
+      html += `<div class="proc-orphan-label">Other Interviews</div>`;
+      // Render orphans as a single pseudo-process row each
+      orphans.forEach(iv => {
+        const dateObj = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
+        const dateStr = dateObj
+          ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'TBD';
+        const done = isCompleted(iv);
+        const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
+          ? `<img src="${_esc(iv.company.logo_url)}" class="proc-logo-img" alt="" data-fb="orp-logo-${iv.id}">
+             <div class="proc-logo-fb" data-fb-id="orp-logo-${iv.id}" style="display:none">${(iv.company?.name || '?')[0].toUpperCase()}</div>`
+          : `<div class="proc-logo-fb">${(iv.company?.name || '?')[0].toUpperCase()}</div>`;
+        html += `
+          <div class="proc-row" style="opacity:${done ? '.65' : '1'}">
+            <div class="proc-header proc-stage" data-interview-id="${iv.id}" style="cursor:pointer">
+              <div class="proc-logo-wrap">${logoHtml}</div>
+              <div class="proc-info">
+                <div class="proc-company">${_esc(iv.company?.name || 'Unknown')}</div>
+                <div class="proc-role">${_esc(iv.stage || 'Interview')} · ${dateStr}</div>
+              </div>
+              <span class="proc-stage-status ${done ? 'proc-ss-done' : ''}">${done ? 'Completed' : 'Scheduled'}</span>
+            </div>
+          </div>`;
+      });
+    }
+
+    feed.innerHTML = html;
     if (window.wireImgFallbacks) window.wireImgFallbacks(feed);
+  }
+
+  // ── Process status management ─────────────────────────────────────────────────
+
+  function _setProcessStatus(processId, status) {
+    const procs = getProcesses();
+    const idx   = procs.findIndex(p => p.id === processId);
+    if (idx < 0) return;
+    const oldStatus  = procs[idx].status;
+    procs[idx].status     = status;
+    procs[idx].updated_at = new Date().toISOString();
+    saveProcesses(procs);
+
+    if (status === 'Offer Accepted' && oldStatus !== 'Offer Accepted') {
+      const proc = procs[idx];
+      window.ApplicationsPage?.triggerOfferCelebration?.(
+        proc.company_name,
+        proc.company_logo,
+        proc.role_title
+      );
+    }
+
+    renderFeed();
+    renderStats();
+  }
+
+  function _deleteProcess(processId) {
+    if (!confirm('Delete this application and all its interview rounds?')) return;
+    const procs = getProcesses().filter(p => p.id !== processId);
+    saveProcesses(procs);
+    // Also unlink interviews (keep them as orphans rather than deleting)
+    const ivs = getAll().map(iv => {
+      if (iv.process_id === processId) { const copy = { ...iv }; delete copy.process_id; return copy; }
+      return iv;
+    });
+    saveAll(ivs);
+    _expanded.delete(processId);
+    renderFeed();
+    renderStats();
+    updateCompanyFilter();
+  }
+
+  function _openEditProcess(processId) {
+    const proc = getProcesses().find(p => p.id === processId);
+    if (!proc) return;
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'proc-edit-backdrop';
+    backdrop.innerHTML = `
+      <div class="proc-edit-card">
+        <div class="proc-edit-title">Edit Application</div>
+        <div class="proc-edit-field">
+          <label class="proc-edit-label">Company Name</label>
+          <input class="proc-edit-input" id="proc-edit-company" type="text" value="${_esc(proc.company_name || '')}">
+        </div>
+        <div class="proc-edit-field">
+          <label class="proc-edit-label">Role Title</label>
+          <input class="proc-edit-input" id="proc-edit-role" type="text" value="${_esc(proc.role_title || '')}">
+        </div>
+        <div class="proc-edit-actions">
+          <button class="proc-edit-cancel" id="proc-edit-cancel">Cancel</button>
+          <button class="proc-edit-save" id="proc-edit-save">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+
+    function _close() { backdrop.remove(); }
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) _close(); });
+    backdrop.querySelector('#proc-edit-cancel').addEventListener('click', _close);
+    backdrop.querySelector('#proc-edit-save').addEventListener('click', () => {
+      const company = backdrop.querySelector('#proc-edit-company').value.trim();
+      const role    = backdrop.querySelector('#proc-edit-role').value.trim();
+      const procs   = getProcesses();
+      const idx     = procs.findIndex(p => p.id === processId);
+      if (idx >= 0) {
+        if (company) procs[idx].company_name = company;
+        if (role)    procs[idx].role_title   = role;
+        procs[idx].updated_at = new Date().toISOString();
+        saveProcesses(procs);
+      }
+      _close();
+      renderFeed();
+      updateCompanyFilter();
+    });
+  }
+
+  function _openKebabMenu(processId, anchorEl) {
+    document.querySelector('.proc-kebab-menu')?.remove();
+    const proc = getProcesses().find(p => p.id === processId);
+    if (!proc) return;
+
+    const menu = document.createElement('div');
+    menu.className = 'proc-kebab-menu';
+    const isActive = proc.status === 'Active';
+    menu.innerHTML = `
+      <button class="proc-km-item" data-km-action="edit">Edit Application</button>
+      <div class="proc-km-divider"></div>
+      ${isActive ? `<button class="proc-km-item" data-km-action="offer-received">Mark: Offer Received</button>` : ''}
+      <button class="proc-km-item" data-km-action="offer-accepted">Mark: Offer Accepted</button>
+      <button class="proc-km-item proc-km-danger" data-km-action="reject">Mark: Rejected</button>
+      <button class="proc-km-item proc-km-danger" data-km-action="withdraw">Mark: Withdrawn</button>
+      <div class="proc-km-divider"></div>
+      <button class="proc-km-item proc-km-danger" data-km-action="delete">Delete Application</button>`;
+
+    const rect = anchorEl.getBoundingClientRect();
+    menu.style.top  = `${rect.bottom + 4}px`;
+    menu.style.left = `${Math.min(rect.right - 188, window.innerWidth - 196)}px`;
+    document.body.appendChild(menu);
+
+    function close() {
+      menu.remove();
+      document.removeEventListener('click', close, true);
+    }
+    setTimeout(() => document.addEventListener('click', close, true), 0);
+
+    menu.addEventListener('click', e => {
+      const btn = e.target.closest('[data-km-action]');
+      if (!btn) return;
+      close();
+      switch (btn.dataset.kmAction) {
+        case 'edit':           _openEditProcess(processId); break;
+        case 'offer-received': _setProcessStatus(processId, 'Offer Received'); break;
+        case 'offer-accepted': _setProcessStatus(processId, 'Offer Accepted'); break;
+        case 'reject':         _setProcessStatus(processId, 'Rejected'); break;
+        case 'withdraw':       _setProcessStatus(processId, 'Withdrawn'); break;
+        case 'delete':         _deleteProcess(processId); break;
+      }
+    });
   }
 
   // ── Detail page ───────────────────────────────────────────────────────────────
 
   function showInterviewDetail(id) {
-    const iv = getAll().find(x => x.id === id);
+    const iv = getAll().find(x => String(x.id) === String(id));
     if (!iv) return;
 
     _layer = 'detail';
@@ -387,7 +600,7 @@ window.InterviewsPage = (() => {
     // ── Section 4: Interview Panel ─────────────────────────────────────────────
     const panelHtml = _buildPanelHtml(iv, interviewers);
 
-    // ── Session Transcript (folded into Coach) ────────────────────────────────
+    // ── Session Transcript ────────────────────────────────────────────────────
     const sessions = iv.sessions || [];
     const latestSession = sessions.length
       ? sessions.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
@@ -409,7 +622,7 @@ window.InterviewsPage = (() => {
         </details>`;
     }
 
-    // ── Section 5 & 6: Coach + Context (cached) ────────────────────────────────
+    // ── Sections 5 & 6: Coach + Context ──────────────────────────────────────
     const coachCached   = iv.coach_analysis  || null;
     const contextCached = iv.context_summary || null;
 
@@ -447,10 +660,9 @@ window.InterviewsPage = (() => {
          <div class="ivdp-ai-body" id="ivdp-context-body" style="display:none"></div>
          <button class="ivdp-refresh-btn" id="ivdp-context-refresh" data-action="refresh-context" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
 
-    // ── Assemble full page ─────────────────────────────────────────────────────
+    // ── Assemble ───────────────────────────────────────────────────────────────
     const container = _el('iv-detail-page');
     container.innerHTML = `
-      <!-- Breadcrumb -->
       <div class="ivdp-breadcrumb">
         <button class="ivdp-bc-link" id="ivdp-back">Interviews</button>
         <span class="ivdp-bc-sep">›</span>
@@ -463,7 +675,6 @@ window.InterviewsPage = (() => {
         </button>
       </div>
 
-      <!-- Section 1: Hero -->
       <div class="ivdp-hero">
         <div class="ivdp-logo-wrap">${logoHtml}</div>
         <div class="ivdp-hero-info">
@@ -488,15 +699,11 @@ window.InterviewsPage = (() => {
         </div>
       </div>
 
-      <!-- Section 2: Role Intel -->
       <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Role Intel</div>
-        </div>
+        <div class="ivdp-section-header"><div class="ivdp-section-title">Role Intel</div></div>
         <div class="ivdp-section-body">${roleIntelHtml}</div>
       </div>
 
-      <!-- Section 3: Candidate Fit -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Candidate Fit</div>
@@ -505,7 +712,6 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body" id="ivdp-fit-section-body">${fitHtml}</div>
       </div>
 
-      <!-- Section 4: Interview Panel -->
       <div class="ivdp-section">
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Interview Panel</div>
@@ -514,12 +720,9 @@ window.InterviewsPage = (() => {
         <div class="ivdp-section-body" id="ivdp-panel-body">${panelHtml}</div>
       </div>
 
-      <!-- Section 5: Community Questions -->
       ${iv.company?.domain ? `
       <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Community Questions</div>
-        </div>
+        <div class="ivdp-section-header"><div class="ivdp-section-title">Community Questions</div></div>
         <div class="ivdp-section-subtitle">Questions Klinch has identified from real interviews at this company over the last 12 months.</div>
         <div class="ivdp-section-body">
           <div id="ivdp-cq-body">
@@ -532,23 +735,16 @@ window.InterviewsPage = (() => {
         </div>
       </div>` : ''}
 
-      <!-- Section 6: Coach -->
       <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Coach</div>
-        </div>
+        <div class="ivdp-section-header"><div class="ivdp-section-title">Coach</div></div>
         <div class="ivdp-section-body">${coachHtml}</div>
       </div>
 
-      <!-- Section 6: Prep Notes -->
       <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Prep Notes</div>
-        </div>
+        <div class="ivdp-section-header"><div class="ivdp-section-title">Prep Notes</div></div>
         <div class="ivdp-section-body">${contextHtml}</div>
       </div>
 
-      <!-- Add Interviewer modal -->
       <div class="ivdp-iw-modal-backdrop" id="ivdp-iw-modal" style="display:none">
         <div class="ivdp-iw-modal-card">
           <div class="ivdp-iw-modal-header">
@@ -582,28 +778,15 @@ window.InterviewsPage = (() => {
     if (window.wireImgFallbacks) window.wireImgFallbacks(container);
     _wireDetailEvents(iv.id);
 
-    // Fire Coach (completed only) + Prep Notes as needed
     const needCoach   = iv.status === 'completed' && !coachCached;
     const needContext = !contextCached;
-    if (needCoach && needContext) {
-      _fireAIAnalysis(iv);
-    } else if (needCoach) {
-      _fireAIAnalysis(iv, 'coach');
-    } else if (needContext) {
-      _fireAIAnalysis(iv, 'context');
-    }
+    if (needCoach && needContext)   _fireAIAnalysis(iv);
+    else if (needCoach)             _fireAIAnalysis(iv, 'coach');
+    else if (needContext)           _fireAIAnalysis(iv, 'context');
 
-    // Fire Candidate Fit if resume + JD available but not yet cached
     const _resumeForFit = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
-    if (_resumeForFit?.raw_text && iv.jd?.raw && !iv.candidate_fit) {
-      _fireCandidateFit(iv);
-    }
-
-    // Fire Community Questions fetch if company domain is known
-    if (iv.company?.domain) {
-      _fireCommunityQuestions(iv);
-    }
-
+    if (_resumeForFit?.raw_text && iv.jd?.raw && !iv.candidate_fit) _fireCandidateFit(iv);
+    if (iv.company?.domain) _fireCommunityQuestions(iv);
   }
 
   function _buildPanelHtml(iv, interviewers) {
@@ -619,11 +802,9 @@ window.InterviewsPage = (() => {
         ? `<img src="${iw.photo_url}" class="icard-photo" alt="" data-fb="ivdp-iw-${i}">
            <div class="icard-photo-fb" data-fb-id="ivdp-iw-${i}" style="display:none">${(iw.name || '?')[0].toUpperCase()}</div>`
         : `<div class="icard-photo-fb">${(iw.name || '?')[0].toUpperCase()}</div>`;
-
       const linkedInBtn = iw.linkedin_url
         ? `<button class="ivdp-iw-linkedin-btn" data-href="${_esc(iw.linkedin_url)}">View LinkedIn</button>`
         : '';
-
       return `
         <div class="ivdp-iw-card" data-iw-index="${i}">
           <div class="icard-photo-wrap ivdp-iw-avatar">${avatar}</div>
@@ -649,28 +830,22 @@ window.InterviewsPage = (() => {
     const cancelBtn = document.getElementById('reschedule-cancel');
     if (!backdrop || !dateInput || !hourSel || !minSel) return;
 
-    // Populate selects once
     if (!hourSel.options.length) {
-      for (let h = 1; h <= 12; h++) {
-        hourSel.add(new Option(String(h), String(h)));
-      }
+      for (let h = 1; h <= 12; h++) hourSel.add(new Option(String(h), String(h)));
     }
     if (!minSel.options.length) {
       ['00','15','30','45'].forEach(m => minSel.add(new Option(m, m)));
     }
 
-    // Pre-fill from existing scheduled_at
     if (iv.scheduled_at) {
       const d = new Date(iv.scheduled_at);
       const yyyy = d.getFullYear();
       const mm   = String(d.getMonth() + 1).padStart(2, '0');
       const dd   = String(d.getDate()).padStart(2, '0');
       dateInput.value = `${yyyy}-${mm}-${dd}`;
-
       const h24 = d.getHours();
       const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
       hourSel.value = String(h12);
-
       const mins = d.getMinutes();
       const snapMin = ['00','15','30','45'].reduce((best, v) =>
         Math.abs(parseInt(v) - mins) < Math.abs(parseInt(best) - mins) ? v : best, '00');
@@ -682,24 +857,19 @@ window.InterviewsPage = (() => {
     }
 
     backdrop.classList.add('visible');
-
     function _close() { backdrop.classList.remove('visible'); }
-
     cancelBtn?.addEventListener('click', _close, { once: true });
     backdrop.addEventListener('click', e => { if (e.target === backdrop) _close(); }, { once: true });
 
     saveBtn?.addEventListener('click', () => {
       const dateVal = dateInput.value;
       if (!dateVal) { dateInput.focus(); return; }
-
       const h   = parseInt(hourSel.value, 10);
       const m   = parseInt(minSel.value, 10);
       const isPm = h < 9 || h === 12;
       const h24  = isPm && h !== 12 ? h + 12 : h;
       const pad  = n => String(n).padStart(2, '0');
-      const scheduled_at = `${dateVal}T${pad(h24)}:${pad(m)}:00`;
-
-      _patchIv(ivId, { scheduled_at });
+      _patchIv(ivId, { scheduled_at: `${dateVal}T${pad(h24)}:${pad(m)}:00` });
       _close();
       const updated = getAll().find(x => x.id === ivId);
       if (updated) _renderDetail(updated);
@@ -709,29 +879,23 @@ window.InterviewsPage = (() => {
   }
 
   function _wireDetailEvents(ivId) {
-    // Breadcrumb back
     const backBtn = _el('ivdp-back');
     if (backBtn) backBtn.addEventListener('click', hideDetail);
 
-    // Launch Ear in full-screen mode from detail page
     const launchEarBtn = _el('ivdp-launch-ear');
     if (launchEarBtn) {
       launchEarBtn.addEventListener('click', async () => {
-        if (!window.Billing?.canStartSession()) {
-          window.Billing?.showUpgradeModal();
-          return;
-        }
-        const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+        if (!window.Billing?.canStartSession()) { window.Billing?.showUpgradeModal(); return; }
+        const prof = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
         await window.klinch.invoke('ear:fullscreen-launch', {
           interviewId: ivId,
           returnTo:    'interviews',
-          roleType:    profile.role_type || '',
+          roleType:    prof.role_type || '',
         });
         window.Billing?.consumeCredit();
       });
     }
 
-    // Mark as Complete
     const completeBtn = _el('ivdp-complete-btn');
     if (completeBtn) {
       completeBtn.addEventListener('click', () => {
@@ -751,16 +915,10 @@ window.InterviewsPage = (() => {
       });
     }
 
-    // Reschedule
     const rescheduleBtn = _el('ivdp-reschedule-btn');
-    if (rescheduleBtn) {
-      rescheduleBtn.addEventListener('click', () => _openRescheduleModal(ivId));
-    }
+    if (rescheduleBtn) rescheduleBtn.addEventListener('click', () => _openRescheduleModal(ivId));
 
-    // React to completion (manual or auto-scheduler)
-    if (_completionListener) {
-      document.removeEventListener('interview:completed', _completionListener);
-    }
+    if (_completionListener) document.removeEventListener('interview:completed', _completionListener);
     _completionListener = (e) => {
       if (String(e.detail.id) !== String(ivId)) return;
       document.removeEventListener('interview:completed', _completionListener);
@@ -770,20 +928,18 @@ window.InterviewsPage = (() => {
     };
     document.addEventListener('interview:completed', _completionListener);
 
-    // Escape key
     document.addEventListener('keydown', _onDetailEscape);
 
-    // Add Interviewer modal
-    const addBtn   = _el('ivdp-add-interviewer');
-    const modal    = _el('ivdp-iw-modal');
-    const closeBtn = _el('ivdp-iw-close');
-    const cancelBtn= _el('ivdp-iw-cancel');
-    const saveBtn  = _el('ivdp-iw-save');
+    const addBtn    = _el('ivdp-add-interviewer');
+    const modal     = _el('ivdp-iw-modal');
+    const closeBtn  = _el('ivdp-iw-close');
+    const cancelBtn = _el('ivdp-iw-cancel');
+    const saveBtn   = _el('ivdp-iw-save');
 
-    if (addBtn) addBtn.addEventListener('click', () => { modal.style.display = ''; });
-    if (closeBtn) closeBtn.addEventListener('click', _closeIwModal);
+    if (addBtn)    addBtn.addEventListener('click', () => { modal.style.display = ''; });
+    if (closeBtn)  closeBtn.addEventListener('click', _closeIwModal);
     if (cancelBtn) cancelBtn.addEventListener('click', _closeIwModal);
-    if (modal) modal.addEventListener('click', e => { if (e.target === modal) _closeIwModal(); });
+    if (modal)     modal.addEventListener('click', e => { if (e.target === modal) _closeIwModal(); });
 
     if (saveBtn) {
       saveBtn.addEventListener('click', () => {
@@ -792,7 +948,6 @@ window.InterviewsPage = (() => {
         const linkedin = _el('ivdp-iw-linkedin').value.trim();
         const notes    = _el('ivdp-iw-notes').value.trim();
         if (!name) { _el('ivdp-iw-name').focus(); return; }
-
         const all = getAll();
         const idx = all.findIndex(x => x.id === ivId);
         if (idx < 0) return;
@@ -800,7 +955,6 @@ window.InterviewsPage = (() => {
         all[idx].interviewers.push({ name, title, linkedin_url: linkedin || null, notes: notes || null });
         saveAll(all);
         _closeIwModal();
-        // Re-render panel
         const panelBody = _el('ivdp-panel-body');
         if (panelBody) {
           panelBody.innerHTML = _buildPanelHtml(all[idx], all[idx].interviewers);
@@ -810,11 +964,9 @@ window.InterviewsPage = (() => {
       });
     }
 
-    // LinkedIn buttons in panel
     const panelBody = _el('ivdp-panel-body');
     if (panelBody) _wirePanelLinkedIn(panelBody);
 
-    // Refresh AI buttons
     const detailPage = _el('iv-detail-page');
     if (detailPage) {
       detailPage.addEventListener('click', e => {
@@ -826,14 +978,14 @@ window.InterviewsPage = (() => {
         const iv = getAll().find(x => x.id === id);
         if (!iv) return;
         if (action === 'refresh-coach') {
+          _patchIv(id, { coach_analysis: null, coach_score: null });
           iv.coach_analysis = null;
           iv.coach_score    = null;
-          _patchIv(id, { coach_analysis: null, coach_score: null });
           _fireAIAnalysis(iv, 'coach');
         }
         if (action === 'refresh-context') {
-          iv.context_summary = null;
           _patchIv(id, { context_summary: null });
+          iv.context_summary = null;
           _fireAIAnalysis(iv, 'context');
         }
         if (action === 'retry-dry-run') {
@@ -855,19 +1007,12 @@ window.InterviewsPage = (() => {
           _fireCandidateFit(iv);
         }
       });
-    }
 
-    // Wire resume link in fit banner + AI section toggles
-    const detailPage2 = _el('iv-detail-page');
-    if (detailPage2) {
-      detailPage2.addEventListener('click', e => {
+      detailPage.addEventListener('click', e => {
         const link = e.target.closest('.ivdp-fit-link[data-nav]');
         if (link && window.navigateTo) window.navigateTo(link.dataset.nav);
-
         const toggleHdr = e.target.closest('[data-toggle-ai-section]');
-        if (toggleHdr) {
-          toggleHdr.closest('.ivdp-ai-section')?.classList.toggle('ivdp-ai-section-collapsed');
-        }
+        if (toggleHdr) toggleHdr.closest('.ivdp-ai-section')?.classList.toggle('ivdp-ai-section-collapsed');
       });
     }
   }
@@ -932,9 +1077,7 @@ window.InterviewsPage = (() => {
   ];
   function _shortenRolesInText(text) {
     let out = text;
-    _ROLE_SHORTEN_PAIRS.forEach(([full, short]) => {
-      out = out.replace(new RegExp(full, 'g'), short);
-    });
+    _ROLE_SHORTEN_PAIRS.forEach(([full, short]) => { out = out.replace(new RegExp(full, 'g'), short); });
     return out;
   }
 
@@ -942,9 +1085,7 @@ window.InterviewsPage = (() => {
     if (!text) return '';
     const escaped = _shortenRolesInText(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const parts   = escaped.split(/^## (.+)$/m);
-
     if (parts.length === 1) return _processMarkdownBody(parts[0]);
-
     let html = parts[0]?.trim() ? `<div class="ivdp-ai-intro">${_processMarkdownBody(parts[0])}</div>` : '';
     for (let i = 1; i < parts.length; i += 2) {
       const heading = parts[i];
@@ -1022,12 +1163,12 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
     const needCoach   = !only || only === 'coach';
     const needContext = !only || only === 'context';
 
-    const coachSkel   = _el('ivdp-coach-skeleton');
-    const coachBody   = _el('ivdp-coach-body');
-    const coachRefresh= _el('ivdp-coach-refresh');
-    const ctxSkel     = _el('ivdp-context-skeleton');
-    const ctxBody     = _el('ivdp-context-body');
-    const ctxRefresh  = _el('ivdp-context-refresh');
+    const coachSkel    = _el('ivdp-coach-skeleton');
+    const coachBody    = _el('ivdp-coach-body');
+    const coachRefresh = _el('ivdp-coach-refresh');
+    const ctxSkel      = _el('ivdp-context-skeleton');
+    const ctxBody      = _el('ivdp-context-body');
+    const ctxRefresh   = _el('ivdp-context-refresh');
 
     try {
       const calls = [];
@@ -1047,7 +1188,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         if (coachSkel)    coachSkel.style.display    = 'none';
         if (coachBody)  { coachBody.innerHTML = _renderMarkdownish(text); coachBody.style.display = ''; }
         if (coachRefresh) coachRefresh.style.display = '';
-        if (window.refreshDashboardStats) window.refreshDashboardStats();
+        window.refreshDashboardStats?.();
       }
       if (needContext && results[ri] !== undefined) {
         const text = results[ri];
@@ -1065,10 +1206,10 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
   }
 
   function _buildFitHtml(fit, ivId) {
-    const score   = Math.min(100, Math.max(0, fit.keyword_match_score || 0));
-    const strengths = (fit.keywords_present || []).slice(0, 5);
-    const gaps      = (fit.keywords_missing || []).slice(0, 4);
-    const talking   = (fit.talking_points   || []).slice(0, 3);
+    const score    = Math.min(100, Math.max(0, fit.keyword_match_score || 0));
+    const strengths= (fit.keywords_present || []).slice(0, 5);
+    const gaps     = (fit.keywords_missing || []).slice(0, 4);
+    const talking  = (fit.talking_points   || []).slice(0, 3);
     return `
       <div class="ivdp-fit-score-row">
         ${window.buildDonut(score, 80)}
@@ -1097,7 +1238,6 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
   async function _fireCandidateFit(iv) {
     const resume = JSON.parse(localStorage.getItem('klinch_resume') || 'null');
     if (!resume?.raw_text || !iv.jd?.raw) return;
-
     try {
       const res = await window.klinch.invoke('claude:role-fit', {
         raw_text:        resume.raw_text,
@@ -1105,16 +1245,12 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         role_title:      iv.jd?.structured?.role_title || 'this role',
         profile_context: window.profileContext ? window.profileContext(profile) : '',
       });
-
       const fitSkel = _el('ivdp-fit-skeleton');
       const fitBody = _el('ivdp-fit-body');
-
       if (!res?.ok) throw new Error(res?.error || 'Unknown error');
-
       _patchIv(iv.id, { candidate_fit: res.data });
       if (fitSkel) fitSkel.style.display = 'none';
       if (fitBody) { fitBody.innerHTML = _buildFitHtml(res.data, iv.id); fitBody.style.display = ''; }
-
       const headerRefresh = document.querySelector(`.ivdp-section-header [data-action="refresh-fit"]`);
       if (headerRefresh) headerRefresh.style.display = '';
     } catch (err) {
@@ -1141,9 +1277,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         if (!byStage[s]) byStage[s] = [];
         byStage[s].push(q);
       });
-
-      const current = activeStage ?? null;
-
+      const current  = activeStage ?? null;
       const tabsHtml = `
         <div class="co-cq-tabs">
           <button class="co-cq-tab${!current ? ' active' : ''}" data-stage="">
@@ -1154,33 +1288,22 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
               ${_esc(s)} <span class="co-cq-tab-count">${byStage[s].length}</span>
             </button>`).join('')}
         </div>`;
-
       let contentHtml;
       if (current) {
         const stageQs = byStage[current] || [];
-        if (!stageQs.length) {
-          contentHtml = '<div class="ivdp-cq-empty">No questions recorded for this stage yet.</div>';
-        } else {
-          const items = stageQs.map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('');
-          contentHtml = `<ul class="ivdp-cq-list">${items}</ul>`;
-        }
+        contentHtml = !stageQs.length
+          ? '<div class="ivdp-cq-empty">No questions recorded for this stage yet.</div>'
+          : `<ul class="ivdp-cq-list">${stageQs.map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('')}</ul>`;
       } else {
         const populated = CQ_STAGE_ORDER.filter(s => byStage[s]?.length);
-        if (!populated.length) {
-          contentHtml = '<div class="ivdp-cq-empty">No community questions yet for this company.</div>';
-        } else {
-          contentHtml = populated.map(stage => {
-            const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
-            const items = byStage[stage].map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('');
-            return `
-              <div class="ivdp-cq-group">
-                <div class="ivdp-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div>
-                <ul class="ivdp-cq-list">${items}</ul>
-              </div>`;
-          }).join('');
-        }
+        contentHtml = !populated.length
+          ? '<div class="ivdp-cq-empty">No community questions yet for this company.</div>'
+          : populated.map(stage => {
+              const cls   = STAGE_BADGE[stage] || 'badge-recruiter';
+              const items = byStage[stage].map(q => `<li class="ivdp-cq-item">${_esc(q.question)}</li>`).join('');
+              return `<div class="ivdp-cq-group"><div class="ivdp-cq-stage"><span class="icard-stage-badge ${cls}">${_esc(stage)}</span></div><ul class="ivdp-cq-list">${items}</ul></div>`;
+            }).join('');
       }
-
       cqBody.innerHTML = tabsHtml + `<div class="co-cq-content">${contentHtml}</div>`;
       cqBody.querySelectorAll('.co-cq-tab').forEach(btn => {
         btn.addEventListener('click', () => _paintCQ(questions, btn.dataset.stage || null));
@@ -1190,7 +1313,6 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
     try {
       const res = await window.klinch.invoke('community:get-questions', { domain });
       if (cqSkel) cqSkel.style.display = 'none';
-
       let questions = res?.data || [];
       if (!questions.length && window.klinch?.isDev) {
         try {
@@ -1198,8 +1320,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
           questions = devPool[domain] || [];
         } catch (_) {}
       }
-
-      _paintCQ(questions, null);
+      _paintCQ(questions, iv.stage || null);
     } catch (err) {
       console.error('[community-questions]', err);
       if (cqSkel) cqSkel.style.display = 'none';
@@ -1223,38 +1344,19 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
       window.navigateTo('calendar');
     });
 
-    document.querySelectorAll('.iv-stat-card[data-stat-filter]').forEach(card => {
-      card.addEventListener('click', () => {
-        const view = card.dataset.statFilter;
-        _filter.view = view;
-        // Sync toggle buttons
-        document.querySelectorAll('.iv-toggle-btn').forEach(b => b.classList.remove('active'));
-        if (view === 'upcoming' || view === 'this-week') {
-          document.querySelector('.iv-toggle-btn[data-view="upcoming"]')?.classList.add('active');
-        } else if (view === 'completed') {
-          document.querySelector('.iv-toggle-btn[data-view="completed"]')?.classList.add('active');
-        }
-        // Active card highlight
-        document.querySelectorAll('.iv-stat-card').forEach(c => c.classList.remove('iv-stat-active'));
-        card.classList.add('iv-stat-active');
-        renderFeed();
-      });
-    });
-
+    // Toggle: Active | All
     document.querySelectorAll('.iv-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.iv-toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        _filter.view = btn.dataset.view;
-        document.querySelectorAll('.iv-stat-card').forEach(c => c.classList.remove('iv-stat-active'));
+        _filter.view = btn.dataset.view; // 'active' | 'all'
         renderFeed();
       });
     });
 
-    _el('iv-filter-company').addEventListener('change', e => { _filter.company = e.target.value; renderFeed(); });
-    _el('iv-filter-stage'  ).addEventListener('change', e => { _filter.stage   = e.target.value; renderFeed(); });
-    _el('iv-filter-format' ).addEventListener('change', e => { _filter.format  = e.target.value; renderFeed(); });
-    _el('iv-search').addEventListener('input', e => { _filter.search = e.target.value.trim(); renderFeed(); });
+    _el('iv-filter-company')?.addEventListener('change', e => { _filter.company = e.target.value; renderFeed(); });
+    _el('iv-filter-status') ?.addEventListener('change', e => { _filter.status  = e.target.value; renderFeed(); });
+    _el('iv-search')        ?.addEventListener('input',  e => { _filter.search  = e.target.value.trim(); renderFeed(); });
 
     document.addEventListener('interview:completed', () => {
       renderStats();
@@ -1263,19 +1365,42 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
       window.refreshDashboardStats?.();
     });
 
+    // Feed click delegation
     _el('iv-feed').addEventListener('click', e => {
-      const deleteBtn = e.target.closest('.icard-delete-btn');
-      if (deleteBtn) {
+      // Kebab menu — must check before header, as kebab is inside header
+      const kebab = e.target.closest('.proc-kebab');
+      if (kebab) {
         e.stopPropagation();
-        const card = deleteBtn.closest('.icard');
-        const id   = card?.dataset.id;
-        if (!id) return;
-        const iv = getAll().find(x => x.id === id);
-        if (window.openInterviewDeleteModal) {
-          window.openInterviewDeleteModal(id, iv?.company?.name || 'this company');
-        }
+        _openKebabMenu(kebab.dataset.processId, kebab);
         return;
       }
+
+      // "Add another round" button
+      const addRound = e.target.closest('.proc-add-round');
+      if (addRound) {
+        e.stopPropagation();
+        window.AddInterview?.openForProcess?.(addRound.dataset.processId);
+        return;
+      }
+
+      // Stage row click → interview detail
+      const stage = e.target.closest('.proc-stage[data-interview-id]');
+      if (stage) {
+        showInterviewDetail(stage.dataset.interviewId);
+        return;
+      }
+
+      // Process header → expand/collapse
+      const header = e.target.closest('.proc-header[data-process-id]');
+      if (header) {
+        const pid = header.dataset.processId;
+        if (_expanded.has(pid)) _expanded.delete(pid);
+        else                    _expanded.add(pid);
+        renderFeed();
+        return;
+      }
+
+      // Company navigation (logo/name click in orphan rows — via data-company-nav)
       const navEl = e.target.closest('[data-company-nav]');
       if (navEl) {
         e.stopPropagation();
@@ -1284,10 +1409,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
           window.navigateTo('companies');
           window.CompaniesPage.openDetail(key);
         }
-        return;
       }
-      const card = e.target.closest('.icard');
-      if (card) showInterviewDetail(card.dataset.id);
     });
   }
 
