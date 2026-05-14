@@ -1118,65 +1118,58 @@ if (btnStart) {
 
 // ── Ear end confirmation modal ────────────────────────────────────────────────
 
-(function() {
-  const confirmBackdrop  = document.getElementById('ear-end-confirm-backdrop');
-  const confirmCancelBtn = document.getElementById('ear-end-cancel-btn');
-  const confirmOkBtn     = document.getElementById('ear-end-confirm-btn');
-  const completeLabel    = document.getElementById('ear-end-complete-label');
-  const completeBox      = document.getElementById('ear-end-complete-box');
+let _earEndConfirmMarkComplete = false;
 
-  let _pendingMarkComplete = false;
+function _openEarEndConfirm() {
+  const backdrop     = document.getElementById('ear-end-confirm-backdrop');
+  const completeRow  = document.getElementById('ear-end-complete-label');
+  if (!backdrop) return;
+  _earEndConfirmMarkComplete = false;
+  if (completeRow) completeRow.classList.remove('checked');
+  backdrop.style.display = 'flex';
+}
 
-  function _openEndConfirm() {
-    _pendingMarkComplete = false;
-    completeLabel?.classList.remove('checked');
-    completeBox?.classList.remove('checked');
-    confirmBackdrop?.classList.add('visible');
+function _closeEarEndConfirm() {
+  const backdrop = document.getElementById('ear-end-confirm-backdrop');
+  if (backdrop) backdrop.style.display = 'none';
+}
+
+document.getElementById('ear-end-complete-label')?.addEventListener('click', () => {
+  _earEndConfirmMarkComplete = !_earEndConfirmMarkComplete;
+  document.getElementById('ear-end-complete-label')?.classList.toggle('checked', _earEndConfirmMarkComplete);
+});
+
+document.getElementById('ear-end-cancel-btn')?.addEventListener('click', _closeEarEndConfirm);
+
+document.getElementById('ear-end-confirm-btn')?.addEventListener('click', async () => {
+  const markComplete   = _earEndConfirmMarkComplete;
+  const earInterviewId = window.getEarSelectedId?.() || null;
+  _closeEarEndConfirm();
+
+  await window.STT.stopSession();
+  await window.klinch.invoke('overlay:close');
+  if (btnStop)  btnStop.style.display  = 'none';
+  if (btnStart) btnStart.style.display = '';
+  transcriptLines = [];
+  renderTranscript();
+
+  if (earInterviewId) window._showEarExitModal?.(earInterviewId, markComplete);
+
+  if (feedbackStatus) {
+    feedbackStatus.textContent = 'Generating feedback…';
+    feedbackStatus.style.display = '';
   }
 
-  function _closeEndConfirm() {
-    confirmBackdrop?.classList.remove('visible');
+  await window.klinch.invoke('interview:feedback', { interviewId: earInterviewId });
+
+  if (feedbackStatus) {
+    feedbackStatus.textContent = 'Feedback ready — view in Interviews';
   }
+});
 
-  completeLabel?.addEventListener('click', () => {
-    _pendingMarkComplete = !_pendingMarkComplete;
-    completeLabel.classList.toggle('checked', _pendingMarkComplete);
-    completeBox.classList.toggle('checked', _pendingMarkComplete);
-  });
-
-  confirmCancelBtn?.addEventListener('click', _closeEndConfirm);
-
-  confirmOkBtn?.addEventListener('click', async () => {
-    const markComplete = _pendingMarkComplete;
-    _closeEndConfirm();
-
-    const earInterviewId = window.getEarSelectedId?.() || null;
-
-    await window.STT.stopSession();
-    await window.klinch.invoke('overlay:close');
-    if (btnStop)  btnStop.style.display  = 'none';
-    if (btnStart) btnStart.style.display = '';
-    transcriptLines = [];
-    renderTranscript();
-
-    if (earInterviewId) window._showEarExitModal?.(earInterviewId, markComplete);
-
-    if (feedbackStatus) {
-      feedbackStatus.textContent = 'Generating feedback…';
-      feedbackStatus.style.display = '';
-    }
-
-    await window.klinch.invoke('interview:feedback', { interviewId: earInterviewId });
-
-    if (feedbackStatus) {
-      feedbackStatus.textContent = 'Feedback ready — view in Interviews';
-    }
-  });
-
-  if (btnStop) {
-    btnStop.addEventListener('click', _openEndConfirm);
-  }
-})();
+if (btnStop) {
+  btnStop.addEventListener('click', _openEarEndConfirm);
+}
 
 // ── Live transcript display ───────────────────────────────────────────────────
 

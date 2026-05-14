@@ -7931,17 +7931,37 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   max-width: 360px;
 }
 
-.ear-end-confirm-footer {
-  justify-content: flex-end;
-  gap: 10px;
+.ear-end-complete-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-subtle);
+  background: var(--bg-base);
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-.ear-end-complete-check.checked .consent-check-box {
+.ear-end-complete-box::after {
+  content: '';
+  display: none;
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+.ear-end-complete-row.checked .ear-end-complete-box {
   background: var(--primary);
   border-color: var(--primary);
 }
 
-.ear-end-complete-check.checked .consent-check-box::after {
+.ear-end-complete-row.checked .ear-end-complete-box::after {
   display: block;
 }
 
