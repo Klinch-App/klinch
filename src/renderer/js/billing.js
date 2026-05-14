@@ -36,6 +36,7 @@ window.Billing = (() => {
       subscription_id:      null,
       customer_id:          null,
       cancel_at_period_end: false,
+      fivepack_expires_at:  null,
     };
   }
 
@@ -72,10 +73,13 @@ window.Billing = (() => {
     _bindUpgradeModal();
     _bindCancelModal();
     _bindTrialBanner();
+    _bindFivepackBanner();
+    _bindFivepackLockModal();
     _bindSettingsPlanButtons();
     _bindOveragePrompts();
     refreshBanner();
     refreshSettings();
+    _checkFivepackExpiry();
     _maybeSyncSubscription(); // fire-and-forget
   }
 
@@ -107,6 +111,7 @@ window.Billing = (() => {
       if (res.credits !== undefined && res.credits !== null) updated.credits_remaining = res.credits;
       // Restore trial_started_at from Supabase only if not already set locally
       if (res.trial_started_at && !updated.trial_started_at) updated.trial_started_at = res.trial_started_at;
+      if (res.fivepack_expires_at !== undefined) updated.fivepack_expires_at = res.fivepack_expires_at;
 
       // Apply Stripe subscription fields
       if (res.current_period_end)               updated.period_end          = new Date(res.current_period_end * 1000).toISOString();
@@ -134,12 +139,35 @@ window.Billing = (() => {
     return Math.max(0, Math.floor(msLeft / (24 * 60 * 60 * 1000)));
   }
 
+  function getFivepackDaysRemaining() {
+    const b = _getBilling();
+    if (!b.fivepack_expires_at) return null;
+    const msLeft = new Date(b.fivepack_expires_at).getTime() - Date.now();
+    return Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+  }
+
+  function isFivepackExpired() {
+    const b = _getBilling();
+    if (!b.fivepack_expires_at) return false;
+    return Date.now() >= new Date(b.fivepack_expires_at).getTime();
+  }
+
+  function _checkFivepackExpiry() {
+    const b = _getBilling();
+    if (b.plan === 'starter' || b.plan === 'unlimited') return;
+    if (b.fivepack_expires_at && isFivepackExpired()) showFivepackLockModal();
+  }
+
   function canStartSession() {
     const b = _getBilling();
     if (b.plan === 'unlimited') return true;
     if (b.plan === 'free_trial' && b.trial_started_at) {
       const expiry = new Date(b.trial_started_at).getTime() + 7 * 24 * 60 * 60 * 1000;
       if (Date.now() >= expiry) return false;
+    }
+    // Fivepack expiry: lock access for non-subscribers when pack has expired
+    if (b.fivepack_expires_at && b.plan !== 'starter' && b.plan !== 'unlimited') {
+      if (isFivepackExpired()) return false;
     }
     return (b.credits_remaining || 0) > 0;
   }
@@ -266,7 +294,11 @@ window.Billing = (() => {
       }
     } else if (plan_key === 'pack') {
       b.credits_remaining = Math.max(b.credits_remaining || 0, 0) + 5;
-      if (b.plan === 'free_trial' || b.plan === 'pay_per_use') b.plan = 'pay_per_use';
+      if (b.plan === 'free_trial' || !b.plan) b.plan = 'pay_per_use';
+    } else if (plan_key === 'fivepack') {
+      b.credits_remaining  = Math.max(b.credits_remaining || 0, 0) + 5;
+      b.fivepack_expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      if (b.plan === 'free_trial' || !b.plan) b.plan = 'pay_per_use';
     }
 
     b.cancel_at_period_end = false;
@@ -277,16 +309,18 @@ window.Billing = (() => {
 
     // Persist billing state to Supabase so it survives reinstalls
     window.klinch.invoke('billing:sync-to-supabase', {
-      plan:               b.plan,
-      credits:            b.plan === 'unlimited' ? -1 : (b.credits_remaining || 0),
-      stripe_customer_id: b.customer_id || null,
-      trial_started_at:   b.trial_started_at || null,
+      plan:                b.plan,
+      credits:             b.plan === 'unlimited' ? -1 : (b.credits_remaining || 0),
+      stripe_customer_id:  b.customer_id || null,
+      trial_started_at:    b.trial_started_at || null,
+      fivepack_expires_at: b.fivepack_expires_at || null,
     }).catch(() => {});
 
     const msgs = {
       starter:   'Starter plan activated! You have 10 interviews this month.',
       unlimited: "Unlimited plan activated! You're all set.",
       pack:      '5 interviews added to your account!',
+      fivepack:  '5-Session Pack activated! You have 30 days to use your sessions.',
     };
     window.klinch.send('notify', { title: 'Klinch', body: msgs[plan_key] || 'Plan activated!' });
   }
@@ -339,17 +373,19 @@ window.Billing = (() => {
 
   function refreshBanner() {
     const banner = document.getElementById('trial-banner');
-    if (!banner) return;
-    const b = _getBilling();
-    if (b.plan !== 'free_trial' || !canStartSession()) {
-      banner.style.display = 'none';
-      return;
+    if (banner) {
+      const b = _getBilling();
+      if (b.plan !== 'free_trial' || !canStartSession()) {
+        banner.style.display = 'none';
+      } else {
+        const creditsEl = document.getElementById('trial-credits-count');
+        if (creditsEl) creditsEl.textContent = b.credits_remaining;
+        const daysEl = document.getElementById('trial-days-count');
+        if (daysEl) daysEl.textContent = getTrialDaysRemaining();
+        banner.style.display = '';
+      }
     }
-    const creditsEl = document.getElementById('trial-credits-count');
-    if (creditsEl) creditsEl.textContent = b.credits_remaining;
-    const daysEl = document.getElementById('trial-days-count');
-    if (daysEl) daysEl.textContent = getTrialDaysRemaining();
-    banner.style.display = '';
+    _refreshFivepackBanner();
   }
 
   function _bindTrialBanner() {
@@ -357,6 +393,61 @@ window.Billing = (() => {
     document.getElementById('trial-banner-close')?.addEventListener('click', () => {
       const banner = document.getElementById('trial-banner');
       if (banner) banner.style.display = 'none';
+    });
+  }
+
+  function _refreshFivepackBanner() {
+    const banner = document.getElementById('fivepack-banner');
+    if (!banner) return;
+    const b = _getBilling();
+    if (b.plan === 'starter' || b.plan === 'unlimited' || !b.fivepack_expires_at) {
+      banner.style.display = 'none';
+      return;
+    }
+    if (sessionStorage.getItem('fivepack_banner_dismissed')) {
+      banner.style.display = 'none';
+      return;
+    }
+    const days = getFivepackDaysRemaining();
+    if (days === null || days > 7 || days <= 0) {
+      banner.style.display = 'none';
+      return;
+    }
+    const daysEl = banner.querySelector('.fivepack-banner-days');
+    if (daysEl) daysEl.textContent = days === 1 ? '1 day' : `${days} days`;
+    banner.style.display = '';
+  }
+
+  function _bindFivepackBanner() {
+    document.getElementById('fivepack-banner-renew')?.addEventListener('click', () => {
+      const b = _getBilling();
+      window.klinch.invoke('billing:create-checkout', {
+        plan_key:    'fivepack',
+        customer_id: b.customer_id || undefined,
+      }).then(res => { if (!res.ok) _showError(res.error); }).catch(() => {});
+    });
+    document.getElementById('fivepack-banner-upgrade')?.addEventListener('click', showUpgradeModal);
+    document.getElementById('fivepack-banner-close')?.addEventListener('click', () => {
+      const banner = document.getElementById('fivepack-banner');
+      if (banner) banner.style.display = 'none';
+      sessionStorage.setItem('fivepack_banner_dismissed', '1');
+    });
+  }
+
+  function showFivepackLockModal() {
+    const modal = document.getElementById('fivepack-lock-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function _bindFivepackLockModal() {
+    const modal = document.getElementById('fivepack-lock-modal');
+    if (!modal) return;
+    modal.querySelectorAll('[data-checkout]').forEach(btn => {
+      btn.addEventListener('click', () => _handleCheckoutBtn(btn));
+    });
+    document.getElementById('fivepack-lock-upgrade')?.addEventListener('click', () => {
+      modal.style.display = 'none';
+      showUpgradeModal();
     });
   }
 
@@ -519,7 +610,10 @@ window.Billing = (() => {
     canStartSession,
     consumeCredit,
     getTrialDaysRemaining,
+    getFivepackDaysRemaining,
+    isFivepackExpired,
     showUpgradeModal,
+    showFivepackLockModal,
     openBillingPortal,
     refreshBanner,
     refreshSettings,

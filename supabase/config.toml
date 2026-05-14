@@ -1,0 +1,7 @@
+project_id = "vmwhggpnrldnugsjdigh"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.fivepack-expiry-check]
+verify_jwt = false

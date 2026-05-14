@@ -8,8 +8,9 @@ const supabaseApi        = require('../api/supabase');
 const PRICES = {
   starter:   process.env.STRIPE_PRICE_STARTER   || null,
   unlimited: process.env.STRIPE_PRICE_UNLIMITED || null,
-  // TODO: Create a new one-time price of $4.99 for a 5-interview pack in the Stripe Dashboard,
-  //       then set STRIPE_PRICE_PACK to the new price ID (price_xxxxx) in .env
+  // 30-day time-bounded 5-pack; webhook sets fivepack_expires_at in Supabase
+  fivepack:  process.env.STRIPE_PRICE_FIVEPACK  || null,
+  // Legacy one-time pack (no expiry); kept for backwards compatibility
   pack:      process.env.STRIPE_PRICE_PACK      || null,
 };
 
@@ -33,16 +34,17 @@ async function _getSession() {
 }
 
 // Upsert billing fields into the profiles table
-async function _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at }) {
+async function _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at, fivepack_expires_at }) {
   const { supabase } = supabaseApi;
   if (!supabase || !userId) return;
   try {
     const row = { id: userId };
-    if (plan               !== undefined) row.plan                = plan;
-    if (credits            !== undefined) row.credits             = credits;
-    if (stripe_customer_id !== undefined) row.stripe_customer_id = stripe_customer_id;
+    if (plan                !== undefined) row.plan                = plan;
+    if (credits             !== undefined) row.credits             = credits;
+    if (stripe_customer_id  !== undefined) row.stripe_customer_id = stripe_customer_id;
+    if (fivepack_expires_at !== undefined) row.fivepack_expires_at = fivepack_expires_at;
     // Only write trial_started_at if not already set in Supabase (preserve first-write semantics)
-    if (trial_started_at   !== undefined && trial_started_at !== null) {
+    if (trial_started_at    !== undefined && trial_started_at !== null) {
       const { data: existing } = await supabase
         .from('profiles')
         .select('trial_started_at')
@@ -70,7 +72,7 @@ function init() {
       };
     }
     try {
-      const isSubscription = plan_key !== 'pack';
+      const isSubscription = plan_key !== 'pack' && plan_key !== 'fivepack';
       const params = {
         mode:                  isSubscription ? 'subscription' : 'payment',
         line_items:            [{ price: priceId, quantity: 1 }],
@@ -142,7 +144,7 @@ function init() {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('stripe_customer_id, plan, credits, trial_started_at')
+          .select('stripe_customer_id, plan, credits, trial_started_at, fivepack_expires_at')
           .eq('id', userId)
           .single();
         if (data) {
@@ -158,10 +160,11 @@ function init() {
       // No Stripe configured — return Supabase state only
       return {
         ok:                  true,
-        stripe_customer_id:  profileBilling?.stripe_customer_id ?? null,
-        plan:                profileBilling?.plan               ?? null,
-        credits:             profileBilling?.credits            ?? null,
-        trial_started_at:    profileBilling?.trial_started_at   ?? null,
+        stripe_customer_id:  profileBilling?.stripe_customer_id  ?? null,
+        plan:                profileBilling?.plan                 ?? null,
+        credits:             profileBilling?.credits              ?? null,
+        trial_started_at:    profileBilling?.trial_started_at     ?? null,
+        fivepack_expires_at: profileBilling?.fivepack_expires_at  ?? null,
       };
     }
 
@@ -169,10 +172,11 @@ function init() {
       // No subscription to verify — return Supabase state
       return {
         ok:                  true,
-        stripe_customer_id:  profileBilling?.stripe_customer_id ?? null,
-        plan:                profileBilling?.plan               ?? null,
-        credits:             profileBilling?.credits            ?? null,
-        trial_started_at:    profileBilling?.trial_started_at   ?? null,
+        stripe_customer_id:  profileBilling?.stripe_customer_id  ?? null,
+        plan:                profileBilling?.plan                 ?? null,
+        credits:             profileBilling?.credits              ?? null,
+        trial_started_at:    profileBilling?.trial_started_at     ?? null,
+        fivepack_expires_at: profileBilling?.fivepack_expires_at  ?? null,
       };
     }
 
@@ -191,10 +195,11 @@ function init() {
         cancel_at_period_end: sub.cancel_at_period_end,
         customer:             sub.customer,
         // Supabase-authoritative fields
-        stripe_customer_id:   profileBilling?.stripe_customer_id ?? null,
-        plan:                 profileBilling?.plan               ?? null,
-        credits:              profileBilling?.credits            ?? null,
-        trial_started_at:     profileBilling?.trial_started_at   ?? null,
+        stripe_customer_id:   profileBilling?.stripe_customer_id  ?? null,
+        plan:                 profileBilling?.plan                 ?? null,
+        credits:              profileBilling?.credits              ?? null,
+        trial_started_at:     profileBilling?.trial_started_at     ?? null,
+        fivepack_expires_at:  profileBilling?.fivepack_expires_at  ?? null,
       };
     } catch (err) {
       console.error('[billing] sync-status:', err.message);
@@ -204,10 +209,10 @@ function init() {
 
   // ── Persist billing state to Supabase profiles ─────────────────────────────
   // Called by renderer after any successful checkout or credit change.
-  ipcMain.handle('billing:sync-to-supabase', async (_e, { plan, credits, stripe_customer_id, trial_started_at }) => {
+  ipcMain.handle('billing:sync-to-supabase', async (_e, { plan, credits, stripe_customer_id, trial_started_at, fivepack_expires_at }) => {
     const { userId } = await _getSession();
     if (!userId) return { ok: true }; // no session — skip silently
-    await _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at });
+    await _saveBillingToProfile(userId, { plan, credits, stripe_customer_id, trial_started_at, fivepack_expires_at });
     return { ok: true };
   });
 
