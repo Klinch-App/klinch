@@ -386,6 +386,7 @@ window.ResumePage = (() => {
         <div class="ivdp-section-header">
           <div class="ivdp-section-title">Role Fit</div>
         </div>
+        <div class="ivdp-section-subtitle">See how your resume stacks up against roles you've applied to.</div>
         <div class="ivdp-section-body">
           <div class="rs-rf-select-row">
             <select class="iv-filter-select rs-iv-select" id="rs-iv-select" ${!hasIvs ? 'disabled' : ''}>
