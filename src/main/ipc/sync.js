@@ -254,12 +254,21 @@ function init() {
 
   // community:get-questions — fetch anonymized pool questions for a company domain
   ipcMain.handle('community:get-questions', async (_event, { domain }) => {
-    const { supabase } = supabaseApi;
-    if (!supabase || !domain) return { ok: true, data: [] };
+    // Use supabaseAdmin (service role) so reads work regardless of anon SELECT grants
+    const { supabaseAdmin } = supabaseApi;
+    if (!domain) {
+      console.log('[community:get-questions] no domain supplied — returning empty');
+      return { ok: true, data: [] };
+    }
+    if (!supabaseAdmin) {
+      console.log('[community:get-questions] no supabaseAdmin client — returning empty');
+      return { ok: true, data: [] };
+    }
 
+    console.log('[community:get-questions] querying domain:', domain);
     try {
       const cutoff = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('community_questions')
         .select('question, interview_stage, created_at')
         .eq('company_domain', domain)
@@ -267,10 +276,11 @@ function init() {
         .order('created_at', { ascending: false })
         .limit(50);
 
+      console.log('[community:get-questions] result — count:', data?.length ?? 0, '| error:', error?.message || null);
       if (error) throw error;
       return { ok: true, data: data || [] };
     } catch (err) {
-      console.error('[sync] community:get-questions:', err.message);
+      console.error('[community:get-questions] failed:', err.message);
       return { ok: false, error: err.message, data: [] };
     }
   });
