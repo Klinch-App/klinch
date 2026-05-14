@@ -4327,6 +4327,16 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 .rs-ats-check { color: var(--primary-light); flex-shrink: 0; margin-top: 1px; }
 
+.rs-ai-callout {
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--text-secondary);
+}
+.rs-ai-callout .rs-ats-check { color: #FBBF24; }
+.rs-ai-callout-label { color: #FBBF24; }
+
 /* Role fit */
 .rs-rf-select-row { margin-bottom: 14px; }
 .rs-iv-select     { width: 100%; max-width: 480px; }

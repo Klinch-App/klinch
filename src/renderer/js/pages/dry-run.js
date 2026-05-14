@@ -25,6 +25,8 @@ window.DryRunPage = (() => {
     { name: 'Panel',            tip: 'A mix of styles from multiple interviewers — recruiter, manager, and peer. Expect cross-functional and interpersonal questions.' },
   ];
 
+  const AI_ADOPTION_QUESTION = "Tell me how you've adopted and implemented AI in your last role.";
+
   const INTERVIEW_SYSTEM =
     'You are conducting a realistic SDR job interview. Ask one question at a time based on ' +
     'the stage and context provided. Questions should feel natural and conversational, not robotic. ' +
@@ -43,7 +45,11 @@ window.DryRunPage = (() => {
     '  },\n' +
     '  "filler_words": { "count": number, "examples": string[] },\n' +
     '  "talk_time_note": string\n' +
-    '}';
+    '}\n\n' +
+    'AI adoption question scoring rules (apply when the question is about AI usage, AI tools, or how the candidate uses AI):\n' +
+    'A STRONG answer (score 75–100) must include ALL THREE: (1) specific AI tools named (e.g. ChatGPT, Clay, Gong AI, Copilot, Orum, Apollo AI, Salesloft AI), (2) measurable outcomes tied to AI use (e.g. "cut research time by 40%", "2x pipeline coverage", "saved 2 hours/day"), and (3) forward-looking thinking (e.g. "I\'m now exploring", "my next step is to automate X"). ' +
+    'A WEAK answer (score below 50) is generic — "I use AI to be more productive", "I\'ve experimented with AI tools", "I use ChatGPT sometimes" — no specifics, no metrics. ' +
+    'In the feedback field for this question, be prescriptive: name exactly what is missing and give a concrete example of what a strong answer would sound like.';
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -650,6 +656,9 @@ window.DryRunPage = (() => {
     let question;
     if (_config.mode === 'retry' && _retryQueue) {
       question = _retryQueue[_questionNum - 1];
+    } else if (_questionNum === 2) {
+      // Always ask the AI adoption question second so it gets dedicated coaching feedback
+      question = AI_ADOPTION_QUESTION;
     } else {
       const interviews = _getInterviews();
       const jd = _config.interview_id

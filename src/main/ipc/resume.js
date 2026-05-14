@@ -24,9 +24,16 @@ async function analyzeResume(rawText, profileCtx, roleType = 'SDR') {
       role: 'user',
       content: `Analyze this resume for a ${roleType} role.
 Return ONLY valid JSON matching this schema exactly:
-{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"${roleDimKey}":<0-100>},"annotations":[{"id":"h1","quote":"<exact verbatim substring>","comment":"<specific feedback>","severity":"high|medium"}],"ats_tips":["<specific actionable tip>"]}
+{"overall_score":<0-100>,"dimensions":{"impact":<0-100>,"clarity":<0-100>,"ats_compatibility":<0-100>,"${roleDimKey}":<0-100>,"ai_fluency":<0-100>},"ai_fluency_callouts":["<specific missing element>"],"annotations":[{"id":"h1","quote":"<exact verbatim substring>","comment":"<specific feedback>","severity":"high|medium"}],"ats_tips":["<specific actionable tip>"]}
 
 Rules:
+- overall_score: weighted average of all 5 dimensions (impact 25%, clarity 20%, ats_compatibility 20%, ${roleDimKey} 20%, ai_fluency 15%).
+- ai_fluency (0–100): Score on three signals:
+  1. Specific AI tools named (ChatGPT, Copilot, Gong AI, Clay, Apollo AI, Orum, Salesloft AI, etc.) — 0 points if none.
+  2. AI-driven outcomes with measurable metrics (e.g. "used Clay to build 200 prospect lists, cutting research time 60%") — 0 points if no quantified results.
+  3. AI-native language and forward-looking framing ("automated", "AI-assisted", "prompt engineering", "LLM workflows") — partial credit.
+  Bands: 0–30 = no AI signals; 31–60 = vague mention, no specifics; 61–85 = tools named, outcomes missing; 86–100 = tools + quantified outcomes + forward-looking language.
+- ai_fluency_callouts: If ai_fluency < 70, include 1–2 callouts telling the candidate exactly what is missing (e.g. "No AI tools are mentioned — name specific tools like ChatGPT, Clay, or Gong AI", "AI outcomes lack metrics — add a line like 'used AI prospecting tools to reduce list-building time by 40%'"). If ai_fluency >= 70, return [].
 - Include 5-8 annotations. Each "quote" must be copied character-for-character from the resume text below — it will be used to find and highlight the exact phrase. Do not paraphrase or summarise.
 - severity: "high" for major issues that significantly hurt the resume, "medium" for minor improvements.
 - Comments must be specific and actionable for ${roleType} roles, not generic.
