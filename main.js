@@ -167,9 +167,6 @@ ipcMain.on('notify', (_event, { title, body }) => {
 ipcMain.handle('overlay:launch', () => createOverlayWindow());
 ipcMain.handle('overlay:close',  () => closeOverlayWindow());
 
-// Renderer → focus the main window (used before showing in-app modals during active sessions)
-ipcMain.handle('window:focus', () => { mainWindow?.focus(); });
-
 // Overlay renderer → toggle click-through for interactive areas
 ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
   if (!overlayWindow?.isDestroyed()) {
