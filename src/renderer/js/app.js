@@ -1121,11 +1121,13 @@ if (btnStart) {
 let _earEndConfirmMarkComplete = false;
 
 function _openEarEndConfirm() {
-  const backdrop     = document.getElementById('ear-end-confirm-backdrop');
-  const completeRow  = document.getElementById('ear-end-complete-label');
+  const backdrop    = document.getElementById('ear-end-confirm-backdrop');
+  const completeRow = document.getElementById('ear-end-complete-label');
   if (!backdrop) return;
   _earEndConfirmMarkComplete = false;
   if (completeRow) completeRow.classList.remove('checked');
+  // Close the overlay window first — it's always-on-top and can intercept clicks
+  window.klinch.invoke('overlay:close');
   backdrop.style.display = 'flex';
 }
 
@@ -1139,7 +1141,11 @@ document.getElementById('ear-end-complete-label')?.addEventListener('click', () 
   document.getElementById('ear-end-complete-label')?.classList.toggle('checked', _earEndConfirmMarkComplete);
 });
 
-document.getElementById('ear-end-cancel-btn')?.addEventListener('click', _closeEarEndConfirm);
+document.getElementById('ear-end-cancel-btn')?.addEventListener('click', async () => {
+  _closeEarEndConfirm();
+  // Session is still running — restore the overlay
+  await window.klinch.invoke('overlay:launch');
+});
 
 document.getElementById('ear-end-confirm-btn')?.addEventListener('click', async () => {
   const markComplete   = _earEndConfirmMarkComplete;
@@ -1147,7 +1153,6 @@ document.getElementById('ear-end-confirm-btn')?.addEventListener('click', async 
   _closeEarEndConfirm();
 
   await window.STT.stopSession();
-  await window.klinch.invoke('overlay:close');
   if (btnStop)  btnStop.style.display  = 'none';
   if (btnStart) btnStart.style.display = '';
   transcriptLines = [];
