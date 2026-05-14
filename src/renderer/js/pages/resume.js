@@ -188,8 +188,8 @@ window.ResumePage = (() => {
         <div class="iv-page-title">Resume</div>
       </div>
       ${_buildUploadSection(r)}
-      ${r ? _buildResumeViewSection(r) : ''}
       ${r ? _buildCoachSection(r) : ''}
+      ${r ? _buildResumeViewSection(r) : ''}
       ${r ? _buildRoleFitSection(r) : ''}
     `;
 
