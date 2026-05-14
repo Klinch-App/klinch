@@ -587,6 +587,19 @@ window.ApplicationsPage = (() => {
     }
   }
 
+  function triggerOfferCelebration(companyName, companyLogo, roleTitle) {
+    _fireConfetti();
+    const syntheticApp = {
+      id: '_proc_offer',
+      company: { name: companyName, logo_url: companyLogo },
+      role_title: roleTitle,
+      offer_modal_shown: false,
+      offer_review_status: null,
+      offer_linkedin_post_url: null,
+    };
+    setTimeout(() => _showCelebrationModal(syntheticApp), 1000);
+  }
+
   // ── Add Application modal ─────────────────────────────────────────────────────
 
   const _aa = { step: 1, company: null, jd: null };
@@ -1054,5 +1067,5 @@ window.ApplicationsPage = (() => {
   }
 
   init();
-  return { refresh, reset, openDetail, onInterviewSaved, openAddModal, getStats };
+  return { refresh, reset, openDetail, onInterviewSaved, openAddModal, getStats, triggerOfferCelebration };
 })();

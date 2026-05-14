@@ -1485,6 +1485,261 @@ html, body {
   margin-bottom: 0;
 }
 
+/* ── Process list (Interviews tab) ─────────────────────────────────────────── */
+
+.iv-process-list { display: flex; flex-direction: column; gap: 8px; }
+
+.proc-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.proc-row:hover { border-color: rgba(124,58,255,0.3); }
+
+.proc-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+}
+.proc-header:hover { background: var(--bg-hover); }
+
+.proc-logo-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.proc-logo-img { width: 40px; height: 40px; object-fit: contain; }
+.proc-logo-fb {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-light);
+  background: linear-gradient(135deg, rgba(124,58,255,0.18), rgba(220,60,160,0.12));
+}
+
+.proc-info { flex: 1; min-width: 0; }
+.proc-company {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proc-role {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proc-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.proc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.proc-status-active        { background: rgba(124,58,255,0.12); color: var(--primary-light); border: 1px solid rgba(124,58,255,0.25); }
+.proc-status-offer-received{ background: rgba(251,191,36,0.12); color: #FBBF24; border: 1px solid rgba(251,191,36,0.3); }
+.proc-status-offer-accepted{ background: linear-gradient(135deg,rgba(124,58,255,0.15),rgba(60,219,160,0.15)); color: #3CDBA0; border: 1px solid rgba(60,219,160,0.3); }
+.proc-status-rejected       { background: rgba(248,113,113,0.08); color: #F87171; border: 1px solid rgba(248,113,113,0.2); }
+.proc-status-withdrawn      { background: rgba(107,100,148,0.1); color: var(--text-muted); border: 1px solid var(--border); }
+
+.proc-kebab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: var(--radius-xs);
+  line-height: 1;
+  font-family: var(--font-sans);
+  transition: background 0.1s, color 0.1s;
+}
+.proc-kebab:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+.proc-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  transition: transform 0.18s;
+  pointer-events: none;
+}
+.proc-chevron.is-open { transform: rotate(180deg); }
+
+/* Stages area */
+.proc-stages {
+  border-top: 1px solid var(--border-subtle);
+  padding: 4px 0 10px;
+}
+
+.proc-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 18px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-left: 2px solid transparent;
+}
+.proc-stage:hover { background: var(--bg-hover); }
+.proc-stage.is-next { border-left-color: var(--primary); }
+.proc-stage.is-completed { opacity: 0.6; }
+
+.proc-stage-icon {
+  font-size: 12px;
+  font-weight: 700;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.proc-stage-icon.icon-done { color: #4ADE80; }
+.proc-stage-icon.icon-next { color: var(--primary-light); }
+.proc-stage-icon.icon-dot  { color: var(--text-muted); font-size: 16px; }
+
+.proc-stage-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
+.proc-stage-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+.proc-stage-date { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+.proc-stage-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.proc-stage-status.proc-ss-done     { color: #4ADE80; }
+.proc-stage-status.proc-ss-upcoming { color: var(--primary-light); }
+.proc-stage-status.proc-ss-noshow   { color: #F87171; }
+
+/* Add another round button */
+.proc-add-round {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 16px 0 46px;
+  padding: 5px 12px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  width: fit-content;
+}
+.proc-add-round:hover { border-color: var(--primary); color: var(--primary-light); background: rgba(124,58,255,0.05); }
+
+/* Orphan section (interviews without a process) */
+.proc-orphan-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 14px 4px 8px;
+}
+
+/* Kebab dropdown menu */
+.proc-kebab-menu {
+  position: fixed;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  z-index: 500;
+  min-width: 188px;
+}
+.proc-km-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s, color 0.1s;
+}
+.proc-km-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.proc-km-item.proc-km-danger { color: #F87171; }
+.proc-km-item.proc-km-danger:hover { background: rgba(248,113,113,0.08); }
+.proc-km-divider { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+
+/* Edit process modal */
+.proc-edit-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8,6,26,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+  backdrop-filter: blur(4px);
+}
+.proc-edit-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 420px;
+  max-width: 90vw;
+}
+.proc-edit-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 18px; }
+.proc-edit-field { margin-bottom: 14px; }
+.proc-edit-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.proc-edit-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.12s;
+  box-sizing: border-box;
+}
+.proc-edit-input:focus { border-color: var(--primary); }
+.proc-edit-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.proc-edit-cancel { background: none; border: 1px solid var(--border); color: var(--text-secondary); font-size: 13px; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-sans); }
+.proc-edit-save { background: var(--primary); border: none; color: #fff; font-size: 13px; font-weight: 600; padding: 8px 20px; border-radius: var(--radius-sm); cursor: pointer; font-family: var(--font-sans); transition: background 0.12s; }
+.proc-edit-save:hover { background: var(--primary-dark); }
+
 .icard {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
