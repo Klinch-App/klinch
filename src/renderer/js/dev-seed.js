@@ -57,10 +57,15 @@
       .forEach(k => localStorage.removeItem(k));
 
     // ── IDs ────────────────────────────────────────────────────────────────────
-    const IV_SF   = _uuid();
-    const IV_HB   = _uuid();
-    const IV_OUT  = _uuid();
-    const IV_GONG = _uuid();
+    const IV_SF      = _uuid();
+    const IV_SF_HM   = _uuid();
+    const IV_HB      = _uuid();
+    const IV_HB_RS   = _uuid();
+    const IV_OUT     = _uuid();
+    const IV_OUT_RS  = _uuid();
+    const IV_OUT_HM  = _uuid();
+    const IV_GONG    = _uuid();
+    const IV_GONG_RS = _uuid();
     const AP_SF   = _uuid();
     const AP_HB   = _uuid();
     const AP_OUT  = _uuid();
@@ -102,6 +107,7 @@
     const interviews = [
       {
         id: IV_SF,
+        process_id: AP_SF,
         company: SALESFORCE,
         interviewers: [{ name: 'Rachel Kim', title: 'Senior Recruiter', linkedin_url: '' }],
         jd: {
@@ -137,6 +143,7 @@
       },
       {
         id: IV_HB,
+        process_id: AP_HB,
         company: HUBSPOT,
         interviewers: [
           { name: 'Marcus Torres', title: 'SDR Manager', linkedin_url: '' },
@@ -175,6 +182,7 @@
       },
       {
         id: IV_OUT,
+        process_id: AP_OUT,
         company: OUTREACH,
         interviewers: [{ name: 'Jamie Chen', title: 'VP of Sales', linkedin_url: '' }],
         jd: {
@@ -242,6 +250,7 @@
       },
       {
         id: IV_GONG,
+        process_id: AP_GONG,
         company: GONG,
         interviewers: [
           { name: 'Sarah Okonkwo', title: 'Sales Recruiter', linkedin_url: '' },
@@ -292,6 +301,112 @@
 • Always have a cold call opener ready — "Hi [name], I'll be upfront, this is a cold call — got 27 seconds?" is simple and effective
 • Quantify your "greatest achievement" story: pipeline generated, conversion rate, or quota attainment
 • Research panel interviewers on LinkedIn before the call and reference something specific about each person`,
+      },
+      // ── Extra stages (multi-round pipelines) ──────────────────────────────────
+      {
+        id: IV_SF_HM,
+        process_id: AP_SF,
+        company: SALESFORCE,
+        interviewers: [],
+        jd: null,
+        stage: 'Hiring Manager',
+        format: 'Virtual',
+        scheduled_at: null,
+        status: 'pending',
+        nudge_sent: false,
+        created_at: _daysFromNow(-7),
+      },
+      {
+        id: IV_HB_RS,
+        process_id: AP_HB,
+        company: HUBSPOT,
+        interviewers: [{ name: 'Priya Nair', title: 'Talent Acquisition', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-7, 11),
+        status: 'completed',
+        created_at: _daysFromNow(-21),
+      },
+      {
+        id: IV_OUT_RS,
+        process_id: AP_OUT,
+        company: OUTREACH,
+        interviewers: [{ name: 'Kira Santos', title: 'Talent Recruiter', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-18, 10),
+        status: 'completed',
+        created_at: _daysFromNow(-28),
+      },
+      {
+        id: IV_OUT_HM,
+        process_id: AP_OUT,
+        company: OUTREACH,
+        interviewers: [{ name: 'Marcus Reid', title: 'Hiring Manager', linkedin_url: '' }],
+        jd: null,
+        stage: 'Hiring Manager',
+        format: 'Virtual',
+        scheduled_at: _scheduledAt(-11, 14),
+        status: 'completed',
+        created_at: _daysFromNow(-20),
+      },
+      {
+        id: IV_GONG_RS,
+        process_id: AP_GONG,
+        company: GONG,
+        interviewers: [{ name: 'Sarah Okonkwo', title: 'Sales Recruiter', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-21, 10),
+        status: 'completed',
+        created_at: _daysFromNow(-28),
+      },
+    ];
+
+    // ── Processes (Interviews tab parent rows) ─────────────────────────────────
+    const processes = [
+      {
+        id: AP_SF,
+        company_name: SALESFORCE.name,
+        company_logo: SALESFORCE.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Active',
+        notes: null,
+        created_at: _daysFromNow(-14),
+        updated_at: _daysFromNow(-7),
+      },
+      {
+        id: AP_HB,
+        company_name: HUBSPOT.name,
+        company_logo: HUBSPOT.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Active',
+        notes: null,
+        created_at: _daysFromNow(-21),
+        updated_at: _daysFromNow(-3),
+      },
+      {
+        id: AP_OUT,
+        company_name: OUTREACH.name,
+        company_logo: OUTREACH.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Offer Received',
+        notes: null,
+        created_at: _daysFromNow(-28),
+        updated_at: _daysFromNow(-5),
+      },
+      {
+        id: AP_GONG,
+        company_name: GONG.name,
+        company_logo: GONG.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Rejected',
+        notes: null,
+        created_at: _daysFromNow(-28),
+        updated_at: _daysFromNow(-14),
       },
     ];
 
@@ -643,6 +758,7 @@ Cold calling, email copywriting, objection handling, territory management`,
     localStorage.setItem('klinch_setup_complete',           '1');
     localStorage.setItem('klinch_profile',                  JSON.stringify(profile));
     localStorage.setItem('klinch_interviews',               JSON.stringify(interviews));
+    localStorage.setItem('klinch_processes',                JSON.stringify(processes));
     localStorage.setItem('klinch_applications',             JSON.stringify(applications));
     localStorage.setItem('klinch_resume',                   JSON.stringify(resume));
     localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRun, dryRunSF, dryRunGong]));
@@ -659,10 +775,15 @@ Cold calling, email copywriting, objection handling, territory management`,
       .forEach(k => localStorage.removeItem(k));
 
     // ── IDs ──────────────────────────────────────────────────────────────────────
-    const IV_VN  = _uuid();
-    const IV_NX  = _uuid();
-    const IV_MD  = _uuid();
-    const IV_CL  = _uuid();
+    const IV_VN     = _uuid();
+    const IV_VN_HM  = _uuid();
+    const IV_NX     = _uuid();
+    const IV_NX_RS  = _uuid();
+    const IV_MD     = _uuid();
+    const IV_MD_RS  = _uuid();
+    const IV_MD_HM  = _uuid();
+    const IV_CL     = _uuid();
+    const IV_CL_RS  = _uuid();
     const AP_VN  = _uuid();
     const AP_NX  = _uuid();
     const AP_MD  = _uuid();
@@ -712,6 +833,7 @@ Cold calling, email copywriting, objection handling, territory management`,
     const interviews = [
       {
         id: IV_VN,
+        process_id: AP_VN,
         company: VANTAGE,
         interviewers: [{ name: 'Laura Chen', title: 'Senior Recruiter', linkedin_url: '' }],
         jd: {
@@ -747,6 +869,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       },
       {
         id: IV_NX,
+        process_id: AP_NX,
         company: NEXUS,
         interviewers: [
           { name: 'David Park', title: 'SDR Manager', linkedin_url: '' },
@@ -785,6 +908,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       },
       {
         id: IV_MD,
+        process_id: AP_MD,
         company: MERIDIAN,
         interviewers: [{ name: 'Sofia Reyes', title: 'VP of Sales', linkedin_url: '' }],
         jd: {
@@ -852,6 +976,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       },
       {
         id: IV_CL,
+        process_id: AP_CL,
         company: CRESTLINE,
         interviewers: [
           { name: 'James Wu', title: 'Sales Recruiter', linkedin_url: '' },
@@ -902,6 +1027,112 @@ Cold calling, email copywriting, objection handling, territory management`,
 • Always have a cold call opener ready — "Hi [name], I'll be upfront, this is a cold call — got 27 seconds?" is simple and effective
 • Quantify your "greatest achievement" story: pipeline generated, conversion rate, or quota attainment
 • Research panel interviewers on LinkedIn before the call and reference something specific about each person`,
+      },
+      // ── Extra stages (multi-round pipelines) ──────────────────────────────────
+      {
+        id: IV_VN_HM,
+        process_id: AP_VN,
+        company: VANTAGE,
+        interviewers: [],
+        jd: null,
+        stage: 'Hiring Manager',
+        format: 'Virtual',
+        scheduled_at: null,
+        status: 'pending',
+        nudge_sent: false,
+        created_at: _daysFromNow(-7),
+      },
+      {
+        id: IV_NX_RS,
+        process_id: AP_NX,
+        company: NEXUS,
+        interviewers: [{ name: 'Aisha Williams', title: 'Talent Acquisition', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-7, 11),
+        status: 'completed',
+        created_at: _daysFromNow(-21),
+      },
+      {
+        id: IV_MD_RS,
+        process_id: AP_MD,
+        company: MERIDIAN,
+        interviewers: [{ name: 'Chloe Huang', title: 'Talent Recruiter', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-18, 10),
+        status: 'completed',
+        created_at: _daysFromNow(-28),
+      },
+      {
+        id: IV_MD_HM,
+        process_id: AP_MD,
+        company: MERIDIAN,
+        interviewers: [{ name: 'Raj Patel', title: 'Hiring Manager', linkedin_url: '' }],
+        jd: null,
+        stage: 'Hiring Manager',
+        format: 'Virtual',
+        scheduled_at: _scheduledAt(-11, 14),
+        status: 'completed',
+        created_at: _daysFromNow(-20),
+      },
+      {
+        id: IV_CL_RS,
+        process_id: AP_CL,
+        company: CRESTLINE,
+        interviewers: [{ name: 'James Wu', title: 'Sales Recruiter', linkedin_url: '' }],
+        jd: null,
+        stage: 'Recruiter Screen',
+        format: 'Phone Screen',
+        scheduled_at: _scheduledAt(-21, 10),
+        status: 'completed',
+        created_at: _daysFromNow(-28),
+      },
+    ];
+
+    // ── Processes (Interviews tab parent rows) ─────────────────────────────────
+    const processes = [
+      {
+        id: AP_VN,
+        company_name: VANTAGE.name,
+        company_logo: VANTAGE.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Active',
+        notes: null,
+        created_at: _daysFromNow(-14),
+        updated_at: _daysFromNow(-7),
+      },
+      {
+        id: AP_NX,
+        company_name: NEXUS.name,
+        company_logo: NEXUS.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Active',
+        notes: null,
+        created_at: _daysFromNow(-21),
+        updated_at: _daysFromNow(-3),
+      },
+      {
+        id: AP_MD,
+        company_name: MERIDIAN.name,
+        company_logo: MERIDIAN.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Offer Received',
+        notes: null,
+        created_at: _daysFromNow(-28),
+        updated_at: _daysFromNow(-5),
+      },
+      {
+        id: AP_CL,
+        company_name: CRESTLINE.name,
+        company_logo: CRESTLINE.logo_url,
+        role_title: 'Sales Development Representative',
+        status: 'Rejected',
+        notes: null,
+        created_at: _daysFromNow(-28),
+        updated_at: _daysFromNow(-14),
       },
     ];
 
@@ -1252,6 +1483,7 @@ Cold calling, email copywriting, objection handling, territory management`,
     localStorage.setItem('klinch_setup_complete',           '1');
     localStorage.setItem('klinch_profile',                  JSON.stringify(profile));
     localStorage.setItem('klinch_interviews',               JSON.stringify(interviews));
+    localStorage.setItem('klinch_processes',                JSON.stringify(processes));
     localStorage.setItem('klinch_applications',             JSON.stringify(applications));
     localStorage.setItem('klinch_resume',                   JSON.stringify(resume));
     localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRunNexus, dryRunVantage, dryRunCrestline]));

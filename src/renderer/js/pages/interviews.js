@@ -193,6 +193,12 @@ window.InterviewsPage = (() => {
 
     const statusCls = PROCESS_STATUS_CLS[proc.status] || 'proc-status-active';
 
+    const companyNavKey = _esc(
+      stages[0]?.company?.primary_domain ||
+      stages[0]?.company?.domain ||
+      proc.company_name || ''
+    );
+
     const sorted = [...stages].sort((a, b) => {
       const da = a.scheduled_at ? new Date(a.scheduled_at) : new Date(0);
       const db = b.scheduled_at ? new Date(b.scheduled_at) : new Date(0);
@@ -210,9 +216,9 @@ window.InterviewsPage = (() => {
     return `
       <div class="proc-row" data-process-id="${proc.id}">
         <div class="proc-header" data-process-id="${proc.id}">
-          <div class="proc-logo-wrap">${logoHtml}</div>
+          <div class="proc-logo-wrap" data-company-nav="${companyNavKey}">${logoHtml}</div>
           <div class="proc-info">
-            <div class="proc-company">${_esc(proc.company_name || 'Unknown')}</div>
+            <div class="proc-company proc-company-link" data-company-nav="${companyNavKey}">${_esc(proc.company_name || 'Unknown')}</div>
             <div class="proc-role">${_esc(proc.role_title || 'Role TBD')}</div>
           </div>
           <div class="proc-header-right">
@@ -241,7 +247,7 @@ window.InterviewsPage = (() => {
     const iconCls = done ? 'icon-done' : (isNext ? 'icon-next' : 'icon-dot');
 
     let statusLabel = 'Scheduled';
-    let statusCls   = isNext ? 'proc-ss-upcoming' : '';
+    let statusCls   = isNext ? 'proc-ss-upcoming' : 'proc-ss-scheduled';
     if (iv.status === 'completed')  { statusLabel = 'Completed'; statusCls = 'proc-ss-done'; }
     if (iv.status === 'cancelled')  { statusLabel = 'Cancelled'; statusCls = ''; }
     if (iv.status === 'no_show')    { statusLabel = 'No Show';   statusCls = 'proc-ss-noshow'; }
@@ -1387,6 +1393,18 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         return;
       }
 
+      // Company navigation — logo or company name click
+      const navEl = e.target.closest('[data-company-nav]');
+      if (navEl) {
+        e.stopPropagation();
+        const key = navEl.dataset.companyNav;
+        if (key && window.navigateTo && window.CompaniesPage) {
+          window.navigateTo('companies');
+          window.CompaniesPage.openDetail(key);
+        }
+        return;
+      }
+
       // Stage row click → interview detail
       const stage = e.target.closest('.proc-stage[data-interview-id]');
       if (stage) {
@@ -1402,17 +1420,6 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         else                    _expanded.add(pid);
         renderFeed();
         return;
-      }
-
-      // Company navigation (logo/name click in orphan rows — via data-company-nav)
-      const navEl = e.target.closest('[data-company-nav]');
-      if (navEl) {
-        e.stopPropagation();
-        const key = navEl.dataset.companyNav;
-        if (key && window.navigateTo && window.CompaniesPage) {
-          window.navigateTo('companies');
-          window.CompaniesPage.openDetail(key);
-        }
       }
     });
   }
