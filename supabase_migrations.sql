@@ -35,3 +35,33 @@ ALTER TABLE public.interviews
   ADD COLUMN IF NOT EXISTS process_id UUID REFERENCES public.processes(id) ON DELETE CASCADE;
 
 GRANT ALL ON public.interviews TO anon, authenticated;
+
+-- ── Fivepack 30-day expiry ─────────────────────────────────────────────────────
+
+-- fivepack_expires_at should already exist per the spec; this ensures it's present.
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS fivepack_expires_at TIMESTAMPTZ;
+
+-- ── Stripe webhook edge function ──────────────────────────────────────────────
+-- Deploy: supabase functions deploy stripe-webhook
+-- Point the Stripe webhook at:
+--   https://vmwhggpnrldnugsjdigh.supabase.co/functions/v1/stripe-webhook
+-- Set secrets: supabase secrets set STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=... STRIPE_PRICE_FIVEPACK=...
+
+-- ── Fivepack expiry email cron ────────────────────────────────────────────────
+-- Requires pg_net and pg_cron extensions (enabled by default on Supabase).
+-- Run this once after deploying the fivepack-expiry-check function.
+-- Replace <SERVICE_ROLE_KEY> with the value from Supabase Dashboard → Settings → API.
+
+-- select cron.schedule(
+--   'fivepack-expiry-check',
+--   '0 10 * * *',
+--   $$ select net.http_post(
+--        url     := 'https://vmwhggpnrldnugsjdigh.supabase.co/functions/v1/fivepack-expiry-check',
+--        headers := jsonb_build_object(
+--          'Content-Type',  'application/json',
+--          'Authorization', 'Bearer <SERVICE_ROLE_KEY>'
+--        ),
+--        body    := '{}'::jsonb
+--      ) as request_id; $$
+-- );

@@ -138,6 +138,19 @@
             <button class="trial-banner-close" id="trial-banner-close" title="Dismiss">×</button>
           </div>
 
+          <div id="fivepack-banner" class="fivepack-banner" style="display:none">
+            <div class="trial-banner-body">
+              <svg class="trial-banner-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                <circle cx="8" cy="8" r="6.5"/>
+                <path d="M8 5v3.5l2 1.5"/>
+              </svg>
+              <span>Your 5-Session Pack expires in <strong class="fivepack-banner-days">7 days</strong> — renew to keep your sessions.</span>
+              <button class="trial-banner-upgrade" id="fivepack-banner-renew">Renew 5-Pack →</button>
+              <button class="trial-banner-upgrade fivepack-banner-upgrade-btn" id="fivepack-banner-upgrade">Or upgrade →</button>
+            </div>
+            <button class="trial-banner-close" id="fivepack-banner-close" title="Dismiss">×</button>
+          </div>
+
           <div class="section-title">Overview</div>
           <div class="card-grid">
             <div class="card" data-nav="applications">
@@ -1788,6 +1801,44 @@
       </div>
       <div class="consent-footer" style="gap:10px">
         <button class="nudge-btn nudge-btn-ghost" id="ear-exit-skip-btn" style="margin-top:0">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Fivepack expiry lock modal ──────────────────────────────────────────── -->
+  <div id="fivepack-lock-modal" class="upgrade-backdrop" style="display:none">
+    <div class="upgrade-card">
+      <div class="upgrade-header">
+        <div class="upgrade-title">Your 5-Session Pack has expired</div>
+        <div class="upgrade-sub">Your sessions are saved — renew your pack or upgrade to keep going</div>
+      </div>
+      <div class="upgrade-plans">
+
+        <div class="upgrade-plan">
+          <div class="upgrade-plan-name">5-Session Pack</div>
+          <div class="upgrade-plan-price">$4.99<span class="upgrade-plan-per"> one-time</span></div>
+          <div class="upgrade-plan-sessions">5 interviews · 30 days to use</div>
+          <ul class="upgrade-plan-features">
+            <li>Your unused sessions carry over</li>
+            <li>No subscription required</li>
+            <li>Buy as you need</li>
+          </ul>
+          <button class="upgrade-plan-btn" data-checkout="fivepack">Renew Pack →</button>
+        </div>
+
+        <div class="upgrade-plan upgrade-plan-featured">
+          <div class="upgrade-plan-popular">No Expiry</div>
+          <div class="upgrade-plan-name">Starter</div>
+          <div class="upgrade-plan-price">$9.99<span class="upgrade-plan-per">/month</span></div>
+          <div class="upgrade-plan-sessions">10 interviews per month</div>
+          <ul class="upgrade-plan-features">
+            <li>Sessions never expire</li>
+            <li>Renews monthly</li>
+            <li>Cancel at any time</li>
+          </ul>
+          <button class="upgrade-plan-btn" id="fivepack-lock-upgrade">View Plans →</button>
+        </div>
+
       </div>
     </div>
   </div>
