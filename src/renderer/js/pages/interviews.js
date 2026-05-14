@@ -901,17 +901,16 @@ window.InterviewsPage = (() => {
       completeBtn.addEventListener('click', () => {
         const all = getAll();
         const idx = all.findIndex(x => String(x.id) === String(ivId));
-        if (idx >= 0 && all[idx].status !== 'completed') {
-          all[idx].status     = 'completed';
-          all[idx].updated_at = new Date().toISOString();
-          saveAll(all);
-        }
-        const updated = getAll().find(x => String(x.id) === String(ivId));
-        if (updated) {
-          _renderDetail(updated);
-          document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: updated.id } }));
-          window.refreshDashboardStats?.();
-        }
+        // Guard: bail if already completed or not found
+        if (idx < 0 || all[idx].status === 'completed') return;
+        all[idx].status     = 'completed';
+        all[idx].updated_at = new Date().toISOString();
+        saveAll(all);
+        // Dispatch only — _completionListener (set below) handles the single re-render.
+        // Do NOT call _renderDetail here: calling it before the event fires causes a
+        // double render, destroying the skeleton DOM nodes that _fireAIAnalysis is
+        // about to populate, so coach analysis silently writes to detached elements.
+        document.dispatchEvent(new CustomEvent('interview:completed', { detail: { id: all[idx].id } }));
       });
     }
 
@@ -1266,7 +1265,11 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
     const domain  = iv.company?.domain;
     const cqBody  = _el('ivdp-cq-body');
     const cqSkel  = _el('ivdp-cq-skeleton');
-    if (!domain || !cqBody) return;
+    console.log('[community-questions] fetching — domain:', domain, '| company:', iv.company?.name, '| stage:', iv.stage);
+    if (!domain || !cqBody) {
+      console.log('[community-questions] skipping — missing domain or cqBody element');
+      return;
+    }
 
     const CQ_STAGE_ORDER = ['Recruiter Screen', 'Hiring Manager', 'Panel', 'Final Round'];
 
@@ -1312,6 +1315,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
 
     try {
       const res = await window.klinch.invoke('community:get-questions', { domain });
+      console.log('[community-questions] IPC response — ok:', res?.ok, '| count:', res?.data?.length ?? 0, '| error:', res?.error || null);
       if (cqSkel) cqSkel.style.display = 'none';
       let questions = res?.data || [];
       if (!questions.length && window.klinch?.isDev) {
@@ -1322,7 +1326,7 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
       }
       _paintCQ(questions, iv.stage || null);
     } catch (err) {
-      console.error('[community-questions]', err);
+      console.error('[community-questions] fetch threw:', err);
       if (cqSkel) cqSkel.style.display = 'none';
       if (cqBody) cqBody.innerHTML = `<div class="ivdp-cq-empty">Could not load community questions.</div>`;
     }

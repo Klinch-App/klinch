@@ -340,19 +340,32 @@ function registerHandlers() {
 async function contributeToPool(transcript, interviewRecord) {
   // Use admin client (service role) — community_questions inserts need to bypass RLS
   const { supabaseAdmin } = supabaseApi;
-  if (!supabaseAdmin) { console.log('[interview] contributeToPool: no supabase admin client, skipping'); return; }
+  if (!supabaseAdmin) {
+    console.log('[community] contributeToPool: no supabaseAdmin client — skipping');
+    return;
+  }
+
+  const domain = interviewRecord?.company?.domain || null;
+  const name   = interviewRecord?.company?.name   || null;
+  const stage  = interviewRecord?.stage           || null;
+
+  console.log('[community] contributeToPool called — company:', name, '| domain:', domain, '| stage:', stage, '| transcript chars:', transcript?.length || 0);
+
+  if (!transcript || !transcript.trim()) {
+    console.log('[community] empty transcript — skipping');
+    return;
+  }
 
   try {
-    console.log('[interview] inferring questions from transcript…');
+    console.log('[community] calling inferQuestions…');
     const questions = await inferQuestions(transcript);
-    console.log('[interview] inferred', questions.length, 'questions');
-    if (!questions.length) return;
+    console.log('[community] inferred', questions.length, 'questions:', questions);
+    if (!questions.length) {
+      console.log('[community] no questions inferred — skipping insert');
+      return;
+    }
 
-    const domain = interviewRecord?.company?.domain || null;
-    const name   = interviewRecord?.company?.name   || null;
-    const stage  = interviewRecord?.stage           || null;
-    const now    = new Date().toISOString();
-
+    const now  = new Date().toISOString();
     const rows = questions.map(q => ({
       question:         q,
       company_domain:   domain,
@@ -361,14 +374,15 @@ async function contributeToPool(transcript, interviewRecord) {
       created_at:       now,
     }));
 
-    const { error } = await supabaseAdmin.from('community_questions').insert(rows);
+    console.log('[community] inserting', rows.length, 'rows into community_questions…');
+    const { data, error } = await supabaseAdmin.from('community_questions').insert(rows).select();
     if (error) {
-      console.error('[interview] community_questions insert failed:', error.message, error.code);
+      console.error('[community] insert failed — message:', error.message, '| code:', error.code, '| details:', error.details, '| hint:', error.hint);
     } else {
-      console.log('[interview] contributed', rows.length, 'questions for domain:', domain);
+      console.log('[community] inserted OK —', data?.length ?? rows.length, 'rows saved');
     }
   } catch (err) {
-    console.error('[interview] contributeToPool error:', err.message);
+    console.error('[community] contributeToPool threw:', err.message);
   }
 }
 
