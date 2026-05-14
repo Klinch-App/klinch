@@ -1116,18 +1116,50 @@ if (btnStart) {
   });
 }
 
-if (btnStop) {
-  btnStop.addEventListener('click', async () => {
+// ── Ear end confirmation modal ────────────────────────────────────────────────
+
+(function() {
+  const confirmBackdrop  = document.getElementById('ear-end-confirm-backdrop');
+  const confirmCancelBtn = document.getElementById('ear-end-cancel-btn');
+  const confirmOkBtn     = document.getElementById('ear-end-confirm-btn');
+  const completeLabel    = document.getElementById('ear-end-complete-label');
+  const completeBox      = document.getElementById('ear-end-complete-box');
+
+  let _pendingMarkComplete = false;
+
+  function _openEndConfirm() {
+    _pendingMarkComplete = false;
+    completeLabel?.classList.remove('checked');
+    completeBox?.classList.remove('checked');
+    confirmBackdrop?.classList.add('visible');
+  }
+
+  function _closeEndConfirm() {
+    confirmBackdrop?.classList.remove('visible');
+  }
+
+  completeLabel?.addEventListener('click', () => {
+    _pendingMarkComplete = !_pendingMarkComplete;
+    completeLabel.classList.toggle('checked', _pendingMarkComplete);
+    completeBox.classList.toggle('checked', _pendingMarkComplete);
+  });
+
+  confirmCancelBtn?.addEventListener('click', _closeEndConfirm);
+
+  confirmOkBtn?.addEventListener('click', async () => {
+    const markComplete = _pendingMarkComplete;
+    _closeEndConfirm();
+
     const earInterviewId = window.getEarSelectedId?.() || null;
 
     await window.STT.stopSession();
     await window.klinch.invoke('overlay:close');
-    btnStop.style.display  = 'none';
-    btnStart.style.display = '';
+    if (btnStop)  btnStop.style.display  = 'none';
+    if (btnStart) btnStart.style.display = '';
     transcriptLines = [];
     renderTranscript();
 
-    if (earInterviewId) window._showEarExitModal?.(earInterviewId);
+    if (earInterviewId) window._showEarExitModal?.(earInterviewId, markComplete);
 
     if (feedbackStatus) {
       feedbackStatus.textContent = 'Generating feedback…';
@@ -1140,7 +1172,11 @@ if (btnStop) {
       feedbackStatus.textContent = 'Feedback ready — view in Interviews';
     }
   });
-}
+
+  if (btnStop) {
+    btnStop.addEventListener('click', _openEndConfirm);
+  }
+})();
 
 // ── Live transcript display ───────────────────────────────────────────────────
 
@@ -1275,12 +1311,12 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId, markComplete } = {})
     if (completeLabel) completeLabel.classList.remove('checked');
   }
 
-  window._showEarExitModal = function(interviewId) {
+  window._showEarExitModal = function(interviewId, preMarkComplete = false) {
     if (!backdrop) return;
     _activeInterviewId = interviewId || null;
-    _markedComplete    = false;
+    _markedComplete    = preMarkComplete;
     if (notesInput) notesInput.value = '';
-    if (completeLabel) completeLabel.classList.remove('checked');
+    if (completeLabel) completeLabel.classList.toggle('checked', preMarkComplete);
 
     if (interviewId) {
       const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
@@ -1291,6 +1327,7 @@ window.klinch.on('ear:fs-closed', ({ returnTo, interviewId, markComplete } = {})
         if (subtitle)      subtitle.textContent      = `${company} — ${stage}`;
         if (completeTitle) completeTitle.textContent = `Mark "${stage} at ${company}" as complete`;
       }
+      if (preMarkComplete) window._completeInterview?.(interviewId);
     }
 
     backdrop.classList.add('visible');
