@@ -131,7 +131,7 @@ window.CompaniesPage = (() => {
       return;
     }
 
-    grid.innerHTML = companies.map(c => {
+    grid.innerHTML = ghostCard + companies.map(c => {
       const logoHtml = c.logo_url && !c.screenshot_mode
         ? `<img src="${_esc(c.logo_url)}" class="co-card-logo-img" alt="" data-fb="co-logo-${_esc(c.key)}">
            <div class="icard-logo-fb" data-fb-id="co-logo-${_esc(c.key)}" ${window._fbHiddenStyle(c)}>${(c.name || '?')[0].toUpperCase()}</div>`
@@ -179,7 +179,7 @@ window.CompaniesPage = (() => {
         </div>`;
     }).join('');
 
-    grid.innerHTML += ghostCard;
+    // ghostCard already prepended above
     if (window.wireImgFallbacks) window.wireImgFallbacks(grid);
     const addCard = _el('co-add-card');
     addCard.addEventListener('click', () => window.AddInterview?.open());
