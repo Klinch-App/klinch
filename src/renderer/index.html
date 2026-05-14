@@ -1770,26 +1770,7 @@
   <!-- Confetti canvas — sits above all UI, pointer-events:none -->
   <canvas id="confetti-canvas" style="display:none"></canvas>
 
-  <!-- Klinch Ear: stop confirmation (pre-stop gate) -->
-  <div id="ear-end-confirm-backdrop" class="upgrade-backdrop" style="display:none">
-    <div class="upgrade-card ear-end-confirm-card">
-      <div class="upgrade-header">
-        <div class="upgrade-title">End recording?</div>
-      </div>
-      <div style="padding:4px 0 20px">
-        <label class="ear-end-complete-row" id="ear-end-complete-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
-          <div class="ear-end-complete-box" id="ear-end-complete-box"></div>
-          <span style="font-size:13.5px;color:var(--text-primary)">Mark this interview as complete</span>
-        </label>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:flex-end">
-        <button class="nudge-btn nudge-btn-ghost" id="ear-end-cancel-btn" style="margin-top:0">Cancel</button>
-        <button class="nudge-btn nudge-btn-primary" id="ear-end-confirm-btn" style="margin-top:0">End Session</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Klinch Ear full-screen: post-session exit modal -->
+<!-- Klinch Ear full-screen: post-session exit modal -->
   <div id="ear-exit-backdrop" class="consent-backdrop">
     <div class="consent-card ear-exit-card">
       <div class="consent-header">
