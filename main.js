@@ -1,6 +1,6 @@
 require('dotenv').config();
 process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
-const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog } = require('electron');
+const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification } = require('electron');
 const path = require('path');
 const interview      = require('./src/main/ipc/interview');
 const interviewsData = require('./src/main/ipc/interviews-data');
@@ -167,19 +167,8 @@ ipcMain.on('notify', (_event, { title, body }) => {
 ipcMain.handle('overlay:launch', () => createOverlayWindow());
 ipcMain.handle('overlay:close',  () => closeOverlayWindow());
 
-// Renderer → native end-recording confirmation dialog
-ipcMain.handle('dialog:end-recording', async () => {
-  const { response, checkboxChecked } = await dialog.showMessageBox(mainWindow, {
-    type: 'question',
-    message: 'End recording?',
-    buttons: ['Cancel', 'End Session'],
-    defaultId: 1,
-    cancelId: 0,
-    checkboxLabel: 'Mark this interview as complete',
-    checkboxChecked: false,
-  });
-  return { confirmed: response === 1, markComplete: checkboxChecked };
-});
+// Renderer → focus the main window (used before showing in-app modals during active sessions)
+ipcMain.handle('window:focus', () => { mainWindow?.focus(); });
 
 // Overlay renderer → toggle click-through for interactive areas
 ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
