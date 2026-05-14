@@ -566,7 +566,6 @@ async function _processJd(raw) {
   _el('ai-jd-structured').style.display = '';
   _nextBtn.disabled = false;
   _updateNextBtn();
-  setTimeout(() => _goToStep(4), 500);
 }
 
 _el('ai-jd-edit').addEventListener('click', () => {
