@@ -1120,20 +1120,25 @@ if (btnStart) {
 
 let _earEndMarkComplete = false;
 
+let _pendingEarEndConfirm = false;
+
+// Show the end-confirm modal once overlay:closed fires (guarantees overlay is gone + window has focus)
+window.klinch.on('overlay:closed', () => {
+  if (!_pendingEarEndConfirm) return;
+  _pendingEarEndConfirm = false;
+
+  const backdrop      = document.getElementById('ear-end-confirm-backdrop');
+  const completeLabel = document.getElementById('ear-end-complete-label');
+  if (!backdrop) return;
+  _earEndMarkComplete = false;
+  completeLabel?.classList.remove('checked');
+  backdrop.classList.add('visible');
+});
+
 if (btnStop) {
-  btnStop.addEventListener('click', async () => {
-    const backdrop     = document.getElementById('ear-end-confirm-backdrop');
-    const completeLabel = document.getElementById('ear-end-complete-label');
-    if (!backdrop) return;
-
-    _earEndMarkComplete = false;
-    completeLabel?.classList.remove('checked');
-
-    // Close overlay, then wait for macOS to return focus before showing modal
-    await window.klinch.invoke('overlay:close');
-    await new Promise(r => setTimeout(r, 120));
-
-    backdrop.classList.add('visible');
+  btnStop.addEventListener('click', () => {
+    _pendingEarEndConfirm = true;
+    window.klinch.invoke('overlay:close');
   });
 }
 
