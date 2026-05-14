@@ -165,7 +165,11 @@ ipcMain.on('notify', (_event, { title, body }) => {
 
 // Renderer → launch / close overlay
 ipcMain.handle('overlay:launch', () => createOverlayWindow());
-ipcMain.handle('overlay:close',  () => closeOverlayWindow());
+ipcMain.handle('overlay:close',  () => {
+  closeOverlayWindow();
+  // Return focus to main window after overlay closes so in-app modals are clickable
+  setTimeout(() => { mainWindow?.show(); mainWindow?.focus(); }, 80);
+});
 
 // Overlay renderer → toggle click-through for interactive areas
 ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
