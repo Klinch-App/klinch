@@ -1129,9 +1129,9 @@ if (btnStop) {
     _earEndMarkComplete = false;
     completeLabel?.classList.remove('checked');
 
-    // Close overlay then explicitly focus main window so modal is clickable
+    // Close overlay, then wait for macOS to return focus before showing modal
     await window.klinch.invoke('overlay:close');
-    await window.klinch.invoke('window:focus');
+    await new Promise(r => setTimeout(r, 120));
 
     backdrop.classList.add('visible');
   });
