@@ -7925,17 +7925,6 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   color: var(--text-muted);
 }
 
-/* ── Ear end confirmation modal ────────────────────────────────────────── */
-
-.ear-end-confirm-card { max-width: 380px; }
-
-.ear-end-complete-label.checked .consent-check-box {
-  background: var(--primary);
-  border-color: var(--primary);
-}
-
-.ear-end-complete-label.checked .consent-check-box::after { display: block; }
-
 /* ── Interview detail: Launch Ear button ───────────────────────────────── */
 
 .ivdp-launch-ear-btn {

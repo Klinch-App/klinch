@@ -1116,68 +1116,37 @@ if (btnStart) {
   });
 }
 
-// ── Ear end confirmation modal ────────────────────────────────────────────────
-
-let _earEndMarkComplete = false;
-
-let _pendingEarEndConfirm = false;
-
-// Show the end-confirm modal once overlay:closed fires (guarantees overlay is gone + window has focus)
-window.klinch.on('overlay:closed', () => {
-  if (!_pendingEarEndConfirm) return;
-  _pendingEarEndConfirm = false;
-
-  const backdrop      = document.getElementById('ear-end-confirm-backdrop');
-  const completeLabel = document.getElementById('ear-end-complete-label');
-  if (!backdrop) return;
-  _earEndMarkComplete = false;
-  completeLabel?.classList.remove('checked');
-  backdrop.classList.add('visible');
-});
+// ── Stop button: native end-recording confirmation ────────────────────────────
 
 if (btnStop) {
-  btnStop.addEventListener('click', () => {
-    _pendingEarEndConfirm = true;
-    window.klinch.invoke('overlay:close');
+  btnStop.addEventListener('click', async () => {
+    const result = await window.klinch.invoke('dialog:end-recording');
+    if (!result?.confirmed) return;
+
+    const markComplete   = result.markComplete;
+    const earInterviewId = window.getEarSelectedId?.() || null;
+
+    await window.STT.stopSession();
+    await window.klinch.invoke('overlay:close');
+    btnStop.style.display  = 'none';
+    btnStart.style.display = '';
+    transcriptLines = [];
+    renderTranscript();
+
+    if (earInterviewId) window._showEarExitModal?.(earInterviewId, markComplete);
+
+    if (feedbackStatus) {
+      feedbackStatus.textContent = 'Generating feedback…';
+      feedbackStatus.style.display = '';
+    }
+
+    await window.klinch.invoke('interview:feedback', { interviewId: earInterviewId });
+
+    if (feedbackStatus) {
+      feedbackStatus.textContent = 'Feedback ready — view in Interviews';
+    }
   });
 }
-
-document.getElementById('ear-end-cancel-btn')?.addEventListener('click', async () => {
-  document.getElementById('ear-end-confirm-backdrop')?.classList.remove('visible');
-  // Restore the overlay since the session is still active
-  await window.klinch.invoke('overlay:launch');
-});
-
-document.getElementById('ear-end-confirm-btn')?.addEventListener('click', async () => {
-  const markComplete   = _earEndMarkComplete;
-  const earInterviewId = window.getEarSelectedId?.() || null;
-
-  document.getElementById('ear-end-confirm-backdrop')?.classList.remove('visible');
-
-  await window.STT.stopSession();
-  btnStop.style.display  = 'none';
-  btnStart.style.display = '';
-  transcriptLines = [];
-  renderTranscript();
-
-  if (earInterviewId) window._showEarExitModal?.(earInterviewId, markComplete);
-
-  if (feedbackStatus) {
-    feedbackStatus.textContent = 'Generating feedback…';
-    feedbackStatus.style.display = '';
-  }
-
-  await window.klinch.invoke('interview:feedback', { interviewId: earInterviewId });
-
-  if (feedbackStatus) {
-    feedbackStatus.textContent = 'Feedback ready — view in Interviews';
-  }
-});
-
-document.getElementById('ear-end-complete-label')?.addEventListener('click', () => {
-  _earEndMarkComplete = !_earEndMarkComplete;
-  document.getElementById('ear-end-complete-label')?.classList.toggle('checked', _earEndMarkComplete);
-});
 
 // ── Live transcript display ───────────────────────────────────────────────────
 
