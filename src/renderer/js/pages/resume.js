@@ -92,15 +92,24 @@ window.ResumePage = (() => {
     return { html, matched, numMap };
   }
 
+  function _firstSentence(text) {
+    const m = (text || '').match(/^.+?[.!?](?:\s|$)/);
+    return m ? m[0].trim() : (text || '').slice(0, 90) + ((text || '').length > 90 ? '…' : '');
+  }
+
   function _buildBubbles(matched, numMap) {
     return matched.map(ann => `
       <div class="rs-ann-bubble rs-severity-${ann.severity === 'high' ? 'high' : 'medium'}" data-id="${_esc(ann.id)}">
-        <div class="rs-ann-bubble-top">
+        <button class="rs-ann-bubble-header" type="button">
           <span class="rs-ann-num">${numMap[ann.id]}</span>
-          <span class="rs-ann-comment">${_esc(ann.comment)}</span>
+          <span class="rs-ann-preview">${_esc(_firstSentence(ann.comment))}</span>
+          <svg class="rs-ann-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,3 5,7 8,3"/></svg>
+        </button>
+        <div class="rs-ann-bubble-body">
+          <div class="rs-ann-comment">${_esc(ann.comment)}</div>
+          <button class="rs-hl-rewrite-btn" data-hid="${_esc(ann.id)}">Rewrite this →</button>
+          <div class="rs-hl-rewrite-result" id="rs-rw-${_esc(ann.id)}"${ann.rewrite ? '' : ' style="display:none"'}>${ann.rewrite ? _esc(ann.rewrite) : ''}</div>
         </div>
-        <button class="rs-hl-rewrite-btn" data-hid="${_esc(ann.id)}">Rewrite this →</button>
-        <div class="rs-hl-rewrite-result" id="rs-rw-${_esc(ann.id)}"${ann.rewrite ? '' : ' style="display:none"'}>${ann.rewrite ? _esc(ann.rewrite) : ''}</div>
       </div>`).join('');
   }
 
@@ -198,10 +207,7 @@ window.ResumePage = (() => {
   function _buildUploadSection(r) {
     return `
       <div class="ivdp-section">
-        <div class="ivdp-section-header">
-          <div class="ivdp-section-title">Upload</div>
-          ${r ? `<button class="ivdp-add-btn" id="rs-replace-btn">↑ Replace Resume</button>` : ''}
-        </div>
+        ${!r ? `<div class="ivdp-section-header"><div class="ivdp-section-title">Resume</div></div>` : ''}
         <div class="ivdp-section-body" id="rs-upload-body">
           ${r ? _buildFileInfo(r) : _buildDropZone()}
         </div>
@@ -223,11 +229,16 @@ window.ResumePage = (() => {
       ? new Date(r.uploaded_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : '';
     return `
-      <div class="rs-file-info">
-        <div class="rs-file-icon">📄</div>
-        <div class="rs-file-meta">
-          <div class="rs-file-name">${_esc(r.file_name || 'Resume')}</div>
-          ${date ? `<div class="rs-file-date">Uploaded ${_esc(date)}</div>` : ''}
+      <div class="rs-file-chip">
+        <div class="rs-file-chip-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+          </svg>
+        </div>
+        <div class="rs-file-chip-meta">
+          <div class="rs-file-chip-name">${_esc(r.file_name || 'Resume')}</div>
+          <div class="rs-file-chip-sub">${date ? `Uploaded ${_esc(date)} · ` : ''}<button class="rs-replace-link" id="rs-replace-btn">Replace resume</button></div>
         </div>
       </div>
       <input type="file" id="rs-file-input" accept=".pdf,.docx" style="display:none">`;
@@ -430,6 +441,7 @@ window.ResumePage = (() => {
       });
     }
 
+    // replace-btn may be rendered as an inline button inside the chip
     const replaceBtn = _el('rs-replace-btn');
     if (replaceBtn && fileInput) replaceBtn.addEventListener('click', () => fileInput.click());
 
@@ -458,7 +470,18 @@ window.ResumePage = (() => {
     if (content) {
       content.addEventListener('click', async e => {
         const btn = e.target.closest('.rs-hl-rewrite-btn');
-        if (btn) await _triggerRewrite(btn.dataset.hid, btn);
+        if (btn) { await _triggerRewrite(btn.dataset.hid, btn); return; }
+
+        const header = e.target.closest('.rs-ann-bubble-header');
+        if (header) {
+          const bubble = header.closest('.rs-ann-bubble');
+          const right  = _el('rs-ann-right');
+          const isOpen = bubble.classList.contains('open');
+          right?.querySelectorAll('.rs-ann-bubble.open').forEach(b => b.classList.remove('open'));
+          if (!isOpen) bubble.classList.add('open');
+          requestAnimationFrame(_positionAnnotations);
+          setTimeout(_positionAnnotations, 240);
+        }
       });
 
       content.addEventListener('mouseover', e => {
