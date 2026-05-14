@@ -1119,38 +1119,83 @@ window.InterviewsPage = (() => {
   }
 
   async function _fireAIAnalysis(iv, only) {
-    const roleTitle   = iv.jd?.structured?.role_title || 'this role';
-    const company     = iv.company?.name || 'this company';
-    const stage       = iv.stage || 'interview';
-    const mustHave    = (iv.jd?.structured?.must_have || []).join(', ') || 'not specified';
-    const niceHave    = (iv.jd?.structured?.nice_to_have || []).join(', ') || 'not specified';
-    const interviewers= (iv.interviewers || []).map(iw => `${iw.name || 'Unknown'} (${iw.title || 'Unknown title'})`).join(', ') || 'unknown';
-    const profileCtx  = window.profileContext ? window.profileContext(profile) : '';
+    const roleTitle    = iv.jd?.structured?.role_title || 'this role';
+    const company      = iv.company?.name || 'this company';
+    const stage        = iv.stage || 'interview';
+    const mustHave     = (iv.jd?.structured?.must_have || []).join(', ') || 'not specified';
+    const niceHave     = (iv.jd?.structured?.nice_to_have || []).join(', ') || 'not specified';
+    const interviewers = (iv.interviewers || []).map(iw => `${iw.name || 'Unknown'} (${iw.title || 'Unknown title'})`).join(', ') || 'unknown';
+    const profileCtx   = window.profileContext ? window.profileContext(profile) : '';
 
-    const coachPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview coach. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
+    // Find the most recent session with a non-empty transcript
+    const sessions = iv.sessions || [];
+    const sessionWithTranscript = sessions
+      .filter(s => s.transcript?.length)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
+
+    let coachPrompt;
+
+    if (sessionWithTranscript) {
+      // ── Post-session mode: feedback grounded in what was actually said ──────
+      const transcriptText = sessionWithTranscript.transcript
+        .map(t => `${t.speaker === 'you' ? 'Candidate' : 'Interviewer'}: ${t.text}`)
+        .join('\n');
+
+      coachPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview coach reviewing a completed ${stage} interview at ${company} for the role of ${roleTitle}.
+
+Interviewers: ${interviewers}
+Must-have qualifications: ${mustHave}
+Nice-to-have qualifications: ${niceHave}
+
+Transcript:
+${transcriptText}
+
+First, on its own line, output an overall performance score (0–100) based on the actual transcript:
+SCORE: [number]
+
+Then provide concise, specific coaching based only on what the candidate actually said. Use exactly these section headers with no deviations:
+
+**What You Did Well**
+• [bullet point tied to something specific they said or did]
+• [bullet point]
+
+**What to Improve**
+• [bullet point tied to a specific gap or missed opportunity in the transcript]
+• [bullet point]
+
+**For Your Next Round**
+• [bullet point — forward-looking advice for the next stage at this company]
+• [bullet point]
+
+Be direct. Ground every point in the transcript. Do not give generic advice.`;
+
+    } else {
+      // ── Pre-session mode: prep brief based on JD + profile ─────────────────
+      coachPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview coach. The candidate has an upcoming ${stage} at ${company} for the role of ${roleTitle}.
 
 Must-have qualifications: ${mustHave}
 Nice-to-have qualifications: ${niceHave}
 Interviewers: ${interviewers}
 
-First, on its own line, output the candidate's overall interview readiness score (0–100) based on their profile fit for this role and stage:
+This is a pre-interview prep brief — no transcript exists yet. First, on its own line, output the candidate's readiness score (0–100) based on their profile fit for this role and stage:
 SCORE: [number]
 
-Then provide concise, actionable coaching in exactly this format — use these exact section headers with no deviations:
+Then provide a focused prep brief in exactly this format — use these exact section headers with no deviations:
 
-**What You Did Well**
-• [bullet point]
-• [bullet point]
-
-**What to Improve**
-• [bullet point]
+**What to Focus On**
+• [the 2–3 things most likely to come up given this stage and role]
 • [bullet point]
 
-**For Your Next Interview**
-• [bullet point]
+**Key Watch-outs**
+• [gaps or risks in their profile relative to the must-haves]
 • [bullet point]
 
-Be specific to this stage, company, and role. Be direct and confident.`;
+**For This Interview**
+• [specific, tactical advice for this stage with this interviewer]
+• [bullet point]
+
+Be specific to this stage, company, and role. Make clear this is preparation guidance, not a debrief.`;
+    }
 
     const contextPrompt = `${profileCtx ? profileCtx + '\n\n' : ''}You are an expert interview researcher. The candidate has a ${stage} at ${company} for the role of ${roleTitle}.
 
