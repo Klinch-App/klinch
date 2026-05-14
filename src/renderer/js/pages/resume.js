@@ -302,6 +302,7 @@ window.ResumePage = (() => {
       impact:                 'Impact',
       clarity:                'Clarity',
       ats_compatibility:      'ATS Compatibility',
+      ai_fluency:             'AI Fluency',
       sdr_relevance:          'SDR Relevance',
       ae_relevance:           'AE Relevance',
       csm_relevance:          'CSM Relevance',
@@ -334,6 +335,12 @@ window.ResumePage = (() => {
         <span>${_esc(t)}</span>
       </div>`).join('');
 
+    const aiCallouts = (a.ai_fluency_callouts || []).map(t => `
+      <div class="rs-ats-tip rs-ai-callout">
+        <span class="rs-ats-check">⚡</span>
+        <span>${_esc(t)}</span>
+      </div>`).join('');
+
     return `
       <div class="rs-score-row">
         <div class="rs-overall-badge ${scoreClass}">
@@ -342,6 +349,9 @@ window.ResumePage = (() => {
         </div>
         <div class="rs-dims">${dimBars}</div>
       </div>
+      ${aiCallouts ? `
+      <div class="rs-sub-label rs-ai-callout-label" style="margin-top:22px">AI Fluency</div>
+      <div class="rs-ats-tips">${aiCallouts}</div>` : ''}
       ${atsTips ? `
       <div class="rs-sub-label" style="margin-top:22px">ATS Tips</div>
       <div class="rs-ats-tips">${atsTips}</div>` : ''}`;
