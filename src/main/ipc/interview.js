@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const { streamFeedback, getCoachingCue, inferQuestions } = require('../api/claude');
+const { streamFeedback, inferQuestions } = require('../api/claude');
 const { randomUUID } = require('crypto');
 const supabaseApi = require('../api/supabase');
 
@@ -9,9 +9,6 @@ let getOverlayWindow = null;
 let sessionActive      = false;
 let sessionTranscript  = [];
 let currentInterviewId = null;
-let utteranceCount     = 0;
-
-const COACHING_EVERY = 3;
 
 // ── Full-screen Ear mode state ────────────────────────────────────────────────
 
@@ -19,7 +16,7 @@ let earFsActive  = false;
 let earFsPaused  = false;
 let earRoleType  = '';
 
-// Per-session tracking (reset on each ear:fs-start)
+// Per-session tracking (reset on each session start)
 let earCuesGiven   = new Set();  // which cue types have fired this session
 
 // Filler word detection (rolling 60-second window)
@@ -67,7 +64,7 @@ function _roleCue(cueType) {
 // ── Cue delivery ──────────────────────────────────────────────────────────────
 
 function _fireCue(type, text) {
-  if (!earFsActive || earFsPaused)      return false;
+  if (!sessionActive || earFsPaused)    return false;
   if (earCuesGiven.has(type))           return false;
   const now = Date.now();
 
@@ -106,7 +103,7 @@ function setEarFsMode(active, roleType) {
 // ── Speech analysis per utterance ─────────────────────────────────────────────
 
 function _analyzeEarUtterance(text) {
-  if (!earFsActive || earFsPaused || !text?.trim()) return;
+  if (!text?.trim() || earFsPaused) return;
 
   const now   = Date.now();
   const words = text.trim().split(/\s+/);
@@ -171,10 +168,17 @@ function init({ mainWindow, overlayWindow }) {
 
 function registerHandlers() {
   ipcMain.handle('interview:start', (_event, { interviewId } = {}) => {
-    currentInterviewId = interviewId || null;
-    sessionActive      = true;
-    sessionTranscript  = [];
-    utteranceCount     = 0;
+    currentInterviewId   = interviewId || null;
+    sessionActive        = true;
+    sessionTranscript    = [];
+    earCuesGiven         = new Set();
+    earFillerBuf         = [];
+    earFillerCueCount    = 0;
+    earFillerCueLastTime = 0;
+    earWpmBuf            = [];
+    earAnswerWords       = 0;
+    earAnswerStartTime   = null;
+    earLastUtteranceTime = null;
   });
 
   ipcMain.handle('interview:stop', () => {
@@ -189,23 +193,7 @@ function registerHandlers() {
   // VAD-flushed candidate utterance
   ipcMain.on('interview:question', (_event, text) => {
     if (!sessionActive) return;
-
-    // Full-screen Ear mode: use rule-based cue engine
-    if (earFsActive) {
-      _analyzeEarUtterance(text);
-      return; // skip Claude-based coaching in full-screen mode
-    }
-
-    // Passive mode: Claude coaching every COACHING_EVERY utterances
-    utteranceCount++;
-    if (utteranceCount % COACHING_EVERY === 0) {
-      const chunk = sessionTranscript
-        .slice(-6)
-        .map((e) => e.text)
-        .join(' ')
-        .trim();
-      if (chunk) triggerCoachingCue(chunk);
-    }
+    _analyzeEarUtterance(text);
   });
 
   // Full-screen Ear: pause / resume cue generation
@@ -331,19 +319,5 @@ async function contributeToPool(transcript, interviewRecord) {
   }
 }
 
-async function triggerCoachingCue(transcript) {
-  if (!sessionActive) return;
-  const overlay = getOverlayWindow();
-  if (!overlay || overlay.isDestroyed()) return;
-
-  try {
-    const cue = await getCoachingCue(transcript);
-    if (cue && sessionActive && !overlay.isDestroyed()) {
-      overlay.webContents.send('overlay:coaching-cue', cue);
-    }
-  } catch (err) {
-    console.error('[interview] coaching cue error:', err.message);
-  }
-}
 
 module.exports = { init, setEarFsMode };
