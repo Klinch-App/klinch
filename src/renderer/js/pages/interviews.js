@@ -628,22 +628,32 @@ window.InterviewsPage = (() => {
         </details>`;
     }
 
-    // ── Sections 5 & 6: Coach + Context ──────────────────────────────────────
+    // ── Section 5: Coach (Ear session feedback only) ─────────────────────────
+    const earFeedback = latestSession?.feedback?.trim() || null;
+    let coachHtml;
+    if (earFeedback) {
+      coachHtml = `
+        <div class="ivdp-ai-body">${_renderMarkdownish(earFeedback)}</div>
+        ${transcriptHtml}`;
+    } else {
+      coachHtml = `
+        <div class="ivdp-empty-state">
+          <div class="ivdp-empty-sub">Complete an Ear session to see your coaching feedback.</div>
+        </div>
+        ${transcriptHtml}`;
+    }
+
+    // ── Section 6: Prep Notes (AI prep brief + context summary) ─────────────
     const coachCached   = iv.coach_analysis  || null;
     const contextCached = iv.context_summary || null;
 
-    let coachHtml;
-    if (iv.status !== 'completed') {
-      coachHtml = `<div class="ivdp-empty-state">
-        <div class="ivdp-empty-sub">This section will populate once you mark this interview as complete.</div>
-      </div>`;
-    } else if (coachCached) {
-      coachHtml = `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
+    let prepAnalysisHtml;
+    if (coachCached) {
+      prepAnalysisHtml = `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
          <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
-         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>
-         ${transcriptHtml}`;
+         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`;
     } else {
-      coachHtml = `<div id="ivdp-coach-score"></div>
+      prepAnalysisHtml = `<div id="ivdp-coach-score"></div>
          <div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
            <div class="ivdp-skel-line w80"></div>
            <div class="ivdp-skel-line w60"></div>
@@ -748,7 +758,7 @@ window.InterviewsPage = (() => {
 
       <div class="ivdp-section">
         <div class="ivdp-section-header"><div class="ivdp-section-title">Prep Notes</div></div>
-        <div class="ivdp-section-body">${contextHtml}</div>
+        <div class="ivdp-section-body">${prepAnalysisHtml}${contextHtml}</div>
       </div>
 
       <div class="ivdp-iw-modal-backdrop" id="ivdp-iw-modal" style="display:none">
@@ -784,7 +794,7 @@ window.InterviewsPage = (() => {
     if (window.wireImgFallbacks) window.wireImgFallbacks(container);
     _wireDetailEvents(iv.id);
 
-    const needCoach   = iv.status === 'completed' && !coachCached;
+    const needCoach   = !coachCached;
     const needContext = !contextCached;
     if (needCoach && needContext)   _fireAIAnalysis(iv);
     else if (needCoach)             _fireAIAnalysis(iv, 'coach');
