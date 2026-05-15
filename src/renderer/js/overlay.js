@@ -40,7 +40,7 @@ function _dismissCue() {
     cueEl.className = 'cue-text';
     cueEl.textContent = '';
     dismissTimer = null;
-  }, 600);
+  }, 3000);
 }
 
 // Escape: dismiss current cue — does NOT exit full-screen

@@ -38,32 +38,25 @@ body.fading-out {
   font-size: 40px;
   font-weight: 700;
   line-height: 1.2;
-  color: #ffffff;
+  color: #7C3AFF;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
   letter-spacing: -0.5px;
-  text-shadow:
-    0 0 40px rgba(124, 58, 255, 0.5),
-    0 2px 16px rgba(0, 0, 0, 0.95);
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.85);
   opacity: 0;
   pointer-events: none;
 }
 
 .cue-text.visible {
-  animation: cue-in 0.4s ease forwards;
+  opacity: 1;
 }
 
 .cue-text.fading {
-  animation: cue-out 0.6s ease forwards;
-}
-
-@keyframes cue-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  animation: cue-out 3s ease forwards;
 }
 
 @keyframes cue-out {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to   { opacity: 0; transform: translateY(-6px) scale(1.02); }
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
 /* ── Full-screen Ear: top-right HUD ─────────────────────────────────────── */
