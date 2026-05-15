@@ -21,8 +21,6 @@ let earRoleType  = '';
 
 // Per-session tracking (reset on each ear:fs-start)
 let earCuesGiven   = new Set();  // which cue types have fired this session
-let earLastCueTime = 0;          // timestamp of most recent cue
-const EAR_MIN_CUE_INTERVAL_MS = 150 * 1000; // 2.5 minutes between any two cues
 
 // Filler word detection (rolling 60-second window)
 let earFillerBuf  = []; // [{ time: ms }] — one entry per filler detected
@@ -72,10 +70,8 @@ function _fireCue(type, text) {
   if (!earFsActive || earFsPaused)      return false;
   if (earCuesGiven.has(type))           return false;
   const now = Date.now();
-  if (now - earLastCueTime < EAR_MIN_CUE_INTERVAL_MS) return false;
 
   earCuesGiven.add(type);
-  earLastCueTime = now;
 
   const overlay = getOverlayWindow();
   if (overlay && !overlay.isDestroyed()) {
@@ -93,7 +89,6 @@ function setEarFsMode(active, roleType) {
     earFsPaused          = false;
     earRoleType          = roleType || '';
     earCuesGiven         = new Set();
-    earLastCueTime       = 0;
     earFillerBuf         = [];
     earFillerCueCount    = 0;
     earFillerCueLastTime = 0;
@@ -125,11 +120,9 @@ function _analyzeEarUtterance(text) {
   earFillerBuf = earFillerBuf.filter(f => now - f.time <= EAR_FILLER_WINDOW_MS);
   if (earFillerBuf.length >= EAR_FILLER_THRESHOLD
       && earFillerCueCount    < FILLER_CUE_MAX
-      && now - earFillerCueLastTime >= FILLER_CUE_COOLDOWN_MS
-      && now - earLastCueTime       >= EAR_MIN_CUE_INTERVAL_MS) {
+      && now - earFillerCueLastTime >= FILLER_CUE_COOLDOWN_MS) {
     earFillerCueCount++;
     earFillerCueLastTime = now;
-    earLastCueTime       = now;
     const overlay = getOverlayWindow();
     if (overlay && !overlay.isDestroyed()) {
       overlay.webContents.send('overlay:coaching-cue', 'Watch the filler words');
