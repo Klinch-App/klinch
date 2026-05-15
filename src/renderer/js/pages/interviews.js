@@ -657,20 +657,6 @@ window.InterviewsPage = (() => {
       return idx >= 0 ? text.slice(idx) : text;
     }
 
-    let prepAnalysisHtml;
-    if (coachCached) {
-      prepAnalysisHtml = `
-         <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>`;
-    } else {
-      prepAnalysisHtml = `<div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
-           <div class="ivdp-skel-line w80"></div>
-           <div class="ivdp-skel-line w60"></div>
-           <div class="ivdp-skel-line w70"></div>
-           <div class="ivdp-skel-line w50"></div>
-         </div>
-         <div class="ivdp-ai-body" id="ivdp-coach-body" style="display:none"></div>`;
-    }
-
     const contextHtml = contextCached
       ? `<div class="ivdp-ai-body">${_renderMarkdownish(_stripIntro(contextCached))}</div>`
       : `<div class="ivdp-ai-skeleton" id="ivdp-context-skeleton">
@@ -763,7 +749,7 @@ window.InterviewsPage = (() => {
 
       <div class="ivdp-section">
         <div class="ivdp-section-header"><div class="ivdp-section-title">Prep Notes</div></div>
-        <div class="ivdp-section-body">${prepAnalysisHtml}${contextHtml}</div>
+        <div class="ivdp-section-body">${contextHtml}</div>
       </div>
 
       <div class="ivdp-iw-modal-backdrop" id="ivdp-iw-modal" style="display:none">
@@ -1072,15 +1058,28 @@ window.InterviewsPage = (() => {
   }
 
   function _processMarkdownBody(text) {
+    // Tables: convert pipe-delimited blocks before any other processing
+    text = text.replace(/((?:\|[^\n]+\|\n?)+)/g, block => {
+      const lines = block.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) return block;
+      const sepIdx = lines.findIndex(l => /^\|[\s\-|:]+\|$/.test(l));
+      if (sepIdx < 1) return block;
+      const cells = l => l.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const thead = cells(lines[sepIdx - 1]).map(c => `<th>${c}</th>`).join('');
+      const tbody = lines.slice(sepIdx + 1)
+        .map(l => `<tr>${cells(l).map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+      return `<table class="ivdp-md-table"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
+    });
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+?)\*/g,  '<em>$1</em>')
       .replace(/^# (.+)$/gm,    '<h3 class="ivdp-ai-h3">$1</h3>')
       .replace(/^### (.+)$/gm,  '<h4 class="ivdp-ai-h4">$1</h4>')
       .replace(/^---$/gm,       '<hr class="ivdp-ai-hr">')
       .replace(/^- (.+)$/gm,    '<li>$1</li>')
       .replace(/(<li>.*<\/li>(\n|$))+/g, m => `<ul>${m}</ul>`)
       .replace(/\n\n/g, '</p><p>')
-      .replace(/^(?!<[hul])(.+)$/gm, (m, p) => p ? `<p>${p}</p>` : '')
+      .replace(/^(?!<[hult])(.+)$/gm, (m, p) => p ? `<p>${p}</p>` : '')
       .replace(/<p><\/p>/g, '');
   }
 
