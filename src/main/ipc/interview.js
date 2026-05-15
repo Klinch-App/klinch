@@ -28,6 +28,12 @@ const EAR_MIN_CUE_INTERVAL_MS = 150 * 1000; // 2.5 minutes between any two cues
 let earFillerBuf  = []; // [{ time: ms }] — one entry per filler detected
 const EAR_FILLER_WINDOW_MS  = 60 * 1000;
 const EAR_FILLER_THRESHOLD  = 5;
+
+// Filler cue — multi-fire tracking (max 3 per session, 5-min cooldown between fires)
+let earFillerCueCount    = 0;
+let earFillerCueLastTime = 0;
+const FILLER_CUE_COOLDOWN_MS = 300 * 1000;
+const FILLER_CUE_MAX         = 3;
 // "so" — chunk-initial only (^so\b); "right" — excludes "that's right", "right now/here/away"
 const EAR_FILLER_RE = /^so\b|\b(um|uh)\b|\blike\b|\byou know\b|\bbasically\b|(?<!that's )\bright\b(?! now| here| away)/gi;
 
@@ -89,6 +95,8 @@ function setEarFsMode(active, roleType) {
     earCuesGiven         = new Set();
     earLastCueTime       = 0;
     earFillerBuf         = [];
+    earFillerCueCount    = 0;
+    earFillerCueLastTime = 0;
     earWpmBuf            = [];
     earAnswerWords       = 0;
     earAnswerStartTime   = null;
@@ -115,8 +123,18 @@ function _analyzeEarUtterance(text) {
     earFillerBuf.push({ time: now });
   }
   earFillerBuf = earFillerBuf.filter(f => now - f.time <= EAR_FILLER_WINDOW_MS);
-  if (earFillerBuf.length >= EAR_FILLER_THRESHOLD) {
-    _fireCue('fillers', 'Watch the filler words');
+  if (earFillerBuf.length >= EAR_FILLER_THRESHOLD
+      && earFillerCueCount    < FILLER_CUE_MAX
+      && now - earFillerCueLastTime >= FILLER_CUE_COOLDOWN_MS
+      && now - earLastCueTime       >= EAR_MIN_CUE_INTERVAL_MS) {
+    earFillerCueCount++;
+    earFillerCueLastTime = now;
+    earLastCueTime       = now;
+    const overlay = getOverlayWindow();
+    if (overlay && !overlay.isDestroyed()) {
+      overlay.webContents.send('overlay:coaching-cue', 'Watch the filler words');
+    }
+    console.log(`[ear] cue fired: [fillers] "Watch the filler words" (${earFillerCueCount}/${FILLER_CUE_MAX})`);
   }
 
   // ── WPM detection ──────────────────────────────────────────────────────────
