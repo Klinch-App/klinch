@@ -27,8 +27,9 @@ const EAR_MIN_CUE_INTERVAL_MS = 150 * 1000; // 2.5 minutes between any two cues
 // Filler word detection (rolling 60-second window)
 let earFillerBuf  = []; // [{ time: ms }] — one entry per filler detected
 const EAR_FILLER_WINDOW_MS  = 60 * 1000;
-const EAR_FILLER_THRESHOLD  = 3;
-const EAR_FILLER_RE         = /\b(um|uh)\b|\blike\b|\byou know\b/gi;
+const EAR_FILLER_THRESHOLD  = 5;
+// "so" — chunk-initial only (^so\b); "right" — excludes "that's right", "right now/here/away"
+const EAR_FILLER_RE = /^so\b|\b(um|uh)\b|\blike\b|\byou know\b|\bbasically\b|(?<!that's )\bright\b(?! now| here| away)/gi;
 
 // WPM detection (rolling 30-second window)
 let earWpmBuf = []; // [{ words: n, time: ms }]
