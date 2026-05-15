@@ -135,6 +135,7 @@ function _analyzeEarUtterance(text) {
   const gap = earLastUtteranceTime ? now - earLastUtteranceTime : Infinity;
 
   if (gap > EAR_ANSWER_GAP_MS) {
+    earCuesGiven.delete('too-long');
     earAnswerWords     = 0;
     earAnswerStartTime = now;
   }
