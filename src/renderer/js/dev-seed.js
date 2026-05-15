@@ -800,7 +800,7 @@ Cold calling, email copywriting, objection handling, territory management`,
       name: 'Vantage',
       domain: 'vantage.io',
       primary_domain: 'vantage.io',
-      logo_url: _logo('vantage.io'),
+      logo_url: null,
       brand_color: '#7C3AED',
       screenshot_mode: true,
     };
@@ -808,23 +808,23 @@ Cold calling, email copywriting, objection handling, territory management`,
       name: 'Nexus',
       domain: 'nexus.ai',
       primary_domain: 'nexus.ai',
-      logo_url: _logo('nexus.ai'),
+      logo_url: null,
       brand_color: '#0D9488',
       screenshot_mode: true,
     };
     const MERIDIAN = {
       name: 'Meridian',
-      domain: 'meridian.co',
-      primary_domain: 'meridian.co',
-      logo_url: _logo('meridian.co'),
-      brand_color: '#DB2777',
+      domain: 'meridian.io',
+      primary_domain: 'meridian.io',
+      logo_url: null,
+      brand_color: '#6C5CE7',
       screenshot_mode: true,
     };
     const CRESTLINE = {
       name: 'Crestline',
       domain: 'crestline.com',
       primary_domain: 'crestline.com',
-      logo_url: _logo('crestline.com'),
+      logo_url: null,
       brand_color: '#2563EB',
       screenshot_mode: true,
     };
@@ -910,69 +910,14 @@ Cold calling, email copywriting, objection handling, territory management`,
         id: IV_MD,
         process_id: AP_MD,
         company: MERIDIAN,
-        interviewers: [{ name: 'Sofia Reyes', title: 'VP of Sales', linkedin_url: '' }],
-        jd: {
-          raw: 'Meridian is hiring SDRs who are passionate about the sales process itself...',
-          structured: {
-            role_title: 'Sales Development Representative',
-            responsibilities: [
-              'Own top-of-funnel pipeline for the Mid-Market segment',
-              'Run multi-channel outbound sequences using Meridian platform',
-              'Research target accounts and personalize messaging',
-              'Partner with AEs to develop territory strategy',
-            ],
-            must_have: [
-              '1+ year of B2B sales or SDR experience',
-              'Demonstrated ability to exceed activity-based targets',
-              'Strong prospecting and research skills',
-            ],
-            nice_to_have: [
-              'Experience selling sales tech or SaaS',
-              'Familiarity with sales engagement platforms',
-            ],
-            location: 'Austin, TX or Remote',
-            salary: '$58,000–$68,000 base + commission',
-          },
-        },
-        stage: 'Final Round',
+        interviewers: [{ name: 'Patrick Dunn', title: 'VP of Sales', linkedin_url: '' }],
+        jd: null,
+        stage: 'VP Sales Final Round',
         format: 'Virtual',
-        scheduled_at: _scheduledAt(-5, 11),
-        status: 'completed',
-        coach_score: 78,
-        created_at: _daysFromNow(-14),
-        sessions: (function() {
-          var base = Date.now() - 5 * 86400000;
-          return [{
-            session_id: _uuid(),
-            created_at: _daysFromNow(-5),
-            transcript: [
-              { speaker: 'you', text: "I've been an SDR for about eighteen months, focused on mid-market outbound at a SaaS company. I manage roughly three hundred accounts and run multi-channel sequences across phone, email, and LinkedIn. Last quarter I came in at a hundred and twelve percent of my meeting quota.", timestamp: base },
-              { speaker: 'you', text: "My prospecting process starts the night before. I'll pick five to ten accounts, look for a specific trigger — a funding announcement, a new hire, a job posting that signals a pain point — and write a first email from scratch based on that. I don't do fully automated sequences for tier-one accounts.", timestamp: base + 240000 },
-              { speaker: 'you', text: "The objection I've gotten best at handling is 'we already have something for that.' I used to push back on it. Now I treat it as a question — I'll say 'totally fair, what made you choose it?' and that almost always opens a real conversation about whether it's actually working.", timestamp: base + 540000 },
-              { speaker: 'you', text: "I actually use Meridian at my current company, which I think is a real advantage here. I'm not learning the platform, I'm selling something I use every day. The pitch I'd lead with centers on the sequence analytics layer — being able to see what's resonating and iterate quickly.", timestamp: base + 840000 },
-              { speaker: 'you', text: "I missed target in January. It was my first month with an expanded territory and I tried to work all three hundred accounts instead of tiering aggressively. I was spread too thin and my quality dropped. I went back to basics — built a tight tier-one list of forty accounts — and recovered to a hundred and six percent by March.", timestamp: base + 1200000 },
-              { speaker: 'you', text: "What gets me into this work is the craft side. I spend time reading about messaging, listening to my own call recordings, testing subject lines. And Meridian's product is built for people who think that way — the premise is that if you pay attention to the data, you can get better faster.", timestamp: base + 1500000 },
-              { speaker: 'you', text: "It comes down to three things. Product belief — I use Meridian and I think it's the best tool in its category. The culture around data and iteration. And the AE path — I want to make that transition in twelve to eighteen months.", timestamp: base + 1800000 },
-              { speaker: 'you', text: "My main question is around what separates the SDRs who transition to AE quickly from those who stay in role longer than expected. Not just that the path exists — I want to understand what the top performers actually do differently in their first year.", timestamp: base + 2100000 },
-            ],
-            feedback: '**Answer Quality**\nAnswers were consistently structured and grounded in specifics — the 112% quota figure, the January miss with a clear recovery arc, and genuine product knowledge all added real credibility. The objection-handling answer was the standout: it moved cleanly from old behavior to new insight to outcome. The "why Meridian" answer showed authentic platform familiarity rather than rehearsed talking points.\n\n**Delivery**\nPacing was confident throughout with minimal filler. The failure story came across as well-rehearsed in the right sense: clear, self-aware, no over-hedging.\n\n**Answer Length**\nMost answers ran 45–75 seconds, which is the right range for a final round. The closing "why Meridian" answer could have used one more concrete example — it ended a beat early.\n\n**Top Improvements**\n• Quantify the "why Meridian" answer — tie one data point to a personal result with the platform.\n• Turn your close into a dialogue — after expressing enthusiasm, add a micro-ask: "Is there anything from today that would give you pause?"\n• Lead the failure answer with the outcome first, then explain why.',
-          }];
-        })(),
-        coach_analysis: `SCORE: 78
-**What You Did Well**
-• Opened with a strong hook referencing Meridian's recent product expansion — showed genuine preparation
-• Handled the "we already have a tool for that" objection confidently with a pivot to ROI
-• Closed clearly by proposing a specific next step rather than leaving it open
-
-**What to Improve**
-• Over-explained the product feature set early — lead with pain, not features
-• Used filler phrases ("to be honest", "at the end of the day") repeatedly — record yourself and eliminate them
-• When asked about failure, pivoted away too quickly — interviewers want to see self-awareness
-
-**For Your Next Interview**
-• Prepare a tight 30-second "why SDR, why this company" answer and practice it until it feels natural
-• Have two quantified stories ready: one pipeline win, one objection you turned around
-• Ask at least one question that shows you've researched the team specifically, not just the company`,
+        scheduled_at: _scheduledAt(5, 10),
+        status: 'pending',
+        nudge_sent: false,
+        created_at: _daysFromNow(-5),
       },
       {
         id: IV_CL,
@@ -1059,24 +1004,92 @@ Cold calling, email copywriting, objection handling, territory management`,
         process_id: AP_MD,
         company: MERIDIAN,
         interviewers: [{ name: 'Chloe Huang', title: 'Talent Recruiter', linkedin_url: '' }],
-        jd: null,
+        jd: {
+          raw: 'Meridian is hiring SDRs to join our mid-market outbound sales team...',
+          structured: {
+            role_title: 'Sales Development Representative',
+            responsibilities: [
+              'Own outbound pipeline generation for mid-market accounts',
+              'Run multi-channel sequences via phone, email, and LinkedIn',
+              'Qualify inbound leads and route to Account Executives',
+              'Maintain CRM hygiene and hit monthly meeting quotas',
+            ],
+            must_have: [
+              '1+ year of B2B sales or SDR experience',
+              'Comfortable with high-volume outreach',
+              'Strong written and verbal communication',
+            ],
+            nice_to_have: [
+              'Experience with sales engagement platforms',
+              'SaaS industry background',
+            ],
+            location: 'Remote (US)',
+            salary: '$52,000–$62,000 base + commission',
+          },
+        },
         stage: 'Recruiter Screen',
         format: 'Phone Screen',
         scheduled_at: _scheduledAt(-18, 10),
         status: 'completed',
+        coach_score: 62,
         created_at: _daysFromNow(-28),
+        coach_analysis: `SCORE: 62
+**What You Did Well**
+• Opened with a clear background summary and connected your experience to the role without rambling
+• Showed real process awareness in the tiering answer — company first, person second, trigger third is the right framework
+
+**What to Improve**
+• Every performance claim was vague — "hit quota most months" without a number does nothing for your credibility
+• Filler words ("like," "basically," "you know") appeared in nearly every answer and concentrated worst in the "why Meridian" response
+• The "why Meridian" answer described the category, not the company — you could have given that answer about any sales tool
+
+**For Your Next Interview**
+• Anchor your opening with one hard number: quota attainment %, meetings set per week, or pipeline generated last quarter
+• Rewrite your "why this company" answer with a specific detail about Meridian's product or market position
+• Record a mock answer and count your filler words — awareness alone usually cuts them by half`,
+        sessions: (function() {
+          var base = Date.now() - 18 * 86400000;
+          return [{
+            session_id: _uuid(),
+            created_at: _daysFromNow(-18),
+            transcript: [
+              { speaker: 'you', text: "I've been an SDR for about fourteen months, doing mostly outbound for a B2B SaaS company. I manage around two hundred and fifty accounts across phone, email, and LinkedIn. I've been pretty consistent — like, I've hit quota most months, which I think shows I can handle the volume.", timestamp: base },
+              { speaker: 'you', text: "My process is basically to tier my accounts first. Tier one gets full personalization — I'll research the company, find a trigger, write a custom first line. The other tiers get more templated sequences. It helps me focus on the accounts that are most likely to convert.", timestamp: base + 180000 },
+              { speaker: 'you', text: "When someone says they're not interested, I try not to just accept it. I'll ask something like, 'is it timing or just not a priority right now?' — that helps me figure out if it's worth staying in the sequence or pulling them out.", timestamp: base + 420000 },
+              { speaker: 'you', text: "I'm interested in Meridian because, you know, it seems like a really solid company in the sales tech space and I think the product is genuinely useful. I've heard good things about the culture too.", timestamp: base + 660000 },
+              { speaker: 'you', text: "In two years I want to be an Account Executive. I think doing the SDR role the right way — actually learning the process, not just hitting activity numbers — is the best foundation for that transition.", timestamp: base + 900000 },
+            ],
+            feedback: '**Answer Quality**\nYour background answer covered the basics but leaned on vague language — "pretty consistent" and "most months" are hedges that dilute the credibility you\'re trying to build. The tiering answer showed real process awareness but needed one more sentence to explain what outcomes that discipline drives.\n\n**Delivery**\nFiller words ("like," "basically," "you know") appeared in nearly every answer and were most pronounced in the "why Meridian" response. The objection-handling answer was cleaner — that\'s the register to aim for across the board.\n\n**Answer Length**\nLength was appropriate for a recruiter screen, but several answers ended before making a clear point. The tiering answer in particular needed 15 more seconds to land properly.\n\n**Clarity & Confidence**\nYou sounded comfortable but not compelling. Confidence comes through specifics — the absence of any quota figure or meetings-set count left most answers feeling unanchored.\n\n**Top Improvements**\n• Add one hard number to your opening — quota attainment % or meetings set per week changes the first impression immediately.\n• Rewrite your "why Meridian" answer with something specific about the company, not the category.\n• Do one recorded mock before your next screen and count your filler words — the number will surprise you.',
+          }];
+        })(),
       },
       {
         id: IV_MD_HM,
         process_id: AP_MD,
         company: MERIDIAN,
-        interviewers: [{ name: 'Raj Patel', title: 'Hiring Manager', linkedin_url: '' }],
+        interviewers: [{ name: 'Raj Patel', title: 'SDR Manager', linkedin_url: '' }],
         jd: null,
         stage: 'Hiring Manager',
         format: 'Virtual',
         scheduled_at: _scheduledAt(-11, 14),
         status: 'completed',
+        coach_score: 74,
         created_at: _daysFromNow(-20),
+        coach_analysis: `SCORE: 74
+**What You Did Well**
+• Came in with noticeably fewer filler words than the recruiter screen — the preparation showed
+• The prospecting process answer was specific and structured, with a clear before/after on tiering methodology
+• Closed with a strong question about what separates top performers — interviewers remember good closing questions
+
+**What to Improve**
+• The failure story pivoted to the recovery too quickly — spend more time on what went wrong before showing the fix
+• "I'm a fast learner" appeared twice without any evidence; replace it with one specific example of something you learned and applied fast
+• Answer length crept up on longer questions; aim to finish by 75 seconds
+
+**For Your Next Interview**
+• For the VP round, have a tight 45-second version of your prospecting process ready — senior leaders want the headline, not every step
+• Have one concrete metric ready for every story: meetings set, reply rate, pipeline influenced, anything measurable
+• Prepare two questions that show you've researched Meridian's market position, not just the role`,
       },
       {
         id: IV_CL_RS,
@@ -1119,7 +1132,7 @@ Cold calling, email copywriting, objection handling, territory management`,
         company_name: MERIDIAN.name,
         company_logo: MERIDIAN.logo_url,
         role_title: 'Sales Development Representative',
-        status: 'Offer Received',
+        status: 'Active',
         notes: null,
         created_at: _daysFromNow(-28),
         updated_at: _daysFromNow(-5),
@@ -1171,12 +1184,12 @@ Cold calling, email copywriting, objection handling, territory management`,
         company: MERIDIAN,
         role_title: 'Sales Development Representative',
         date_applied: _dateStr(-28),
-        date_first_interview: _dateStr(-5),
+        date_first_interview: _dateStr(-18),
         status: 'Interviewing',
-        current_stage: 'Final Round',
+        current_stage: 'VP Sales Final Round',
         jd: null,
         notes: '',
-        interview_ids: [IV_MD],
+        interview_ids: [IV_MD_RS, IV_MD_HM, IV_MD],
         created_at: _daysFromNow(-28),
         updated_at: _daysFromNow(-5),
       },
@@ -1263,30 +1276,7 @@ Cold calling, email copywriting, objection handling, territory management`,
         ],
         summary: 'Solid SDR profile with relevant tool experience and clear vertical focus. The main gap is quantification — nearly every bullet describes activity rather than outcomes. Adding 2–3 hard numbers (meetings set, pipeline generated, quota %) would move this from a 68 to an 85+ overnight.',
       },
-      role_fits: {
-        [IV_MD]: {
-          keyword_match_score: 76,
-          keywords_present: [
-            'Meridian (platform experience)',
-            'B2B SaaS outbound prospecting',
-            'Multi-channel sequences (phone/email/LinkedIn)',
-            'LinkedIn Sales Navigator',
-            'Salesforce CRM',
-          ],
-          keywords_missing: [
-            'Quota attainment % (not stated)',
-            'Pipeline dollar amount missing',
-            'Mid-market/enterprise account scope',
-            'Sales engagement analytics experience',
-          ],
-          talking_points: [
-            'Lead with the 112% quota figure immediately — Meridian is metrics-driven and this is your strongest credibility signal',
-            'Emphasize you\'re a current Meridian user: you\'re selling a tool you rely on every day, not one you learned for the interview',
-            'Connect your tiering methodology directly to their JD language around "Mid-Market segment" and "territory strategy"',
-          ],
-          strategic_summary: 'Solid alignment on core SDR skills, platform familiarity, and prospecting methodology. The main gap is quantification — the JD calls for "demonstrated ability to exceed activity-based targets" but the resume describes activities rather than outcomes. Going into this Final Round, anchor every answer in a specific number: meetings set, conversion rate, or quota attainment percentage.',
-        },
-      },
+      role_fits: {},
       created_at: _daysFromNow(-10),
       updated_at: _daysFromNow(-10),
     };
@@ -1443,7 +1433,7 @@ Cold calling, email copywriting, objection handling, territory management`,
         { question: 'How do you stay motivated during a tough prospecting week?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-20) },
         { question: 'How do you research a prospect before reaching out?', interview_stage: 'Hiring Manager', created_at: _daysFromNow(-12) },
       ],
-      'meridian.co': [
+      'meridian.io': [
         { question: 'How do you use data and analytics to iterate on your outreach sequences?', interview_stage: 'Final Round', created_at: _daysFromNow(-90) },
         { question: 'Give me an example of a creative prospecting approach that got a reply when nothing else had.', interview_stage: 'Final Round', created_at: _daysFromNow(-75) },
         { question: 'How do you handle the "send me some information" brush-off on a cold call?', interview_stage: 'Final Round', created_at: _daysFromNow(-60) },
