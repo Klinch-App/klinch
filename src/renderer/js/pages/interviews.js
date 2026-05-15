@@ -630,13 +630,16 @@ window.InterviewsPage = (() => {
 
     // ── Section 5: Coach (Ear session feedback only) ─────────────────────────
     const earFeedback = latestSession?.feedback?.trim() || null;
+    const scoreHtml   = iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : '<div id="ivdp-coach-score"></div>';
     let coachHtml;
     if (earFeedback) {
       coachHtml = `
+        ${scoreHtml}
         <div class="ivdp-ai-body">${_renderMarkdownish(earFeedback)}</div>
         ${transcriptHtml}`;
     } else {
       coachHtml = `
+        ${scoreHtml}
         <div class="ivdp-empty-state">
           <div class="ivdp-empty-sub">Complete an Ear session to see your coaching feedback.</div>
         </div>
@@ -649,12 +652,11 @@ window.InterviewsPage = (() => {
 
     let prepAnalysisHtml;
     if (coachCached) {
-      prepAnalysisHtml = `${iv.coach_score != null ? _buildCoachScoreHtml(iv.coach_score) : ''}
+      prepAnalysisHtml = `
          <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
          <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`;
     } else {
-      prepAnalysisHtml = `<div id="ivdp-coach-score"></div>
-         <div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
+      prepAnalysisHtml = `<div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
            <div class="ivdp-skel-line w80"></div>
            <div class="ivdp-skel-line w60"></div>
            <div class="ivdp-skel-line w70"></div>
