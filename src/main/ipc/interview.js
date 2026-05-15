@@ -112,13 +112,31 @@ function _analyzeEarUtterance(text) {
   const words = text.trim().split(/\s+/);
   const wc    = words.length;
 
-  // ── Filler word detection ───────────────────────────────────────────────────
+  // ── Answer length tracking (highest priority) ─────────────────────────────
+  const gap = earLastUtteranceTime ? now - earLastUtteranceTime : Infinity;
+
+  if (gap > EAR_ANSWER_GAP_MS) {
+    earCuesGiven.delete('too-long');
+    earAnswerWords     = 0;
+    earAnswerStartTime = now;
+  }
+
+  if (!earAnswerStartTime) earAnswerStartTime = now;
+  earAnswerWords += wc;
+  earLastUtteranceTime = now;
+
+  const answerDurationS = (now - earAnswerStartTime) / 1000;
+  const tooLongFired = answerDurationS >= EAR_ANSWER_TOO_LONG_S
+    && _fireCue('too-long', _roleCue('too-long'));
+
+  // ── Filler word detection (skipped if Answer Too Long fired this utterance) ─
   const fillers = text.match(EAR_FILLER_RE) || [];
   for (let i = 0; i < fillers.length; i++) {
     earFillerBuf.push({ time: now });
   }
   earFillerBuf = earFillerBuf.filter(f => now - f.time <= EAR_FILLER_WINDOW_MS);
-  if (earFillerBuf.length >= EAR_FILLER_THRESHOLD
+  if (!tooLongFired
+      && earFillerBuf.length >= EAR_FILLER_THRESHOLD
       && earFillerCueCount    < FILLER_CUE_MAX
       && now - earFillerCueLastTime >= FILLER_CUE_COOLDOWN_MS) {
     earFillerCueCount++;
@@ -140,24 +158,6 @@ function _analyzeEarUtterance(text) {
     if (wpm >= EAR_WPM_THRESHOLD) {
       _fireCue('fast', 'Slow down');
     }
-  }
-
-  // ── Answer length tracking ─────────────────────────────────────────────────
-  const gap = earLastUtteranceTime ? now - earLastUtteranceTime : Infinity;
-
-  if (gap > EAR_ANSWER_GAP_MS) {
-    earCuesGiven.delete('too-long');
-    earAnswerWords     = 0;
-    earAnswerStartTime = now;
-  }
-
-  if (!earAnswerStartTime) earAnswerStartTime = now;
-  earAnswerWords += wc;
-  earLastUtteranceTime = now;
-
-  const answerDurationS = (now - earAnswerStartTime) / 1000;
-  if (answerDurationS >= EAR_ANSWER_TOO_LONG_S) {
-    _fireCue('too-long', _roleCue('too-long'));
   }
 }
 
