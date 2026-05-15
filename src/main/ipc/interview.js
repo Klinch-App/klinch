@@ -24,11 +24,6 @@ let earCuesGiven   = new Set();  // which cue types have fired this session
 let earLastCueTime = 0;          // timestamp of most recent cue
 const EAR_MIN_CUE_INTERVAL_MS = 150 * 1000; // 2.5 minutes between any two cues
 
-let earSessionStartTime  = null;
-let earSmileTimer        = null;
-let earSitUpTimer        = null;
-let earCameraTimer       = null;
-
 // Filler word detection (rolling 60-second window)
 let earFillerBuf  = []; // [{ time: ms }] — one entry per filler detected
 const EAR_FILLER_WINDOW_MS  = 60 * 1000;
@@ -44,9 +39,8 @@ const EAR_WPM_THRESHOLD = 175; // words per minute
 let earAnswerWords     = 0;
 let earAnswerStartTime = null;
 let earLastUtteranceTime = null;
-const EAR_ANSWER_GAP_MS        = 8000;  // gap > 8s = new answer started
-const EAR_ANSWER_TOO_LONG_S    = 180;   // 3 minutes
-const EAR_ANSWER_TOO_SHORT_W   = 15;    // < 15 words
+const EAR_ANSWER_GAP_MS     = 8000;  // gap > 8s = new answer started
+const EAR_ANSWER_TOO_LONG_S = 180;   // 3 minutes
 
 // ── Role-aware cue text ───────────────────────────────────────────────────────
 
@@ -61,12 +55,6 @@ function _roleCue(cueType) {
     if (se)  return 'Land the point — avoid over-explaining';
     if (ae)  return 'Start wrapping up — let them respond';
     return 'Start wrapping up';
-  }
-  if (cueType === 'pause') {
-    if (sdr) return 'Take a strategic pause';
-    if (se)  return 'Pause — let the point sink in';
-    if (ae)  return 'Pause and let that land';
-    return 'Take a pause';
   }
   return null;
 }
@@ -90,60 +78,25 @@ function _fireCue(type, text) {
   return true;
 }
 
-// Timer-based cue with retry if interval not met yet
-function _scheduleTimerCue(type, text, delayMs) {
-  return setTimeout(() => {
-    if (!earFsActive) return;
-    if (!_fireCue(type, text)) {
-      // If interval blocked, retry after the remaining cooldown
-      const remaining = EAR_MIN_CUE_INTERVAL_MS - (Date.now() - earLastCueTime);
-      _scheduleTimerCue(type, text, Math.max(remaining + 2000, 15000));
-    }
-  }, delayMs);
-}
-
 // ── Full-screen Ear mode API (called by main.js) ──────────────────────────────
 
 function setEarFsMode(active, roleType) {
   if (active) {
-    earFsActive         = true;
-    earFsPaused         = false;
-    earRoleType         = roleType || '';
-    earCuesGiven        = new Set();
-    earLastCueTime      = 0;
-    earSessionStartTime = null; // set on first utterance so timers are session-accurate
-    earFillerBuf        = [];
-    earWpmBuf           = [];
-    earAnswerWords      = 0;
-    earAnswerStartTime  = null;
+    earFsActive          = true;
+    earFsPaused          = false;
+    earRoleType          = roleType || '';
+    earCuesGiven         = new Set();
+    earLastCueTime       = 0;
+    earFillerBuf         = [];
+    earWpmBuf            = [];
+    earAnswerWords       = 0;
+    earAnswerStartTime   = null;
     earLastUtteranceTime = null;
-    _clearEarTimers();
   } else {
-    earFsActive  = false;
-    earFsPaused  = false;
-    earRoleType  = '';
-    _clearEarTimers();
+    earFsActive = false;
+    earFsPaused = false;
+    earRoleType = '';
   }
-}
-
-function _clearEarTimers() {
-  if (earSmileTimer)  { clearTimeout(earSmileTimer);  earSmileTimer  = null; }
-  if (earSitUpTimer)  { clearTimeout(earSitUpTimer);  earSitUpTimer  = null; }
-  if (earCameraTimer) { clearTimeout(earCameraTimer); earCameraTimer = null; }
-}
-
-function _startEarTimers() {
-  // Smile: fires between 90–110 s into the session
-  const smileDelay = (90 + Math.floor(Math.random() * 20)) * 1000;
-  earSmileTimer = _scheduleTimerCue('smile', "Don't forget to smile", smileDelay);
-
-  // Sit up straight: fires between 5–8 minutes
-  const sitDelay = (300 + Math.floor(Math.random() * 180)) * 1000;
-  earSitUpTimer = _scheduleTimerCue('sit-up', 'Sit up straight', sitDelay);
-
-  // Look at camera: fires around 9–11 minutes
-  const cameraDelay = (540 + Math.floor(Math.random() * 120)) * 1000;
-  earCameraTimer = _scheduleTimerCue('camera', 'Look at the camera', cameraDelay);
 }
 
 // ── Speech analysis per utterance ─────────────────────────────────────────────
@@ -155,18 +108,11 @@ function _analyzeEarUtterance(text) {
   const words = text.trim().split(/\s+/);
   const wc    = words.length;
 
-  // Start session clock on first utterance
-  if (!earSessionStartTime) {
-    earSessionStartTime = now;
-    _startEarTimers();
-  }
-
   // ── Filler word detection ───────────────────────────────────────────────────
   const fillers = text.match(EAR_FILLER_RE) || [];
   for (let i = 0; i < fillers.length; i++) {
     earFillerBuf.push({ time: now });
   }
-  // Prune old entries outside window
   earFillerBuf = earFillerBuf.filter(f => now - f.time <= EAR_FILLER_WINDOW_MS);
   if (earFillerBuf.length >= EAR_FILLER_THRESHOLD) {
     _fireCue('fillers', 'Watch the filler words');
@@ -176,7 +122,7 @@ function _analyzeEarUtterance(text) {
   earWpmBuf.push({ words: wc, time: now });
   earWpmBuf = earWpmBuf.filter(e => now - e.time <= EAR_WPM_WINDOW_MS);
   const windowSecs = Math.min((now - earWpmBuf[0].time) / 1000, EAR_WPM_WINDOW_MS / 1000);
-  if (windowSecs >= 10) { // need at least 10s of data
+  if (windowSecs >= 10) {
     const totalWords = earWpmBuf.reduce((s, e) => s + e.words, 0);
     const wpm = (totalWords / windowSecs) * 60;
     if (wpm >= EAR_WPM_THRESHOLD) {
@@ -188,11 +134,6 @@ function _analyzeEarUtterance(text) {
   const gap = earLastUtteranceTime ? now - earLastUtteranceTime : Infinity;
 
   if (gap > EAR_ANSWER_GAP_MS) {
-    // New answer started — check if previous answer was too short
-    if (earAnswerWords > 0 && earAnswerWords < EAR_ANSWER_TOO_SHORT_W) {
-      _fireCue('short', 'Can you add more detail?');
-    }
-    // Reset answer tracking
     earAnswerWords     = 0;
     earAnswerStartTime = now;
   }
@@ -201,18 +142,9 @@ function _analyzeEarUtterance(text) {
   earAnswerWords += wc;
   earLastUtteranceTime = now;
 
-  // Too long: check if current answer has exceeded 3 minutes
   const answerDurationS = (now - earAnswerStartTime) / 1000;
   if (answerDurationS >= EAR_ANSWER_TOO_LONG_S) {
     _fireCue('too-long', _roleCue('too-long'));
-  }
-
-  // ── Strategic pause: suggest once after 8+ minutes at a natural break ───────
-  if (!earCuesGiven.has('pause') && earSessionStartTime) {
-    const sessionMinutes = (now - earSessionStartTime) / 60000;
-    if (sessionMinutes >= 8) {
-      _fireCue('pause', _roleCue('pause'));
-    }
   }
 }
 
