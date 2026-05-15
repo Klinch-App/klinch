@@ -650,11 +650,17 @@ window.InterviewsPage = (() => {
     const coachCached   = iv.coach_analysis  || null;
     const contextCached = iv.context_summary || null;
 
+    // Strip any intro text (heading + subtitle) before the first ## section
+    function _stripIntro(text) {
+      if (!text) return text;
+      const idx = text.search(/^## /m);
+      return idx >= 0 ? text.slice(idx) : text;
+    }
+
     let prepAnalysisHtml;
     if (coachCached) {
       prepAnalysisHtml = `
-         <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>
-         <button class="ivdp-refresh-btn" data-action="refresh-coach" data-iv-id="${iv.id}">↺ Refresh</button>`;
+         <div class="ivdp-ai-body">${_renderMarkdownish(coachCached)}</div>`;
     } else {
       prepAnalysisHtml = `<div class="ivdp-ai-skeleton" id="ivdp-coach-skeleton">
            <div class="ivdp-skel-line w80"></div>
@@ -662,21 +668,18 @@ window.InterviewsPage = (() => {
            <div class="ivdp-skel-line w70"></div>
            <div class="ivdp-skel-line w50"></div>
          </div>
-         <div class="ivdp-ai-body" id="ivdp-coach-body" style="display:none"></div>
-         <button class="ivdp-refresh-btn" id="ivdp-coach-refresh" data-action="refresh-coach" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
+         <div class="ivdp-ai-body" id="ivdp-coach-body" style="display:none"></div>`;
     }
 
     const contextHtml = contextCached
-      ? `<div class="ivdp-ai-body">${_renderMarkdownish(contextCached)}</div>
-         <button class="ivdp-refresh-btn" data-action="refresh-context" data-iv-id="${iv.id}">↺ Refresh</button>`
+      ? `<div class="ivdp-ai-body">${_renderMarkdownish(_stripIntro(contextCached))}</div>`
       : `<div class="ivdp-ai-skeleton" id="ivdp-context-skeleton">
            <div class="ivdp-skel-line w80"></div>
            <div class="ivdp-skel-line w60"></div>
            <div class="ivdp-skel-line w70"></div>
            <div class="ivdp-skel-line w50"></div>
          </div>
-         <div class="ivdp-ai-body" id="ivdp-context-body" style="display:none"></div>
-         <button class="ivdp-refresh-btn" id="ivdp-context-refresh" data-action="refresh-context" data-iv-id="${iv.id}" style="display:none">↺ Refresh</button>`;
+         <div class="ivdp-ai-body" id="ivdp-context-body" style="display:none"></div>`;
 
     // ── Assemble ───────────────────────────────────────────────────────────────
     const container = _el('iv-detail-page');
