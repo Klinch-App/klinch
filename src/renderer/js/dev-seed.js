@@ -1469,6 +1469,21 @@ Cold calling, email copywriting, objection handling, territory management`,
       additional_context: '[screenshot data]',
     };
 
+    // ── Company cache (pre-seed overview for screenshot companies) ────────────────
+    const companyCache = {
+      'meridian.io': {
+        org: {
+          short_description: 'Meridian is a sales engagement platform built for mid-market outbound teams. The platform combines multi-channel sequencing, AI-assisted personalization, and real-time analytics to help SDRs book more meetings with less guesswork. Meridian is used by over 600 revenue teams across North America and Europe.',
+          industry: 'Software',
+          estimated_num_employees: 280,
+          founded_year: 2018,
+          city: 'Austin',
+          state: 'TX',
+          country: 'US',
+        },
+      },
+    };
+
     // ── Write to localStorage ─────────────────────────────────────────────────────
     localStorage.setItem('klinch_setup_complete',           '1');
     localStorage.setItem('klinch_profile',                  JSON.stringify(profile));
@@ -1479,6 +1494,7 @@ Cold calling, email copywriting, objection handling, territory management`,
     localStorage.setItem('klinch_dry_runs',                 JSON.stringify([dryRunNexus, dryRunVantage, dryRunCrestline]));
     localStorage.setItem('klinch_settings',                 JSON.stringify(settings));
     localStorage.setItem('klinch_dev_community_questions',  JSON.stringify(communityQuestions));
+    localStorage.setItem('klinch_company_cache',            JSON.stringify(companyCache));
   }
 
 })();

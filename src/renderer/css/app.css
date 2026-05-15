@@ -3991,6 +3991,14 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 .ivdp-ai-body ul   { padding-left: 18px; margin-bottom: 10px; }
 .ivdp-ai-body li   { margin-bottom: 4px; }
 .ivdp-ai-body strong { color: var(--text-primary); }
+.ivdp-ai-body em { font-style: italic; }
+
+.ivdp-md-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
+.ivdp-md-table th, .ivdp-md-table td { padding: 6px 10px; text-align: left; border: 1px solid var(--border-subtle); }
+.ivdp-md-table th { background: var(--bg-elevated); color: var(--text-primary); font-weight: 600; }
+.ivdp-md-table td { color: var(--text-secondary); }
+.ivdp-md-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
 .ivdp-ai-h3 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
 .ivdp-ai-h4 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 10px 0 4px; }
 .ivdp-ai-hr { border: none; border-top: 1px solid var(--border-subtle); margin: 10px 0; }
