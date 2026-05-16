@@ -4,11 +4,16 @@
 
 window.STT = (() => {
   // ── State ──────────────────────────────────────────────────────────────────
-  let wsMic         = null;
-  let recMic        = null;
-  let streamMic     = null;
-  let sessionActive = false;
-  let candidateBuf  = '';
+  let wsMic              = null;
+  let recMic             = null;
+  let streamMic          = null;
+  let sessionActive      = false;
+  let candidateBuf       = '';
+  let _reconnectAttempts = 0;
+  let _reconnectDeadline = 0;
+
+  const RECONNECT_MAX_ATTEMPTS = 5;
+  const RECONNECT_MAX_MS       = 30_000;
 
   const DG_BASE =
     'wss://api.deepgram.com/v1/listen' +
@@ -94,7 +99,10 @@ window.STT = (() => {
         if (recMic && recMic.state !== 'inactive') recMic.stop();
         recMic = null;
 
-        if (sessionActive) setTimeout(() => reconnect(), 1000);
+        if (sessionActive) {
+          if (_reconnectDeadline === 0) _reconnectDeadline = Date.now() + RECONNECT_MAX_MS;
+          setTimeout(() => reconnect(), 1000);
+        }
       };
 
       socket.onmessage = (e) => {
@@ -127,9 +135,22 @@ window.STT = (() => {
 
   async function reconnect() {
     if (!sessionActive || !streamMic) return;
-    console.log('[stt] reconnecting (candidate)…');
+
+    _reconnectAttempts++;
+    const gaveUp = _reconnectAttempts > RECONNECT_MAX_ATTEMPTS
+                || Date.now() > _reconnectDeadline;
+
+    if (gaveUp) {
+      console.error(`[stt] giving up reconnect after ${_reconnectAttempts - 1} attempts`);
+      window.klinch.send('stt:reconnect-failed');
+      return;
+    }
+
+    console.log(`[stt] reconnecting (candidate) — attempt ${_reconnectAttempts}/${RECONNECT_MAX_ATTEMPTS}…`);
     try {
       wsMic = await connectDeepgram(streamMic);
+      _reconnectAttempts = 0;
+      _reconnectDeadline = 0;
     } catch (err) {
       console.error('[stt] reconnect failed (candidate):', err.message);
       setTimeout(() => reconnect(), 2000);
@@ -177,8 +198,10 @@ window.STT = (() => {
       return false;
     }
 
-    sessionActive = true;
-    candidateBuf  = '';
+    sessionActive      = true;
+    candidateBuf       = '';
+    _reconnectAttempts = 0;
+    _reconnectDeadline = 0;
 
     document.dispatchEvent(new CustomEvent('stt:device-status', { detail: 'mic' }));
     await window.klinch.invoke('interview:start', { interviewId: interviewId || null });
