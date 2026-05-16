@@ -168,12 +168,16 @@ function init() {
 
   // General claude:coach handler (used by Interview Detail page and Dry Run)
   ipcMain.handle('claude:coach', async (_e, { model, max_tokens, messages, system }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30_000);
     try {
       const params = { model, max_tokens, messages };
       if (system) params.system = system;
-      const result = await client.messages.create(params);
+      const result = await client.messages.create(params, { signal: controller.signal });
+      clearTimeout(timer);
       return result;
     } catch (err) {
+      clearTimeout(timer);
       console.error('[claude:coach]', err.message);
       return { content: [{ type: 'text', text: `Error: ${err.message}` }] };
     }

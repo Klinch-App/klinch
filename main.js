@@ -261,6 +261,12 @@ function _fadeOutOverlay(callback) {
   setTimeout(() => callback?.(), 500);
 }
 
+// Main window → Deepgram gave up reconnecting
+ipcMain.on('stt:reconnect-failed', () => {
+  overlayWindow?.webContents.send('ear:fs-session-state', 'error');
+  overlayWindow?.webContents.send('overlay:coaching-cue', 'Transcription lost — please restart.');
+});
+
 // Overlay → user clicked Start button
 ipcMain.on('ear:fs-start', () => {
   mainWindow?.webContents.send('ear:do-start', { interviewId: earFsInterviewId });

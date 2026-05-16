@@ -70,9 +70,10 @@ window.klinch.on('ear:fs-fade-out', () => {
 
 window.klinch.on('ear:fs-session-state', (state) => {
   dot.className = 'ear-fs-dot';
-  if (state === 'recording') dot.classList.add('recording');
+  if (state === 'recording')    dot.classList.add('recording');
   else if (state === 'paused')  dot.classList.add('paused');
   else if (state === 'stopped') dot.classList.add('stopped');
+  else if (state === 'error')   dot.classList.add('error');
   // 'idle' leaves dot dim (no class added)
 });
 

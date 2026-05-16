@@ -267,7 +267,18 @@ function registerHandlers() {
 
     console.log('[interview] generating feedback for transcript:\n', formatted);
     let feedback = '';
-    await streamFeedback(formatted, (token) => { feedback += token; });
+    const feedbackTimeoutMs = 30_000;
+    try {
+      await Promise.race([
+        streamFeedback(formatted, (token) => { feedback += token; }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('feedback timed out after 30s')), feedbackTimeoutMs)
+        ),
+      ]);
+    } catch (err) {
+      console.error('[interview] streamFeedback failed:', err.message);
+      return 'Feedback could not be generated — the request timed out or failed. Please try again.';
+    }
 
     const sessionRecord = {
       session_id:   randomUUID(),
