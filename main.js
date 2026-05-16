@@ -265,6 +265,7 @@ function _fadeOutOverlay(callback) {
 ipcMain.on('ear:fs-start', () => {
   mainWindow?.webContents.send('ear:do-start', { interviewId: earFsInterviewId });
   overlayWindow?.webContents.send('ear:fs-session-state', 'recording');
+  interview.startSessionTimer();
 });
 
 // Overlay → user clicked Pause
@@ -281,6 +282,11 @@ ipcMain.on('ear:fs-resume', () => {
 
 // Overlay → user confirmed End session
 ipcMain.on('ear:fs-end', (_event, { markComplete } = {}) => {
+  _doEndEarSession({ markComplete: !!markComplete });
+});
+
+function _doEndEarSession({ markComplete = false } = {}) {
+  interview.stopSessionTimer();
   overlayWindow?.webContents.send('ear:fs-session-state', 'stopped');
 
   // Stop STT and generate feedback in main window before fading out
@@ -297,12 +303,13 @@ ipcMain.on('ear:fs-end', (_event, { markComplete } = {}) => {
     if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.close();
     mainWindow?.show();
     mainWindow?.focus();
-    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId, markComplete: !!markComplete });
+    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId, markComplete });
   });
-});
+}
 
 // Overlay → user clicked Minimize (no exit modal, session may continue from dashboard)
 ipcMain.on('ear:fs-minimize', () => {
+  interview.stopSessionTimer();
   earFsReturnTo    = null;
   earFsInterviewId = null;
   interview.setEarFsMode(false, '');
@@ -398,6 +405,7 @@ app.whenReady().then(() => {
     mainWindow: () => mainWindow,
     overlayWindow: () => overlayWindow,
   });
+  interview.setForceEndCallback(() => _doEndEarSession({ markComplete: false }));
 
   // Cmd+Return: manual trigger — tells stt.js to flush current buffer immediately
   // Registered globally (not just when overlay is open) so it works any time a session is active

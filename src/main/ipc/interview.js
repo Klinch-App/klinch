@@ -44,6 +44,14 @@ let earLastUtteranceTime = null;
 const EAR_ANSWER_GAP_MS     = 8000;  // gap > 8s = new answer started
 const EAR_ANSWER_TOO_LONG_S = 180;   // 3 minutes
 
+// Session time cap
+let earSessionStartTime    = null;
+let earSessionTimerInterval = null;
+let _onSessionTimeout      = null;
+const EAR_WARN1_MS = 55 * 60 * 1000;
+const EAR_WARN2_MS = 57 * 60 * 1000;
+const EAR_MAX_MS   = 60 * 60 * 1000;
+
 // ── Role-aware cue text ───────────────────────────────────────────────────────
 
 function _roleCue(cueType) {
@@ -78,6 +86,47 @@ function _fireCue(type, text) {
   return true;
 }
 
+// ── Session time cap ──────────────────────────────────────────────────────────
+
+function startSessionTimer() {
+  earSessionStartTime     = Date.now();
+  earSessionTimerInterval = setInterval(_checkSessionTime, 1000);
+}
+
+function stopSessionTimer() {
+  clearInterval(earSessionTimerInterval);
+  earSessionTimerInterval = null;
+  earSessionStartTime     = null;
+}
+
+function setForceEndCallback(fn) {
+  _onSessionTimeout = fn;
+}
+
+function _checkSessionTime() {
+  if (!earSessionStartTime) return;
+  const elapsed = Date.now() - earSessionStartTime;
+
+  if (elapsed >= EAR_MAX_MS) {
+    stopSessionTimer();
+    _onSessionTimeout?.();
+    return;
+  }
+
+  const overlay = getOverlayWindow();
+  if (!overlay || overlay.isDestroyed()) return;
+
+  if (elapsed >= EAR_WARN2_MS && !earCuesGiven.has('time-warn-57')) {
+    earCuesGiven.add('time-warn-57');
+    overlay.webContents.send('overlay:coaching-cue', '3 minutes remaining');
+    console.log('[ear] session time warning: 3 minutes remaining');
+  } else if (elapsed >= EAR_WARN1_MS && !earCuesGiven.has('time-warn-55')) {
+    earCuesGiven.add('time-warn-55');
+    overlay.webContents.send('overlay:coaching-cue', 'Session ending in 5 minutes');
+    console.log('[ear] session time warning: 5 minutes remaining');
+  }
+}
+
 // ── Full-screen Ear mode API (called by main.js) ──────────────────────────────
 
 function setEarFsMode(active, roleType) {
@@ -97,6 +146,7 @@ function setEarFsMode(active, roleType) {
     earFsActive = false;
     earFsPaused = false;
     earRoleType = '';
+    stopSessionTimer();
   }
 }
 
@@ -320,4 +370,4 @@ async function contributeToPool(transcript, interviewRecord) {
 }
 
 
-module.exports = { init, setEarFsMode };
+module.exports = { init, setEarFsMode, startSessionTimer, stopSessionTimer, setForceEndCallback };

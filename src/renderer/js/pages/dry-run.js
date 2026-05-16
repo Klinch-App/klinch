@@ -18,6 +18,11 @@ window.DryRunPage = (() => {
   let _retryQueue      = null;
 
   const MAX_QUESTIONS = 10;
+  const DR_WARN1_S    = 720;   // 12 min
+  const DR_WARN2_S    = 780;   // 13 min
+  const DR_MAX_S      = 900;   // 15 min
+
+  let _timeWarnShown = new Set();
   const STAGES = [
     { name: 'Recruiter Screen', tip: 'High-level fit questions — your background, motivation for SDR, comp expectations, and availability. Light on process detail.' },
     { name: 'Hiring Manager',   tip: 'Focused on your sales process, past quota attainment, how you handle objections, and day-to-day methodology.' },
@@ -206,13 +211,29 @@ window.DryRunPage = (() => {
   // ── Timer ──────────────────────────────────────────────────────────────────
 
   function _startTimer() {
-    _timerSeconds = 0;
+    _timerSeconds  = 0;
+    _timeWarnShown = new Set();
     _timerInterval = setInterval(() => {
       _timerSeconds++;
       const m = Math.floor(_timerSeconds / 60);
       const s = String(_timerSeconds % 60).padStart(2, '0');
       const el = _el('dr-timer');
       if (el) el.textContent = `${m}:${s}`;
+
+      if (_timerSeconds >= DR_MAX_S) {
+        _stopTimer();
+        _endSession();
+        return;
+      }
+
+      const warnEl = _el('dr-time-warning');
+      if (_timerSeconds >= DR_WARN2_S && !_timeWarnShown.has(2)) {
+        _timeWarnShown.add(2);
+        if (warnEl) { warnEl.textContent = '2 minutes remaining'; warnEl.style.display = ''; }
+      } else if (_timerSeconds >= DR_WARN1_S && !_timeWarnShown.has(1)) {
+        _timeWarnShown.add(1);
+        if (warnEl) { warnEl.textContent = 'Session ending in 3 minutes'; warnEl.style.display = ''; }
+      }
     }, 1000);
   }
 
@@ -445,6 +466,7 @@ window.DryRunPage = (() => {
       <div class="dr-session">
         <div class="dr-session-topbar">
           <div class="dr-timer" id="dr-timer">0:00</div>
+          <div class="dr-time-warning" id="dr-time-warning" style="display:none"></div>
           <div class="dr-progress" id="dr-progress">
             <div class="dr-q-label">Question</div>
             <div class="dr-q-nums"><span id="dr-q-current">1</span><span class="dr-q-sep"> / ${MAX_QUESTIONS}</span></div>

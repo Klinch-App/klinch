@@ -4731,6 +4731,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .dr-session-topbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4746,6 +4747,15 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .dr-topbar-spacer { width: 60px; }
+
+.dr-time-warning {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-warning, #f59e0b);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
 
 .dr-progress {
   display: flex;
