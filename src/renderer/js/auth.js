@@ -81,24 +81,27 @@ window.Auth = (() => {
     const submitBtn = document.getElementById('auth-submit-btn');
     const heading   = document.getElementById('auth-heading');
     const pwConfirm = document.getElementById('auth-password-confirm-wrap');
-    const ageWrap   = document.getElementById('auth-age-wrap');
-    const ageBox    = document.getElementById('auth-age-checkbox');
+    const ageWrap     = document.getElementById('auth-age-wrap');
+    const ageBox      = document.getElementById('auth-age-checkbox');
+    const privacyWrap = document.getElementById('auth-privacy-wrap');
 
     if (_mode === 'signup') {
-      if (heading)   heading.textContent   = 'Save your work.';
-      if (submitBtn) submitBtn.textContent = 'Create Account';
-      if (toggleMsg) toggleMsg.textContent = 'Already have an account?';
-      if (toggleBtn) toggleBtn.textContent = 'Log In';
-      if (pwConfirm) pwConfirm.style.display = '';
-      if (ageWrap)   ageWrap.style.display   = '';
+      if (heading)      heading.textContent       = 'Save your work.';
+      if (submitBtn)    submitBtn.textContent      = 'Create Account';
+      if (toggleMsg)    toggleMsg.textContent      = 'Already have an account?';
+      if (toggleBtn)    toggleBtn.textContent      = 'Log In';
+      if (pwConfirm)    pwConfirm.style.display    = '';
+      if (ageWrap)      ageWrap.style.display      = '';
+      if (privacyWrap)  privacyWrap.style.display  = '';
     } else {
-      if (heading)   heading.textContent   = 'Welcome back.';
-      if (submitBtn) submitBtn.textContent = 'Log In';
-      if (toggleMsg) toggleMsg.textContent = "Don't have an account?";
-      if (toggleBtn) toggleBtn.textContent = 'Sign Up';
-      if (pwConfirm) pwConfirm.style.display = 'none';
-      if (ageWrap)   ageWrap.style.display   = 'none';
-      if (ageBox)    ageBox.checked          = false;
+      if (heading)      heading.textContent       = 'Welcome back.';
+      if (submitBtn)    submitBtn.textContent      = 'Log In';
+      if (toggleMsg)    toggleMsg.textContent      = "Don't have an account?";
+      if (toggleBtn)    toggleBtn.textContent      = 'Sign Up';
+      if (pwConfirm)    pwConfirm.style.display    = 'none';
+      if (ageWrap)      ageWrap.style.display      = 'none';
+      if (ageBox)       ageBox.checked             = false;
+      if (privacyWrap)  privacyWrap.style.display  = 'none';
     }
     _setError('');
   }
@@ -110,6 +113,11 @@ window.Auth = (() => {
     document.getElementById('auth-mode-toggle')?.addEventListener('click', () => {
       _mode = _mode === 'signup' ? 'login' : 'signup';
       _updateMode();
+    });
+
+    // Privacy Policy link
+    document.getElementById('auth-privacy-link')?.addEventListener('click', () => {
+      window.klinch.invoke('shell:open-external', { url: 'https://tryklinch.com/privacy' });
     });
 
     // Google OAuth
