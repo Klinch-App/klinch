@@ -130,12 +130,13 @@ window.ResumePage = (() => {
       placements.push({ bubble, top });
     });
 
-    // Sort by document order, then stack from the top — numbered badges keep the association
+    // Align each bubble to its mark's Y position; push down only to avoid overlap.
     placements.sort((a, b) => a.top - b.top);
-    let cursor = 28; // matches .rs-text-view padding-top
+    let cursor = 0;
     for (const p of placements) {
-      p.bubble.style.top = cursor + 'px';
-      cursor += p.bubble.offsetHeight + 12;
+      const pos = Math.max(p.top, cursor);
+      p.bubble.style.top = pos + 'px';
+      cursor = pos + p.bubble.offsetHeight + 12;
     }
 
     // Ensure the wrap is tall enough for both columns
