@@ -115,7 +115,10 @@ window.Auth = (() => {
       _updateMode();
     });
 
-    // Privacy Policy link
+    // Terms / Privacy links
+    document.getElementById('auth-terms-link')?.addEventListener('click', () => {
+      window.klinch.invoke('shell:open-external', { url: 'https://tryklinch.com/terms' });
+    });
     document.getElementById('auth-privacy-link')?.addEventListener('click', () => {
       window.klinch.invoke('shell:open-external', { url: 'https://tryklinch.com/privacy' });
     });
