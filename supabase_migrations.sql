@@ -65,3 +65,45 @@ ALTER TABLE public.profiles
 --        body    := '{}'::jsonb
 --      ) as request_id; $$
 -- );
+
+-- ── ON DELETE CASCADE for all user-owned tables ───────────────────────────────
+--
+-- The original schema created these FKs without ON DELETE CASCADE, so deleting
+-- a user via auth.admin.deleteUser() orphans their data rows instead of removing
+-- them. This migration drops each auto-named FK constraint and re-adds it with
+-- ON DELETE CASCADE. Safe to run multiple times (DROP IF EXISTS + named ADD).
+--
+-- Already handled (no action needed):
+--   processes.user_id      — created with CASCADE in the SESSION 1 migration above
+--   interviews.process_id  — created with CASCADE in the SESSION 1 migration above
+--   community_questions    — no user_id column; skip
+
+-- profiles (id is both PK and FK to auth.users)
+ALTER TABLE public.profiles
+  DROP CONSTRAINT IF EXISTS profiles_id_fkey,
+  ADD CONSTRAINT profiles_id_fkey
+    FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- interviews
+ALTER TABLE public.interviews
+  DROP CONSTRAINT IF EXISTS interviews_user_id_fkey,
+  ADD CONSTRAINT interviews_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- applications
+ALTER TABLE public.applications
+  DROP CONSTRAINT IF EXISTS applications_user_id_fkey,
+  ADD CONSTRAINT applications_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- dry_runs
+ALTER TABLE public.dry_runs
+  DROP CONSTRAINT IF EXISTS dry_runs_user_id_fkey,
+  ADD CONSTRAINT dry_runs_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- resumes (user_id is both PK and FK to auth.users)
+ALTER TABLE public.resumes
+  DROP CONSTRAINT IF EXISTS resumes_user_id_fkey,
+  ADD CONSTRAINT resumes_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
