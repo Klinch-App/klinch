@@ -4178,7 +4178,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   text-align: left;
   transition: background 0.1s;
 }
-.rs-ann-bubble-header:hover { background: rgba(255,255,255,0.025); }
+.rs-ann-bubble:hover { border-color: var(--primary); background: var(--bg-hover); }
 
 .rs-ann-num {
   flex-shrink: 0;

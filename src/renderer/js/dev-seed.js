@@ -502,32 +502,22 @@ CRM: Salesforce, HubSpot | Sequencing: Outreach, Salesloft | Research: LinkedIn 
 Cold calling, email copywriting, objection handling, territory management`,
 
       analysis: {
-        overall_score: 68,
+        overall_score: 65,
         dimensions: {
           impact:            62,
           clarity:           74,
           ats_compatibility: 65,
           sdr_relevance:     82,
+          ai_fluency:        38,
         },
-        highlights: [
-          {
-            id: 'h1',
-            original: 'Responsible for making outbound calls and sending emails to prospects in the SMB segment',
-            reason: 'Passive construction with no outcome. Replace the verb and add a metric — how many calls, what conversion rate, what did it generate?',
-            rewrite: null,
-          },
-          {
-            id: 'h2',
-            original: 'Helped the team exceed quarterly targets for two consecutive quarters',
-            reason: '"Helped" buries your contribution. Own it. What was the target? What did you personally contribute?',
-            rewrite: null,
-          },
-          {
-            id: 'h3',
-            original: 'Managed a territory of 300+ named accounts across the retail vertical',
-            reason: 'Good specificity on territory size. Add a pipeline or meeting metric to show what you did with those accounts.',
-            rewrite: null,
-          },
+        ai_fluency_callouts: [
+          'No AI tools are mentioned — name specific tools like Claude, ChatGPT, or Gemini',
+          'AI outcomes lack metrics — add a line like "used AI prospecting tools to reduce list-building time by 40%"',
+        ],
+        annotations: [
+          { id: 'h1', quote: 'Responsible for making outbound calls and sending emails to prospects in the SMB segment', comment: 'Passive construction with no outcome. Replace the verb and add a metric — how many calls, what conversion rate, what did it generate?', severity: 'high' },
+          { id: 'h2', quote: 'Helped the team exceed quarterly targets for two consecutive quarters', comment: '"Helped" buries your contribution. Own it. What was the target? What did you personally contribute?', severity: 'high' },
+          { id: 'h3', quote: 'Managed a territory of 300+ named accounts across the retail vertical', comment: 'Good specificity on territory size. Add a pipeline or meeting metric to show what you did with those accounts.', severity: 'medium' },
         ],
         ats_tips: [
           'Add "SDR" or "Sales Development Representative" to your title line — ATS systems scan for exact job title matches',
@@ -1241,32 +1231,22 @@ CRM: Salesforce, HubSpot | Sequencing: Meridian, Outreach, Salesloft | Research:
 Cold calling, email copywriting, objection handling, territory management`,
 
       analysis: {
-        overall_score: 68,
+        overall_score: 65,
         dimensions: {
           impact:            62,
           clarity:           74,
           ats_compatibility: 65,
           sdr_relevance:     82,
+          ai_fluency:        38,
         },
-        highlights: [
-          {
-            id: 'h1',
-            original: 'Responsible for making outbound calls and sending emails to prospects in the SMB segment',
-            reason: 'Passive construction with no outcome. Replace the verb and add a metric — how many calls, what conversion rate, what did it generate?',
-            rewrite: null,
-          },
-          {
-            id: 'h2',
-            original: 'Helped the team exceed quarterly targets for two consecutive quarters',
-            reason: '"Helped" buries your contribution. Own it. What was the target? What did you personally contribute?',
-            rewrite: null,
-          },
-          {
-            id: 'h3',
-            original: 'Managed a territory of 300+ named accounts across the retail vertical',
-            reason: 'Good specificity on territory size. Add a pipeline or meeting metric to show what you did with those accounts.',
-            rewrite: null,
-          },
+        ai_fluency_callouts: [
+          'No AI tools are mentioned — name specific tools like Claude, ChatGPT, or Gemini',
+          'AI outcomes lack metrics — add a line like "used AI prospecting tools to reduce list-building time by 40%"',
+        ],
+        annotations: [
+          { id: 'h1', quote: 'Responsible for making outbound calls and sending emails to prospects in the SMB segment', comment: 'Passive construction with no outcome. Replace the verb and add a metric — how many calls, what conversion rate, what did it generate?', severity: 'high' },
+          { id: 'h2', quote: 'Helped the team exceed quarterly targets for two consecutive quarters', comment: '"Helped" buries your contribution. Own it. What was the target? What did you personally contribute?', severity: 'high' },
+          { id: 'h3', quote: 'Managed a territory of 300+ named accounts across the retail vertical', comment: 'Good specificity on territory size. Add a pipeline or meeting metric to show what you did with those accounts.', severity: 'medium' },
         ],
         ats_tips: [
           'Add "SDR" or "Sales Development Representative" to your title line — ATS systems scan for exact job title matches',
