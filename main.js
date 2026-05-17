@@ -10,8 +10,19 @@ const supabaseApi    = require('./src/main/api/supabase');
 const authIpc        = require('./src/main/ipc/auth');
 const syncIpc        = require('./src/main/ipc/sync');
 
-// Register klinch:// custom protocol for OAuth callback (must happen before app ready)
-app.setAsDefaultProtocolClient('klinch');
+// Register klinch:// custom protocol for OAuth callback (must happen before app ready).
+// In dev (electron .), process.defaultApp is true and macOS needs the full exec path
+// + argv so it knows how to relaunch the dev binary when a klinch:// URL is opened.
+if (process.defaultApp && process.argv.length >= 2) {
+  app.setAsDefaultProtocolClient('klinch', process.execPath, [path.resolve(process.argv[1])]);
+} else {
+  app.setAsDefaultProtocolClient('klinch');
+}
+
+// Enforce single instance so the second-instance event fires reliably on all platforms.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
 
 nativeTheme.themeSource = 'dark';
 
@@ -64,10 +75,6 @@ function createMainWindow() {
   };
   ipcMain.once('app:initialized', _show);
   setTimeout(_show, 4000); // Safety fallback
-
-  if (process.argv.includes('--dev')) {
-    mainWindow.webContents.openDevTools();
-  }
 
   mainWindow.on('closed', () => { mainWindow = null; });
 }
@@ -434,9 +441,22 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// macOS: handle klinch:// custom-protocol redirect from OAuth browser flow
+// macOS: klinch:// URL opened while app is already running
 app.on('open-url', (event, url) => {
   event.preventDefault();
+  console.log('[open-url] received:', url);
   authIpc.handleAuthCallback(url);
+});
+
+// Windows/Linux + macOS dev mode: klinch:// URL causes a second instance launch;
+// the URL arrives in commandLine args, not open-url.
+app.on('second-instance', (_event, commandLine) => {
+  const url = commandLine.find(arg => arg.startsWith('klinch://'));
+  console.log('[second-instance] commandLine:', commandLine, '→ url:', url);
+  if (url) authIpc.handleAuthCallback(url);
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
 });
 
