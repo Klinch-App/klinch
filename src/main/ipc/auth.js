@@ -120,10 +120,19 @@ function init({ mainWindow }) {
   ipcMain.handle('auth:sign-in-google', async () => {
     const { supabase } = supabaseApi;
     if (!supabase) return _unavailable();
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return { ok: false, error: 'Google OAuth not configured — add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to .env' };
+    }
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: REDIRECT_URL, skipBrowserRedirect: true },
+        options: {
+          redirectTo:          REDIRECT_URL,
+          skipBrowserRedirect: true,
+          queryParams: {
+            client_id: process.env.GOOGLE_CLIENT_ID,
+          },
+        },
       });
       if (error) return { ok: false, error: error.message };
       if (data?.url) {
