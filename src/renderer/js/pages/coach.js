@@ -897,9 +897,16 @@ window.CoachPage = (() => {
       const date    = iv.scheduled_at
         ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
+      const initial  = (iv.company?.name || '?')[0].toUpperCase();
+      const logoId   = `co-score-logo-${_esc(iv.id)}`;
+      const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
+        ? `<img src="${_esc(iv.company.logo_url)}" class="coach-outreach-logo-img" alt="" data-fb="${logoId}">
+           <div class="coach-outreach-logo-fb" data-fb-id="${logoId}" ${window._fbHiddenStyle(iv.company)}>${initial}</div>`
+        : `<div class="coach-outreach-logo-fb"${window._fbStyle(iv.company)}>${initial}</div>`;
       return `
         <div class="coach-score-card" data-iv-id="${_esc(iv.id)}">
           ${window.buildDonut(iv.coach_score, 52)}
+          <div class="coach-outreach-logo-wrap">${logoHtml}</div>
           <div class="coach-score-card-meta">
             <div class="coach-score-card-company">${company}</div>
             <div class="coach-score-card-stage">${stage}</div>
@@ -917,6 +924,8 @@ window.CoachPage = (() => {
         </div>
       </div>
       <div class="coach-scores-grid">${cards}</div>`;
+
+    if (window.wireImgFallbacks) window.wireImgFallbacks(list);
 
     list.querySelectorAll('.coach-score-card[data-iv-id]').forEach(card => {
       card.addEventListener('click', () => {
