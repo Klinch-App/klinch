@@ -6881,6 +6881,26 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   border-color: rgba(139,92,246,0.35);
   color: var(--primary);
 }
+.coach-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(139,92,246,0.18);
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.coach-outreach-filter-btn:not(.active) .coach-filter-count {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
 
 /* ── Outreach card enhancements ──────────────────────────────────────────────── */
 

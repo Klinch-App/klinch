@@ -268,12 +268,8 @@ window.CoachPage = (() => {
   function _updateNavBadge(activeCards) {
     const badge = document.getElementById('coach-nav-badge');
     if (!badge) return;
-    let count = 0;
-    for (const card of activeCards) {
-      const due = _computeDueLabel(card.iv, card.type);
-      if (due?.cls === 'due-overdue' || due?.cls === 'due-today') count++;
-    }
-    badge.textContent  = count;
+    const count = activeCards.length;
+    badge.textContent   = count;
     badge.style.display = count > 0 ? '' : 'none';
   }
 
@@ -297,10 +293,12 @@ window.CoachPage = (() => {
 
     const filtered = allCards.filter(c => c.type === _outreachFilter);
 
+    const postCount = allCards.filter(c => c.type === 'post').length;
+    const preCount  = allCards.filter(c => c.type === 'pre').length;
     const filterBar = `
       <div class="coach-outreach-filter-bar">
-        <button class="coach-outreach-filter-btn${_outreachFilter === 'post' ? ' active' : ''}" data-filter="post">Post-Interview</button>
-        <button class="coach-outreach-filter-btn${_outreachFilter === 'pre'  ? ' active' : ''}" data-filter="pre">Pre-Interview</button>
+        <button class="coach-outreach-filter-btn${_outreachFilter === 'post' ? ' active' : ''}" data-filter="post">Post-Interview${postCount ? ` <span class="coach-filter-count">${postCount}</span>` : ''}</button>
+        <button class="coach-outreach-filter-btn${_outreachFilter === 'pre'  ? ' active' : ''}" data-filter="pre">Pre-Interview${preCount  ? ` <span class="coach-filter-count">${preCount}</span>`  : ''}</button>
       </div>`;
 
     let activeHtml;
