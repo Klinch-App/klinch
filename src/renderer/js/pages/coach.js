@@ -1,8 +1,5 @@
 window.CoachPage = (() => {
 
-  const CACHE_KEY = 'klinch_coach_actions';
-  const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
-
   function _esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -105,31 +102,158 @@ window.CoachPage = (() => {
 
   // ── Section 2 — Outreach Actions ─────────────────────────────────────────
 
-  const OUTREACH_CACHE_KEY = 'klinch_coach_outreach';
+  const OUTREACH_CACHE_KEY   = 'klinch_coach_outreach';
+  const TRANSCRIPT_MAX_CHARS = 8000; // ≈2 000 tokens
 
-  function _getOutreachInterviews() {
-    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-    const now        = new Date();
+  let _outreachFilter        = null;  // 'pre' | 'post'
+  let _outreachFilterUserSet = false;
+  let _cardMap               = new Map(); // cacheKey → card descriptor
+
+  function _truncateTranscript(sessions, maxChars) {
+    const lines = [];
+    for (const s of (sessions || [])) {
+      for (const entry of (s.transcript || [])) {
+        lines.push(`${entry.speaker || 'Speaker'}: ${entry.text || ''}`);
+      }
+    }
+    const full = lines.join('\n');
+    return full.length > maxChars ? full.slice(0, maxChars) + '…' : full;
+  }
+
+  function _computeDueLabel(iv, type) {
+    const now = new Date();
+    if (type === 'post') {
+      const completedAt = iv.completed_at
+        ? new Date(iv.completed_at)
+        : (iv.scheduled_at ? new Date(iv.scheduled_at) : null);
+      if (!completedAt) return null;
+      const dueAt  = new Date(completedAt.getTime() + 24 * 60 * 60 * 1000);
+      const diffMs = dueAt - now;
+      if (diffMs <= 0) {
+        const d = Math.floor(-diffMs / 86400000);
+        return d < 1 ? { label: 'Overdue', cls: 'due-overdue' } : { label: `Overdue ${d}d`, cls: 'due-overdue' };
+      }
+      const hrs = Math.ceil(diffMs / 3600000);
+      return hrs <= 1
+        ? { label: 'Due now',        cls: 'due-today' }
+        : { label: `Due in ${hrs}h`, cls: 'due-today' };
+    } else {
+      const scheduledAt = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
+      if (!scheduledAt) return null;
+      const diffMs = scheduledAt - now;
+      if (diffMs <= 0) return null;
+      const hrs  = Math.floor(diffMs / 3600000);
+      const days = Math.floor(hrs / 24);
+      if (hrs < 24)  return { label: `In ${hrs}h`,  cls: 'due-today' };
+      if (days === 1) return { label: 'Tomorrow',    cls: '' };
+      return { label: `In ${days}d`, cls: '' };
+    }
+  }
+
+  function _buildSystemPrompt(type, stage, hasTranscript) {
+    const s = (stage || '').toLowerCase();
+    const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
+      ? 'This was an early-stage recruiter screen. Keep the tone warm, enthusiastic, and brief.'
+      : s.includes('panel') || s.includes('loop') || s.includes('onsite')
+        ? "This was a panel or onsite interview. Express appreciation for everyone's time and mention the collaborative energy."
+        : 'This was a hiring manager interview. Be confident, personal, and forward-looking.';
+
+    const ref = hasTranscript
+      ? 'Reference at least one specific detail from the transcript excerpt below — a topic discussed, a question asked, or a moment of connection — to make the message feel genuinely personal. Do not fabricate details not present in the transcript.'
+      : `No transcript is available. ${stageTone} Write a warm message that sounds personal without fabricating details.`;
+
+    return type === 'post'
+      ? `You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. ${ref} Return the message text only, no greeting, no sign-off, no preamble.`
+      : `You are an expert career coach. Write a warm, brief LinkedIn connection request ahead of a job interview. ${ref} Return the message text only, no greeting, no sign-off, no preamble.`;
+  }
+
+  function _buildEmailSystemPrompt(type, stage, hasTranscript) {
+    const s = (stage || '').toLowerCase();
+    const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
+      ? 'This was an early-stage recruiter screen. Keep the tone warm, brief, and enthusiastic.'
+      : s.includes('panel') || s.includes('loop') || s.includes('onsite')
+        ? "This was a panel or onsite interview. Express genuine appreciation for everyone's time."
+        : 'This was a hiring manager interview. Be confident, specific, and forward-looking.';
+
+    const ref = hasTranscript
+      ? 'Reference at least one specific detail from the transcript excerpt below to make the email feel genuinely personal. Do not fabricate details.'
+      : `No transcript is available. ${stageTone} Write a message that sounds personal without fabricating details.`;
+
+    return type === 'post'
+      ? `Write a short personalised thank-you email after a job interview. ${ref} First line must be "Subject: <subject>". Return email text only, no preamble.`
+      : `Write a short warm pre-interview email. ${ref} First line must be "Subject: <subject>". Return email text only, no preamble.`;
+  }
+
+  function _getOutreachCards() {
+    const interviews   = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const now          = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const cards        = [];
 
-    const pre = interviews.filter(iv =>
-      iv.status === 'pending' && iv.scheduled_at && new Date(iv.scheduled_at) >= now
-    ).sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-
-    const post = interviews.filter(iv => {
+    for (const iv of interviews) {
+      const scheduled   = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
       const isCompleted = iv.status === 'completed' ||
-        (iv.scheduled_at && new Date(iv.scheduled_at) < now && iv.status !== 'pending');
-      if (!isCompleted) return false;
-      const completedDate = iv.completed_at ? new Date(iv.completed_at) : (iv.scheduled_at ? new Date(iv.scheduled_at) : null);
-      if (!completedDate || completedDate < sevenDaysAgo) return false;
-      return !iv.outreach_post_sent;
-    }).sort((a, b) => {
-      const da = a.completed_at || a.scheduled_at || 0;
-      const db = b.completed_at || b.scheduled_at || 0;
+        (scheduled && scheduled < now && iv.status !== 'pending');
+
+      if (!isCompleted && scheduled && scheduled >= now && iv.status === 'pending') {
+        if (!iv.outreach_pre_sent) {
+          cards.push({ iv, sessionIdx: null, session: null, type: 'pre', cacheKey: `${iv.id}_pre` });
+        }
+        continue;
+      }
+
+      if (isCompleted) {
+        const completedDate = iv.completed_at ? new Date(iv.completed_at) : scheduled;
+        if (!completedDate || completedDate < sevenDaysAgo) continue;
+
+        const sessions     = iv.sessions || [];
+        const sentSessions = iv.outreach_sessions_sent || {};
+
+        if (sessions.length > 0) {
+          sessions.forEach((session, idx) => {
+            if (!sentSessions[String(idx)]) {
+              cards.push({ iv, sessionIdx: idx, session, type: 'post', cacheKey: `${iv.id}_s${idx}_post` });
+            }
+          });
+        } else if (!iv.outreach_post_sent) {
+          cards.push({ iv, sessionIdx: null, session: null, type: 'post', cacheKey: `${iv.id}_post` });
+        }
+      }
+    }
+
+    cards.sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'post' ? -1 : 1;
+      const da = a.iv.completed_at || a.iv.scheduled_at || 0;
+      const db = b.iv.completed_at || b.iv.scheduled_at || 0;
       return new Date(db) - new Date(da);
     });
 
-    return { pre, post };
+    return cards;
+  }
+
+  function _getSentCards() {
+    const interviews   = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const cards        = [];
+
+    for (const iv of interviews) {
+      if (iv.outreach_pre_sent && new Date(iv.outreach_pre_sent) >= sevenDaysAgo) {
+        cards.push({ iv, sessionIdx: null, session: null, type: 'pre', cacheKey: `${iv.id}_pre` });
+      }
+      const sessions     = iv.sessions || [];
+      const sentSessions = iv.outreach_sessions_sent || {};
+      sessions.forEach((session, idx) => {
+        const sentAt = sentSessions[String(idx)];
+        if (sentAt && new Date(sentAt) >= sevenDaysAgo) {
+          cards.push({ iv, sessionIdx: idx, session, type: 'post', cacheKey: `${iv.id}_s${idx}_post` });
+        }
+      });
+      if (!sessions.length && iv.outreach_post_sent && new Date(iv.outreach_post_sent) >= sevenDaysAgo) {
+        cards.push({ iv, sessionIdx: null, session: null, type: 'post', cacheKey: `${iv.id}_post` });
+      }
+    }
+
+    return cards;
   }
 
   function _loadOutreachCache() {
@@ -141,47 +265,106 @@ window.CoachPage = (() => {
     localStorage.setItem(OUTREACH_CACHE_KEY, JSON.stringify(cache));
   }
 
-  function _renderOutreachSection() {
-    const list = document.getElementById('coach-outreach-list');
-    if (!list) return;
-
-    const { pre, post } = _getOutreachInterviews();
-    const cache = _loadOutreachCache();
-
-    const sent = JSON.parse(localStorage.getItem('klinch_interviews') || '[]')
-      .filter(iv => iv.outreach_post_sent || iv.outreach_pre_sent);
-
-    if (!pre.length && !post.length) {
-      const hasSent = sent.length > 0;
-      list.innerHTML = `<div class="coach-outreach-empty">${hasSent ? 'All outreach sent. Great work!' : 'No outreach needed right now. Check back after your next interview is scheduled.'}</div>`;
-      return;
+  function _updateNavBadge(activeCards) {
+    const badge = document.getElementById('coach-nav-badge');
+    if (!badge) return;
+    let count = 0;
+    for (const card of activeCards) {
+      const due = _computeDueLabel(card.iv, card.type);
+      if (due?.cls === 'due-overdue' || due?.cls === 'due-today') count++;
     }
-
-    const cards = [
-      ...post.map(iv => _buildOutreachCard(iv, 'post', cache[iv.id + '_post'])),
-      ...pre.map(iv  => _buildOutreachCard(iv, 'pre',  cache[iv.id + '_pre'])),
-    ];
-
-    list.innerHTML = cards.join('');
-    if (window.wireImgFallbacks) window.wireImgFallbacks(list);
-    _wireOutreachEvents(list);
+    badge.textContent  = count;
+    badge.style.display = count > 0 ? '' : 'none';
   }
 
-  function _buildOutreachCard(iv, type, cached) {
-    const company   = _esc(iv.company?.name || 'Unknown Company');
-    const rawRole   = iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role';
-    const role      = _esc(window.shortenRoleTitle?.(rawRole) ?? rawRole);
-    const isPost    = type === 'post';
-    const cardId    = `coach-outreach-${iv.id}-${type}`;
-    const navKey    = _esc(iv.company?.domain || iv.company?.name || '');
-    const initial   = (iv.company?.name || '?')[0].toUpperCase();
-    const logoId    = `co-outreach-logo-${_esc(iv.id)}-${type}`;
-    const dateLabel = isPost
-      ? (iv.completed_at || iv.scheduled_at ? new Date(iv.completed_at || iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '')
-      : (iv.scheduled_at ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '');
+  function _renderOutreachSection() {
+    const container = document.getElementById('coach-outreach-list');
+    if (!container) return;
 
-    const typeLabel = isPost ? 'Post-Interview' : 'Pre-Interview';
-    const tagClass  = isPost ? 'coach-outreach-tag-post' : 'coach-outreach-tag-pre';
+    const allCards  = _getOutreachCards();
+    const cache     = _loadOutreachCache();
+    const sentCards = _getSentCards();
+
+    if (!_outreachFilterUserSet) {
+      _outreachFilter = allCards.some(c => c.type === 'post') ? 'post' : 'pre';
+    }
+
+    _updateNavBadge(allCards);
+
+    _cardMap = new Map();
+    for (const c of allCards)  _cardMap.set(c.cacheKey, c);
+    for (const c of sentCards) _cardMap.set(c.cacheKey, c);
+
+    const filtered = allCards.filter(c => c.type === _outreachFilter);
+
+    const filterBar = `
+      <div class="coach-outreach-filter-bar">
+        <button class="coach-outreach-filter-btn${_outreachFilter === 'post' ? ' active' : ''}" data-filter="post">Post-Interview</button>
+        <button class="coach-outreach-filter-btn${_outreachFilter === 'pre'  ? ' active' : ''}" data-filter="pre">Pre-Interview</button>
+      </div>`;
+
+    let activeHtml;
+    if (!filtered.length) {
+      const other    = _outreachFilter === 'post' ? 'pre' : 'post';
+      const hasOther = allCards.some(c => c.type === other);
+      activeHtml = `<div class="coach-outreach-empty">${
+        hasOther
+          ? `No ${_outreachFilter === 'post' ? 'post' : 'pre'}-interview outreach needed right now.`
+          : 'No outreach needed right now. Check back after your next interview is scheduled.'
+      }</div>`;
+    } else {
+      activeHtml = filtered.map(c => _buildOutreachCard(c, cache[c.cacheKey])).join('');
+    }
+
+    let archiveHtml = '';
+    if (sentCards.length) {
+      const archiveCards = sentCards.map(c => _buildOutreachCard(c, cache[c.cacheKey], true)).join('');
+      archiveHtml = `
+        <div class="coach-outreach-archive coach-outreach-archive-collapsed">
+          <div class="coach-outreach-archive-header" data-toggle-archive>
+            <span>Completed</span>
+            <span class="coach-outreach-archive-count">${sentCards.length}</span>
+            <span class="coach-outreach-archive-chevron">▾</span>
+          </div>
+          <div class="coach-outreach-archive-list">${archiveCards}</div>
+        </div>`;
+    }
+
+    container.innerHTML = filterBar + `<div id="coach-outreach-active-list">${activeHtml}</div>` + archiveHtml;
+    if (window.wireImgFallbacks) window.wireImgFallbacks(container);
+    _wireOutreachEvents(container);
+  }
+
+  function _buildOutreachCard(card, cached, isArchived = false) {
+    const { iv, sessionIdx, session, type } = card;
+    const company  = _esc(iv.company?.name || 'Unknown Company');
+    const rawRole  = iv.jd?.structured?.role_title || iv.role_title || 'Unknown Role';
+    const role     = _esc(window.shortenRoleTitle?.(rawRole) ?? rawRole);
+    const isPost   = type === 'post';
+    const cardId   = `coach-outreach-${iv.id}-${sessionIdx !== null ? `s${sessionIdx}-` : ''}${type}`;
+    const navKey   = _esc(iv.company?.domain || iv.company?.name || '');
+    const initial  = (iv.company?.name || '?')[0].toUpperCase();
+    const logoId   = `co-outreach-logo-${_esc(iv.id)}-${type}${sessionIdx !== null ? `-s${sessionIdx}` : ''}`;
+    const ckEsc    = _esc(card.cacheKey);
+
+    const stage            = iv.stage || '';
+    const interviewerNames = (iv.interviewers || []).map(i => i.name).filter(Boolean);
+
+    const due      = _computeDueLabel(iv, type);
+    const dueBadge = due
+      ? `<span class="coach-outreach-due${due.cls ? ' ' + _esc(due.cls) : ''}">${_esc(due.label)}</span>`
+      : '';
+
+    const typeLabel    = isPost ? 'Post-Interview' : 'Pre-Interview';
+    const tagClass     = isPost ? 'coach-outreach-tag-post' : 'coach-outreach-tag-pre';
+    const sessionLabel = sessionIdx !== null
+      ? `<span class="coach-outreach-session-tag">Session ${sessionIdx + 1}</span>`
+      : '';
+
+    const metaSub = [
+      stage              ? `<span class="coach-outreach-stage">${_esc(stage)}</span>` : '',
+      interviewerNames.length ? `<span class="coach-outreach-ivr">${_esc(interviewerNames.join(', '))}</span>` : '',
+    ].filter(Boolean).join('<span class="coach-outreach-meta-sep">·</span>');
 
     const logoHtml = iv.company?.logo_url && !iv.company?.screenshot_mode
       ? `<img src="${_esc(iv.company.logo_url)}" class="coach-outreach-logo-img" alt="" data-fb="${logoId}">
@@ -190,24 +373,34 @@ window.CoachPage = (() => {
 
     let contentHtml;
     if (cached?.linkedin_message) {
-      contentHtml = _buildOutreachContentHtml(iv.id, type, cached);
+      contentHtml = _buildOutreachContentHtml(iv.id, type, cached, card.cacheKey);
+    } else if (isArchived) {
+      contentHtml = `<div class="coach-outreach-archived-note">Outreach marked as sent.</div>`;
     } else {
       contentHtml = `
         <div class="coach-outreach-generate-row">
-          <button class="coach-outreach-generate-btn" data-iv-id="${_esc(iv.id)}" data-outreach-type="${type}">Generate Outreach</button>
+          <button class="coach-outreach-generate-btn" data-cache-key="${ckEsc}" data-outreach-type="${type}">Generate Outreach</button>
         </div>`;
     }
 
     return `
-      <div class="coach-outreach-card" id="${cardId}">
+      <div class="coach-outreach-card${isArchived ? ' coach-outreach-card-archived coach-outreach-card-collapsed' : ''}" id="${cardId}">
         <div class="coach-outreach-card-header" data-toggle-card="${cardId}">
+          <label class="coach-outreach-checkbox-wrap" title="Mark as sent">
+            <input type="checkbox" class="coach-outreach-checkbox" data-cache-key="${ckEsc}"${isArchived ? ' checked' : ''}>
+            <span class="coach-outreach-checkmark"></span>
+          </label>
           <div class="coach-outreach-logo-wrap" data-company-nav="${navKey}">${logoHtml}</div>
           <div class="coach-outreach-card-meta">
-            <span class="coach-outreach-company" data-company-nav="${navKey}">${company}</span>
-            <span class="coach-outreach-role">${role}</span>
+            <div class="coach-outreach-card-meta-top">
+              <span class="coach-outreach-company" data-company-nav="${navKey}">${company}</span>
+              <span class="coach-outreach-role">${role}</span>
+            </div>
+            ${metaSub ? `<div class="coach-outreach-card-meta-sub">${metaSub}</div>` : ''}
           </div>
           <div class="coach-outreach-card-badges">
-            ${dateLabel ? `<span class="coach-outreach-date">${dateLabel}</span>` : ''}
+            ${dueBadge}
+            ${sessionLabel}
             <span class="coach-outreach-tag ${tagClass}">${typeLabel}</span>
             <span class="coach-outreach-chevron">▾</span>
           </div>
@@ -218,8 +411,8 @@ window.CoachPage = (() => {
       </div>`;
   }
 
-  function _buildOutreachContentHtml(ivId, type, data) {
-    const pfx = `co-${ivId}-${type}`;
+  function _buildOutreachContentHtml(ivId, type, data, cacheKey) {
+    const pfx      = `co-${_esc(cacheKey).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const gmailUrl = `https://mail.google.com/mail/?view=cm&su=${encodeURIComponent(data.email?.subject || '')}&body=${encodeURIComponent(data.email?.body || '')}`;
     return `
       <div class="coach-outreach-block">
@@ -239,12 +432,24 @@ window.CoachPage = (() => {
         </div>
       </div>
       <div class="coach-outreach-sent-row">
-        <button class="coach-outreach-btn coach-outreach-btn-sent" data-mark-sent-id="${_esc(ivId)}" data-mark-sent-type="${type}">Mark as Sent ✓</button>
+        <button class="coach-outreach-btn coach-outreach-btn-sent" data-mark-sent-key="${_esc(cacheKey)}">Mark as Sent ✓</button>
       </div>`;
   }
 
   function _wireOutreachEvents(list) {
+    if (list.dataset.outreachWired) return;
+    list.dataset.outreachWired = '1';
     list.addEventListener('click', async e => {
+      // Checkbox must be checked before card-toggle so stopPropagation works
+      const checkboxWrap = e.target.closest('.coach-outreach-checkbox-wrap');
+      if (checkboxWrap) {
+        e.stopPropagation();
+        const ck   = checkboxWrap.querySelector('.coach-outreach-checkbox')?.dataset.cacheKey;
+        const card = _cardMap.get(ck);
+        if (card) _markSent(card.iv.id, card.type, card.sessionIdx);
+        return;
+      }
+
       const companyNav = e.target.closest('[data-company-nav]');
       if (companyNav) {
         const key = companyNav.dataset.companyNav;
@@ -255,18 +460,31 @@ window.CoachPage = (() => {
         return;
       }
 
+      const filterBtn = e.target.closest('[data-filter]');
+      if (filterBtn) {
+        _outreachFilter        = filterBtn.dataset.filter;
+        _outreachFilterUserSet = true;
+        _renderOutreachSection();
+        return;
+      }
+
+      const archiveHdr = e.target.closest('[data-toggle-archive]');
+      if (archiveHdr) {
+        archiveHdr.closest('.coach-outreach-archive')?.classList.toggle('coach-outreach-archive-collapsed');
+        return;
+      }
+
       const toggleHdr = e.target.closest('[data-toggle-card]');
-      if (toggleHdr && !e.target.closest('button')) {
-        const card = document.getElementById(toggleHdr.dataset.toggleCard);
-        card?.classList.toggle('coach-outreach-card-collapsed');
+      if (toggleHdr && !e.target.closest('button') && !e.target.closest('label')) {
+        const cardEl = document.getElementById(toggleHdr.dataset.toggleCard);
+        cardEl?.classList.toggle('coach-outreach-card-collapsed');
         return;
       }
 
       const genBtn = e.target.closest('[data-outreach-type]');
       if (genBtn) {
-        const ivId = genBtn.dataset.ivId;
-        const type = genBtn.dataset.outreachType;
-        await _generateOutreach(ivId, type, genBtn);
+        const card = _cardMap.get(genBtn.dataset.cacheKey);
+        if (card) await _generateOutreach(card, genBtn);
         return;
       }
 
@@ -291,11 +509,10 @@ window.CoachPage = (() => {
         return;
       }
 
-      const sentBtn = e.target.closest('[data-mark-sent-id]');
+      const sentBtn = e.target.closest('[data-mark-sent-key]');
       if (sentBtn) {
-        const ivId = sentBtn.dataset.markSentId;
-        const type = sentBtn.dataset.markSentType;
-        _markSent(ivId, type);
+        const card = _cardMap.get(sentBtn.dataset.markSentKey);
+        if (card) _markSent(card.iv.id, card.type, card.sessionIdx);
         return;
       }
     });
@@ -309,46 +526,48 @@ window.CoachPage = (() => {
     });
   }
 
-  async function _generateOutreach(ivId, type, btn) {
-    const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
-    const iv = interviews.find(x => x.id === ivId);
-    if (!iv) return;
-
-    const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
-    const cardBody = document.getElementById(`coach-outreach-${ivId}-${type}-body`);
+  async function _generateOutreach(card, btn) {
+    const { iv, sessionIdx, session, type } = card;
+    const cardId   = `coach-outreach-${iv.id}-${sessionIdx !== null ? `s${sessionIdx}-` : ''}${type}`;
+    const cardBody = document.getElementById(`${cardId}-body`);
     if (!cardBody) return;
 
-    btn.disabled = true;
+    btn.disabled    = true;
     btn.textContent = 'Generating…';
 
-    const ivr          = iv.interviewers?.[0] || {};
-    const company      = iv.company?.name || 'the company';
-    const role         = iv.jd?.structured?.role_title || iv.role_title || 'the role';
+    const profile       = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
+    const company       = iv.company?.name || 'the company';
+    const role          = iv.jd?.structured?.role_title || iv.role_title || 'the role';
+    const stage         = iv.stage || '';
     const candidateName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'the candidate';
-    const interviewerName  = ivr.name  || '';
-    const interviewerTitle = ivr.title || '';
-    const isPost = type === 'post';
+    const isPost        = type === 'post';
+
+    const ivrLines = (iv.interviewers || [])
+      .map(i => [i.name, i.title].filter(Boolean).join(', '))
+      .filter(Boolean);
 
     const dateStr = iv.scheduled_at
       ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
       : '';
-    const highlights = isPost ? (iv.sessions || []).map(s => s.synopsis).filter(Boolean) : [];
+
+    const sessionsForCtx = session ? [session] : (isPost ? (iv.sessions || []) : []);
+    const transcriptText = _truncateTranscript(sessionsForCtx, TRANSCRIPT_MAX_CHARS);
+    const feedbackText   = sessionsForCtx.map(s => s.feedback).filter(Boolean).join('\n---\n');
+    const hasTranscript  = transcriptText.length > 0;
 
     const payload = [
       `Candidate: ${candidateName}`,
-      interviewerName ? `Interviewer: ${interviewerName}${interviewerTitle ? ', ' + interviewerTitle : ''}` : '',
+      ivrLines.length ? `Interviewer(s): ${ivrLines.join('; ')}` : '',
       `Company: ${company}`,
       `Role: ${role}`,
+      stage   ? `Interview stage: ${stage}` : '',
       dateStr ? `Interview date: ${dateStr}` : '',
-      highlights.length ? `Key moments: ${highlights.join('; ')}` : '',
+      hasTranscript ? `\nTranscript excerpt:\n${transcriptText}` : '',
+      feedbackText  ? `\nPost-interview feedback:\n${feedbackText}` : '',
     ].filter(Boolean).join('\n');
 
-    const [liSystemPre, liSystemPost, emailSystemPre, emailSystemPost] = [
-      'You are an expert career coach. Write a warm, brief LinkedIn connection request before a job interview. Return the message text only, no preamble.',
-      'You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. Be grateful, specific, forward-looking. Return the message text only, no preamble.',
-      'Write a short warm pre-interview email. First line must be "Subject: <subject>". Return email text only, no preamble.',
-      'Write a personalised thank-you email after a job interview. First line must be "Subject: <subject>". Be warm, specific, concise. Return email text only, no preamble.',
-    ];
+    const liSystem    = _buildSystemPrompt(type, stage, hasTranscript);
+    const emailSystem = _buildEmailSystemPrompt(type, stage, hasTranscript);
 
     try {
       const invoke = (system, max_tokens) => window.klinch.invoke('claude:coach', {
@@ -359,8 +578,8 @@ window.CoachPage = (() => {
       }).then(r => r?.content?.[0]?.text || r?.text || '');
 
       const [linkedin_message, emailRaw] = await Promise.all([
-        invoke(isPost ? liSystemPost : liSystemPre, 150),
-        invoke(isPost ? emailSystemPost : emailSystemPre, 300),
+        invoke(liSystem,    200),
+        invoke(emailSystem, 400),
       ]);
 
       const emailLines  = emailRaw.split('\n');
@@ -368,151 +587,36 @@ window.CoachPage = (() => {
       const subject     = subjectLine.replace(/^Subject:\s*/i, '').trim();
       const body        = emailLines.filter(l => !/^Subject:/i.test(l)).join('\n').trim();
 
-      const data = { linkedin_message, email: { subject, body }, generated_at: new Date().toISOString() };
+      const data  = { linkedin_message, email: { subject, body }, generated_at: new Date().toISOString() };
       const cache = _loadOutreachCache();
-      cache[ivId + '_' + type] = data;
+      cache[card.cacheKey] = data;
       _saveOutreachCache(cache);
 
-      cardBody.innerHTML = _buildOutreachContentHtml(ivId, type, data);
-      document.getElementById(`coach-outreach-${ivId}-${type}`)?.classList.remove('coach-outreach-card-collapsed');
+      cardBody.innerHTML = _buildOutreachContentHtml(iv.id, type, data, card.cacheKey);
+      document.getElementById(cardId)?.classList.remove('coach-outreach-card-collapsed');
     } catch (err) {
       console.error('[coach-outreach] generate failed:', err);
-      btn.disabled = false;
+      btn.disabled    = false;
       btn.textContent = 'Generate Outreach';
     }
   }
 
-  function _markSent(ivId, type) {
+  function _markSent(ivId, type, sessionIdx) {
     const interviews = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
     const idx = interviews.findIndex(x => x.id === ivId);
     if (idx === -1) return;
 
-    const field = type === 'post' ? 'outreach_post_sent' : 'outreach_pre_sent';
-    interviews[idx][field] = new Date().toISOString();
+    if (type === 'pre') {
+      interviews[idx].outreach_pre_sent = new Date().toISOString();
+    } else if (sessionIdx !== null && sessionIdx !== undefined && sessionIdx !== '') {
+      if (!interviews[idx].outreach_sessions_sent) interviews[idx].outreach_sessions_sent = {};
+      interviews[idx].outreach_sessions_sent[String(sessionIdx)] = new Date().toISOString();
+    } else {
+      interviews[idx].outreach_post_sent = new Date().toISOString();
+    }
+
     localStorage.setItem('klinch_interviews', JSON.stringify(interviews));
-
     _renderOutreachSection();
-  }
-
-  // ── Section 3 — Recommended Next Actions ─────────────────────────────────
-
-  const TYPE_ICONS = {
-    'follow-up': '↩',
-    'prepare':   '◎',
-    'apply':     '→',
-    'other':     '⚡',
-  };
-
-  function _buildActionSummary(data) {
-    const recentIvs = [...data.interviews]
-      .sort((a, b) => new Date(b.scheduled_at || 0) - new Date(a.scheduled_at || 0))
-      .slice(0, 10)
-      .map(iv => ({
-        company:      iv.company?.name,
-        stage:        iv.stage,
-        status:       iv.status,
-        scheduled_at: iv.scheduled_at,
-      }));
-
-    const recentApps = [...data.applications]
-      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-      .slice(0, 8)
-      .map(a => ({
-        company:   a.company?.name,
-        role:      a.role_title,
-        status:    a.status,
-        stage:     a.current_stage,
-        applied:   a.date_applied,
-      }));
-
-    return JSON.stringify({
-      total_applications:   data.applications.length,
-      active_applications:  data.active.length,
-      offers:               data.offers.length,
-      interviews_completed: data.completed.length,
-      interviews_upcoming:  data.upcoming.length,
-      win_rate:             data.winRate !== null ? `${data.winRate}%` : 'N/A',
-      avg_response_days:    data.avgResponse,
-      recent_interviews:    recentIvs,
-      recent_applications:  recentApps,
-    });
-  }
-
-  function _renderActions(actions) {
-    const list = document.getElementById('coach-actions-list');
-    if (!list) return;
-
-    if (!actions?.length) {
-      list.innerHTML = '<div class="coach-actions-empty">Add interviews and applications to get personalised coaching recommendations.</div>';
-      return;
-    }
-
-    list.innerHTML = actions.map(a => {
-      const urgency  = (a.urgency || 'low').toLowerCase();
-      const type     = (a.type    || 'other').toLowerCase();
-      const icon     = TYPE_ICONS[type] || TYPE_ICONS.other;
-      return `
-        <div class="coach-action-card">
-          <div class="coach-action-urgency-dot coach-urgency-${_esc(urgency)}"></div>
-          <div class="coach-action-body">
-            <div class="coach-action-header">
-              <span class="coach-action-icon">${icon}</span>
-              <span class="coach-action-title">${_esc(a.action)}</span>
-              <span class="coach-urgency-tag coach-urgency-${_esc(urgency)}">${_esc(urgency)}</span>
-            </div>
-            <div class="coach-action-detail">${_esc(a.detail)}</div>
-          </div>
-        </div>`;
-    }).join('');
-  }
-
-  function _renderActionsSkeleton() {
-    const list = document.getElementById('coach-actions-list');
-    if (!list) return;
-    list.innerHTML = [1, 2, 3].map(() => `
-      <div class="coach-action-card">
-        <div class="coach-action-urgency-dot coach-skel-dot"></div>
-        <div class="coach-action-body" style="flex:1">
-          <div class="ivdp-skel-line w50" style="height:12px;margin-bottom:8px"></div>
-          <div class="ivdp-skel-line w80" style="height:10px"></div>
-        </div>
-      </div>`).join('');
-  }
-
-  async function _fetchActions(data, force = false) {
-    if (!force) {
-      try {
-        const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-        if (cached?.generated_at && Date.now() - new Date(cached.generated_at).getTime() < CACHE_TTL) {
-          _renderActions(cached.actions);
-          return;
-        }
-      } catch (_) {}
-    }
-
-    _renderActionsSkeleton();
-
-    try {
-      const summary = _buildActionSummary(data);
-      const result  = await window.klinch.invoke('claude:coach', {
-        model:      'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system:     'Return only valid JSON. No preamble. No markdown.',
-        messages:   [{
-          role:    'user',
-          content: `You are a SaaS hiring coach reviewing a candidate's interview pipeline. Based on the following data, return the top 5 recommended next actions as a JSON array. Each action should have: action (short title), detail (one sentence explanation), urgency (high/medium/low), and type (follow-up/prepare/apply/other). Data: ${summary}`,
-        }],
-      });
-
-      const text    = result?.content?.[0]?.text || result?.text || '[]';
-      const actions = JSON.parse(text.trim());
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ actions, generated_at: new Date().toISOString() }));
-      _renderActions(actions);
-    } catch (err) {
-      console.error('[coach] actions failed:', err);
-      const list = document.getElementById('coach-actions-list');
-      if (list) list.innerHTML = '<div class="coach-actions-empty"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M7 1L13 12.5H1L7 1Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><line x1="7" y1="5" x2="7" y2="8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="10.5" r="0.7" fill="currentColor"/></svg>Could not load recommendations — try refreshing.</div>';
-    }
   }
 
   // ── Section 3 — Insider Tips ──────────────────────────────────────────────
@@ -835,16 +939,11 @@ window.CoachPage = (() => {
 
   // ── Init ──────────────────────────────────────────────────────────────────
 
-  document.getElementById('coach-actions-refresh')?.addEventListener('click', () => {
-    _fetchActions(_getPipelineData(), true);
-  });
-
   function reset() {
     const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
     const data    = _getPipelineData();
     _renderHealth(data);
     _renderOutreachSection();
-    _fetchActions(data);
     _renderInterviewScores();
     _renderTips(profile);
   }
