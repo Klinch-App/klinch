@@ -875,6 +875,8 @@ window.CoachPage = (() => {
 
   // ── Section 4 — Interview Scores ──────────────────────────────────────────
 
+  let _scoresExpanded = false;
+
   function _renderInterviewScores() {
     const list = document.getElementById('coach-scores-list');
     if (!list) return;
@@ -889,12 +891,13 @@ window.CoachPage = (() => {
       return;
     }
 
-    const avg = Math.round(scored.reduce((s, iv) => s + iv.coach_score, 0) / scored.length);
+    const avg     = Math.round(scored.reduce((s, iv) => s + iv.coach_score, 0) / scored.length);
+    const visible = _scoresExpanded ? scored : scored.slice(0, 3);
 
-    const cards = scored.map(iv => {
-      const company = _esc(iv.company?.name || 'Unknown Company');
-      const stage   = _esc(iv.stage || 'Interview');
-      const date    = iv.scheduled_at
+    const cards = visible.map(iv => {
+      const company  = _esc(iv.company?.name || 'Unknown Company');
+      const stage    = _esc(iv.stage || 'Interview');
+      const date     = iv.scheduled_at
         ? new Date(iv.scheduled_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : '';
       const initial  = (iv.company?.name || '?')[0].toUpperCase();
@@ -915,6 +918,14 @@ window.CoachPage = (() => {
         </div>`;
     }).join('');
 
+    const toggleLink = scored.length > 3
+      ? `<div class="coach-scores-toggle-row">
+           <button class="coach-scores-toggle" id="coach-scores-toggle">
+             ${_scoresExpanded ? 'Show less' : `Show all (${scored.length})`}
+           </button>
+         </div>`
+      : '';
+
     list.innerHTML = `
       <div class="coach-scores-summary">
         ${window.buildDonut(avg, 64)}
@@ -923,7 +934,8 @@ window.CoachPage = (() => {
           <div class="coach-scores-avg-sub">${scored.length} interview${scored.length > 1 ? 's' : ''} scored</div>
         </div>
       </div>
-      <div class="coach-scores-grid">${cards}</div>`;
+      <div class="coach-scores-grid">${cards}</div>
+      ${toggleLink}`;
 
     if (window.wireImgFallbacks) window.wireImgFallbacks(list);
 
@@ -941,6 +953,11 @@ window.CoachPage = (() => {
           });
         }, 0);
       });
+    });
+
+    document.getElementById('coach-scores-toggle')?.addEventListener('click', () => {
+      _scoresExpanded = !_scoresExpanded;
+      _renderInterviewScores();
     });
   }
 

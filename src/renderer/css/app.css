@@ -6549,6 +6549,27 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   color: var(--text-muted);
 }
 
+.coach-scores-toggle-row {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+.coach-scores-toggle {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s, color 0.12s;
+}
+.coach-scores-toggle:hover {
+  background: rgba(139,92,246,0.1);
+}
+
 /* ── Tip cards ───────────────────────────────────────────────────────────── */
 
 .coach-tips-grid {
