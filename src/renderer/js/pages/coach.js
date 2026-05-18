@@ -905,13 +905,16 @@ window.CoachPage = (() => {
     return 'sdr';
   }
 
-  function _renderTips(profile) {
+  let _tipsAll      = [];   // full list for current user, built once per reset
+  let _tipsFilter   = 'All';
+
+  function _applyTipsFilter() {
     const grid = document.getElementById('coach-tips-grid');
     if (!grid) return;
-    const key  = _getRoleKey(profile);
-    const tips = [...(TIPS[key] || TIPS.sdr), ...(TIPS.any || [])];
-
-    grid.innerHTML = tips.map(t => `
+    const visible = _tipsFilter === 'All'
+      ? _tipsAll
+      : _tipsAll.filter(t => t.stage === _tipsFilter || t.stage === 'Any');
+    grid.innerHTML = visible.map(t => `
       <div class="coach-tip-card">
         <div class="coach-tip-top">
           <div class="coach-tip-title">${_esc(t.title)}</div>
@@ -919,6 +922,38 @@ window.CoachPage = (() => {
         </div>
         <div class="coach-tip-body">${_esc(t.body)}</div>
       </div>`).join('');
+  }
+
+  function _renderTips(profile) {
+    const bar = document.getElementById('coach-tips-filter-bar');
+    if (!bar) return;
+
+    const key = _getRoleKey(profile);
+    _tipsAll    = [...(TIPS[key] || TIPS.sdr), ...(TIPS.any || [])];
+    _tipsFilter = 'All';
+
+    // Reset active state
+    bar.querySelectorAll('.coach-outreach-filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.stage === 'All');
+    });
+
+    // Wire filter clicks (guard against double-binding across resets)
+    if (!bar.dataset.tipsWired) {
+      bar.dataset.tipsWired = '1';
+      bar.addEventListener('click', e => {
+        const btn = e.target.closest('.coach-outreach-filter-btn');
+        if (!btn) return;
+        const stage = btn.dataset.stage;
+        if (stage === _tipsFilter) return;
+        _tipsFilter = stage;
+        bar.querySelectorAll('.coach-outreach-filter-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.stage === stage);
+        });
+        _applyTipsFilter();
+      });
+    }
+
+    _applyTipsFilter();
   }
 
   // ── Section 4 — Interview Scores ──────────────────────────────────────────
