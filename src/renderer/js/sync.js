@@ -100,6 +100,9 @@ window.Sync = (() => {
     if (profileResult.status === 'fulfilled' && profileResult.value?.billing) {
       _mergeBillingFromProfile(profileResult.value.billing);
     }
+
+    // Signal to any listener (e.g. CoachPage badge) that synced data is now in localStorage
+    window.dispatchEvent(new CustomEvent('klinch:synced'));
   }
 
   function _mergeBillingFromProfile(billing) {
