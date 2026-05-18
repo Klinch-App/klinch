@@ -1041,6 +1041,9 @@
               </button>
             </div>
           </div>
+          <div id="ai-phone-tip" class="ai-phone-tip" style="display:none">
+            📞 Keep your call on your handset or earbuds — not speakerphone. Klinch will pick up your voice through your laptop mic. Speakerphone may capture your interviewer's voice, which violates our Terms of Service.
+          </div>
         </div>
 
         <div id="ai-toast" class="ai-toast" style="display:none"></div>
@@ -1752,6 +1755,19 @@
       <div class="kmodal-title" id="kmodal-title"></div>
       <div class="kmodal-body"  id="kmodal-body"></div>
       <div class="kmodal-actions" id="kmodal-actions"></div>
+    </div>
+  </div>
+
+  <!-- Phone screen launch warning modal -->
+  <div id="phone-warn-backdrop" class="phone-warn-backdrop" style="display:none">
+    <div class="phone-warn-card">
+      <div class="phone-warn-title">Phone Interview Heads Up</div>
+      <ul class="phone-warn-list">
+        <li class="phone-warn-item phone-warn-ok">Keep your call on your handset or earbuds</li>
+        <li class="phone-warn-item phone-warn-ok">Speak naturally near your laptop — Klinch will hear you</li>
+        <li class="phone-warn-item phone-warn-no">No speakerphone — it may pick up your interviewer's voice, which violates our Terms of Service</li>
+      </ul>
+      <button class="kmodal-btn-confirm" id="phone-warn-confirm">Got it, start session</button>
     </div>
   </div>
 

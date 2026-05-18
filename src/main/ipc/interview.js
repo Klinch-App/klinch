@@ -17,7 +17,9 @@ let earFsPaused  = false;
 let earRoleType  = '';
 
 // Per-session tracking (reset on each session start)
-let earCuesGiven   = new Set();  // which cue types have fired this session
+let earCuesGiven      = new Set();  // which cue types have fired this session
+let earIsPhoneScreen  = false;
+let earUtteranceCount = 0;
 
 // Filler word detection (rolling 60-second window)
 let earFillerBuf  = []; // [{ time: ms }] — one entry per filler detected
@@ -129,12 +131,14 @@ function _checkSessionTime() {
 
 // ── Full-screen Ear mode API (called by main.js) ──────────────────────────────
 
-function setEarFsMode(active, roleType) {
+function setEarFsMode(active, roleType, isPhoneScreen) {
   if (active) {
     earFsActive          = true;
     earFsPaused          = false;
     earRoleType          = roleType || '';
+    earIsPhoneScreen     = !!isPhoneScreen;
     earCuesGiven         = new Set();
+    earUtteranceCount    = 0;
     earFillerBuf         = [];
     earFillerCueCount    = 0;
     earFillerCueLastTime = 0;
@@ -143,9 +147,10 @@ function setEarFsMode(active, roleType) {
     earAnswerStartTime   = null;
     earLastUtteranceTime = null;
   } else {
-    earFsActive = false;
-    earFsPaused = false;
-    earRoleType = '';
+    earFsActive      = false;
+    earFsPaused      = false;
+    earRoleType      = '';
+    earIsPhoneScreen = false;
     stopSessionTimer();
   }
 }
@@ -154,6 +159,11 @@ function setEarFsMode(active, roleType) {
 
 function _analyzeEarUtterance(text) {
   if (!text?.trim() || earFsPaused) return;
+
+  earUtteranceCount++;
+  if (earIsPhoneScreen && earUtteranceCount === 2) {
+    _fireCue('phone-screen', '📞 On phone screens, your energy and tone carry the room — smile, it comes through in your voice.');
+  }
 
   const now   = Date.now();
   const words = text.trim().split(/\s+/);
@@ -222,6 +232,7 @@ function registerHandlers() {
     sessionActive        = true;
     sessionTranscript    = [];
     earCuesGiven         = new Set();
+    earUtteranceCount    = 0;
     earFillerBuf         = [];
     earFillerCueCount    = 0;
     earFillerCueLastTime = 0;

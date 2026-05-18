@@ -203,12 +203,12 @@ ipcMain.on('overlay:set-ignore-mouse', (_event, ignore) => {
 // ─── Full-screen Ear mode ─────────────────────────────────────────────────────
 
 // Renderer → launch overlay in full-screen Ear mode
-ipcMain.handle('ear:fullscreen-launch', (_event, { interviewId, returnTo, roleType } = {}) => {
+ipcMain.handle('ear:fullscreen-launch', (_event, { interviewId, returnTo, roleType, isPhoneScreen } = {}) => {
   earFsReturnTo    = returnTo    || 'dashboard';
   earFsInterviewId = interviewId || null;
 
-  // Tell the cue engine which role type to use
-  interview.setEarFsMode(true, roleType || '');
+  // Tell the cue engine which role type and format to use
+  interview.setEarFsMode(true, roleType || '', !!isPhoneScreen);
 
   if (overlayWindow && !overlayWindow.isDestroyed()) {
     // Overlay already open — drop passive-mode shortcuts before activating full-screen
