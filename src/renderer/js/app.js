@@ -452,9 +452,10 @@ function _nudgeRenderCal() {
 
 
 function _checkInterviewNudges() {
+  const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+  console.log('[klinch] _checkInterviewNudges: interviews in localStorage =', all.length, '| CoachPage ready =', !!window.CoachPage);
   window.CoachPage?.refreshBadge();
 
-  const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   const now = new Date();
   const queue = all.filter(iv =>
     iv.status === 'pending' &&
@@ -668,6 +669,8 @@ async function _initFlow() {
     console.log('[klinch] step 3 → dev bypass active, skipping auth → going to app');
     if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
     _checkInterviewNudges();
+    // coach.js loads after app.js in script order; defer badge until all scripts are parsed
+    setTimeout(() => window.CoachPage?.refreshBadge(), 0);
     return;
   }
   console.log('[klinch] step 3 → no dev bypass, running auth check');
