@@ -8370,3 +8370,74 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .kmodal-btn-confirm:hover { background: var(--primary-dark); }
+
+/* ── Phone Screen inline tip (Add Interview step 4) ─────────────────────── */
+.ai-phone-tip {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(124, 58, 255, 0.08);
+  border: 1px solid rgba(124, 58, 255, 0.22);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* ── Phone Screen pre-session warning modal ──────────────────────────────── */
+.phone-warn-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 26, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.phone-warn-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.phone-warn-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+
+.phone-warn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.phone-warn-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.phone-warn-item::before {
+  flex-shrink: 0;
+  font-size: 14px;
+  margin-top: 1px;
+}
+
+.phone-warn-ok::before  { content: '✅'; }
+.phone-warn-no::before  { content: '❌'; }

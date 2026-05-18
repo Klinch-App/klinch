@@ -593,6 +593,8 @@ function _syncFormatToggle() {
   document.querySelectorAll('.ai-format-opt').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.value === _state.format);
   });
+  const tip = document.getElementById('ai-phone-tip');
+  if (tip) tip.style.display = _state.format === 'Phone Screen' ? '' : 'none';
 }
 
 function _setDefaultDate() {

@@ -885,6 +885,18 @@ window.InterviewsPage = (() => {
     }, { once: true });
   }
 
+  function _showPhoneWarnModal() {
+    return new Promise(resolve => {
+      const backdrop = document.getElementById('phone-warn-backdrop');
+      const btn      = document.getElementById('phone-warn-confirm');
+      backdrop.style.display = '';
+      btn.addEventListener('click', () => {
+        backdrop.style.display = 'none';
+        resolve();
+      }, { once: true });
+    });
+  }
+
   function _wireDetailEvents(ivId) {
     const backBtn = _el('ivdp-back');
     if (backBtn) backBtn.addEventListener('click', hideDetail);
@@ -893,11 +905,27 @@ window.InterviewsPage = (() => {
     if (launchEarBtn) {
       launchEarBtn.addEventListener('click', async () => {
         if (!window.Billing?.canStartSession()) { window.Billing?.showUpgradeModal(); return; }
+
+        const allIvs    = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+        const currentIv = allIvs.find(x => String(x.id) === String(ivId));
+        const isPhoneScreen = currentIv?.format === 'Phone Screen';
+
+        if (isPhoneScreen && !currentIv?.phone_warned) {
+          await _showPhoneWarnModal();
+          const updated = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
+          const idx = updated.findIndex(x => String(x.id) === String(ivId));
+          if (idx >= 0) {
+            updated[idx].phone_warned = true;
+            localStorage.setItem('klinch_interviews', JSON.stringify(updated));
+          }
+        }
+
         const prof = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
         await window.klinch.invoke('ear:fullscreen-launch', {
-          interviewId: ivId,
-          returnTo:    'interviews',
-          roleType:    prof.role_type || '',
+          interviewId:  ivId,
+          returnTo:     'interviews',
+          roleType:     prof.role_type || '',
+          isPhoneScreen,
         });
         window.Billing?.consumeCredit();
       });
