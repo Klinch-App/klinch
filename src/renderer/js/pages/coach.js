@@ -979,6 +979,9 @@ window.CoachPage = (() => {
   return { reset, refreshBadge };
 })();
 
-// Refresh badge once synced data lands in localStorage (covers auth + post-signin paths).
-// dev-bypass path has no syncAllDown so app.js handles it with setTimeout(0).
-window.addEventListener('klinch:synced', () => window.CoachPage?.refreshBadge());
+// Run immediately — by this line, CoachPage is defined and the badge DOM element exists.
+// Covers dev-bypass (no syncAllDown ever runs) and shows badge from any cached localStorage.
+window.CoachPage.refreshBadge();
+
+// Refresh again after sync-down completes so the badge reflects the latest Supabase data.
+window.addEventListener('klinch:synced', () => window.CoachPage.refreshBadge());
