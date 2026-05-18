@@ -452,6 +452,8 @@ function _nudgeRenderCal() {
 
 
 function _checkInterviewNudges() {
+  window.CoachPage?.refreshBadge();
+
   const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
   const now = new Date();
   const queue = all.filter(iv =>

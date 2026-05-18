@@ -972,5 +972,9 @@ window.CoachPage = (() => {
     _renderTips(profile);
   }
 
-  return { reset };
+  function refreshBadge() {
+    _updateNavBadge(_getOutreachCards());
+  }
+
+  return { reset, refreshBadge };
 })();
