@@ -978,3 +978,7 @@ window.CoachPage = (() => {
 
   return { reset, refreshBadge };
 })();
+
+// Refresh badge once synced data lands in localStorage (covers auth + post-signin paths).
+// dev-bypass path has no syncAllDown so app.js handles it with setTimeout(0).
+window.addEventListener('klinch:synced', () => window.CoachPage?.refreshBadge());
