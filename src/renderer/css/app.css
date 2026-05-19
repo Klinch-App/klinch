@@ -114,6 +114,20 @@ html, body {
   color: var(--text-primary);
 }
 
+.klinch-logo-img {
+  height: 75px;
+  width: auto;
+  display: block;
+}
+
+.klinch-logo-welcome {
+  height: 100px;
+}
+
+.sidebar-logo .klinch-logo-img {
+  filter: drop-shadow(0 8px 18px rgba(139, 92, 246, 0.45));
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -6865,7 +6879,7 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   height: 16px;
   padding: 0 4px;
   border-radius: 8px;
-  background: #ef4444;
+  background: var(--accent-pink);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
