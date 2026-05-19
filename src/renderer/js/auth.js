@@ -90,17 +90,14 @@ window.Auth = (() => {
     const submitBtn = document.getElementById('auth-submit-btn');
     const heading   = document.getElementById('auth-heading');
     const pwConfirm = document.getElementById('auth-password-confirm-wrap');
-    const ageWrap     = document.getElementById('auth-age-wrap');
-    const ageBox      = document.getElementById('auth-age-checkbox');
     const privacyWrap = document.getElementById('auth-privacy-wrap');
 
     if (_mode === 'signup') {
-      if (heading)      heading.textContent       = 'Save your work.';
+      if (heading)      heading.textContent       = 'Land your next role.';
       if (submitBtn)    submitBtn.textContent      = 'Create Account';
       if (toggleMsg)    toggleMsg.textContent      = 'Already have an account?';
       if (toggleBtn)    toggleBtn.textContent      = 'Log In';
       if (pwConfirm)    pwConfirm.style.display    = '';
-      if (ageWrap)      ageWrap.style.display      = '';
       if (privacyWrap)  privacyWrap.style.display  = '';
     } else {
       if (heading)      heading.textContent       = 'Welcome back.';
@@ -108,8 +105,6 @@ window.Auth = (() => {
       if (toggleMsg)    toggleMsg.textContent      = "Don't have an account?";
       if (toggleBtn)    toggleBtn.textContent      = 'Sign Up';
       if (pwConfirm)    pwConfirm.style.display    = 'none';
-      if (ageWrap)      ageWrap.style.display      = 'none';
-      if (ageBox)       ageBox.checked             = false;
       if (privacyWrap)  privacyWrap.style.display  = 'none';
     }
     _setError('');
@@ -277,10 +272,7 @@ window.Auth = (() => {
       if (!email || !password) { _setError('Please enter your email and password.'); return; }
       if (_mode === 'signup' && password !== confirm) { _setError('Passwords do not match.'); return; }
       if (password.length < 8) { _setError('Password must be at least 8 characters.'); return; }
-      if (_mode === 'signup' && !document.getElementById('auth-age-checkbox')?.checked) {
-        _setError('You must be 18 or older to use Klinch.');
-        return;
-      }
+
 
       _setLoading(true);
       const channel = _mode === 'signup' ? 'auth:sign-up' : 'auth:sign-in';
