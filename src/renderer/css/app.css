@@ -7939,8 +7939,16 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 .auth-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   margin-bottom: 28px;
+}
+
+.auth-logo .klinch-logo-img {
+  height: 94px;
+  filter: drop-shadow(0 8px 18px rgba(139, 92, 246, 0.45));
 }
 
 .auth-logo-mark {
