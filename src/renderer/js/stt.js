@@ -1,5 +1,5 @@
 // Candidate-only transcription: mic → single Deepgram socket.
-// Speaker-labelled finals are stored for post-interview feedback.
+// Speaker-labeled finals are stored for post-interview feedback.
 // Candidate utterances are buffered and flushed to Claude for live coaching.
 
 window.STT = (() => {
