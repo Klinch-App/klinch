@@ -152,6 +152,17 @@ window.CoachPage = (() => {
 
   function _buildSystemPrompt(type, stage, hasTranscript) {
     const s = (stage || '').toLowerCase();
+
+    if (type === 'pre') {
+      const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
+        ? 'This is an upcoming recruiter screen. Keep the tone casual, warm, and brief.'
+        : s.includes('panel') || s.includes('loop') || s.includes('onsite')
+          ? 'This is an upcoming panel or onsite interview. Keep the tone warm and genuine.'
+          : 'This is an upcoming hiring manager interview. Be warm, confident, and concise.';
+      const ref = `${stageTone} Use the candidate and interviewer details provided to personalize the message. Do not reference the interview as if it already happened.`;
+      return `You are an expert career coach. Write a casual, warm LinkedIn message (1–2 sentences max) expressing excitement about an upcoming job interview. ${ref} Do NOT use post-interview language such as "enjoyed our conversation", "left feeling energized", or "looking forward to next steps" — those belong in a post-interview follow-up. Return the message text only — no greeting, no sign-off, no preamble.`;
+    }
+
     const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
       ? 'This was an early-stage recruiter screen. Keep the tone warm, enthusiastic, and brief.'
       : s.includes('panel') || s.includes('loop') || s.includes('onsite')
@@ -162,13 +173,22 @@ window.CoachPage = (() => {
       ? 'Reference at least one specific detail from the transcript excerpt below — a topic discussed, a question asked, or a moment of connection — to make the message feel genuinely personal. Do not fabricate details not present in the transcript.'
       : `No transcript is available. ${stageTone} Write a warm message that sounds personal without fabricating details.`;
 
-    return type === 'post'
-      ? `You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. ${ref} Return the message text only, no greeting, no sign-off, no preamble.`
-      : `You are an expert career coach. Write a warm, brief LinkedIn connection request ahead of a job interview. ${ref} Return the message text only, no greeting, no sign-off, no preamble.`;
+    return `You are an expert career coach. Write a warm, brief LinkedIn follow-up message after a job interview. ${ref} Return the message text only, no greeting, no sign-off, no preamble.`;
   }
 
   function _buildEmailSystemPrompt(type, stage, hasTranscript) {
     const s = (stage || '').toLowerCase();
+
+    if (type === 'pre') {
+      const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
+        ? 'This is an upcoming recruiter screen.'
+        : s.includes('panel') || s.includes('loop') || s.includes('onsite')
+          ? 'This is an upcoming panel or onsite interview.'
+          : 'This is an upcoming hiring manager interview.';
+      const ref = `${stageTone} Use the candidate, interviewer, company, and role details provided to personalize the message. Do not reference the interview as if it already happened.`;
+      return `Write a brief pre-interview email (3–4 sentences max). ${ref} Tone: warm, genuine, and human — like a quick note fired off the day before. Thank them for the calendar invite or opportunity to chat. Express genuine excitement about the upcoming conversation. Write a short, direct subject line. Do NOT include commentary on company culture, growth trajectory, or anything that would only make sense after the interview. Do NOT use post-interview language such as "enjoyed our conversation", "left feeling energized", or "looking forward to next steps". First line must be "Subject: <subject>". Return email text only, no preamble.`;
+    }
+
     const stageTone = s.includes('recruiter') || s.includes('screen') || s.includes('phone')
       ? 'This was an early-stage recruiter screen. Keep the tone warm, brief, and enthusiastic.'
       : s.includes('panel') || s.includes('loop') || s.includes('onsite')
@@ -179,9 +199,7 @@ window.CoachPage = (() => {
       ? 'Reference at least one specific detail from the transcript excerpt below to make the email feel genuinely personal. Do not fabricate details.'
       : `No transcript is available. ${stageTone} Write a message that sounds personal without fabricating details.`;
 
-    return type === 'post'
-      ? `Write a short personalised thank-you email after a job interview. ${ref} First line must be "Subject: <subject>". Return email text only, no preamble.`
-      : `Write a short warm pre-interview email. ${ref} First line must be "Subject: <subject>". Return email text only, no preamble.`;
+    return `Write a short personalized thank-you email after a job interview. ${ref} First line must be "Subject: <subject>". Return email text only, no preamble.`;
   }
 
   function _getOutreachCards() {
@@ -576,8 +594,8 @@ window.CoachPage = (() => {
       }).then(r => r?.content?.[0]?.text || r?.text || '');
 
       const [linkedin_message, emailRaw] = await Promise.all([
-        invoke(liSystem,    200),
-        invoke(emailSystem, 400),
+        invoke(liSystem,    isPost ? 200 : 80),
+        invoke(emailSystem, isPost ? 400 : 200),
       ]);
 
       const emailLines  = emailRaw.split('\n');

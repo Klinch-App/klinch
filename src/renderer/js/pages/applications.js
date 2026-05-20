@@ -238,7 +238,7 @@ window.ApplicationsPage = (() => {
             <span class="icard-date">Applied ${_esc(dateApplied)}</span>
             ${firstIvDate ? `<span class="ap-meta-dot">·</span><span class="icard-date">1st interview ${_esc(firstIvDate)}</span>` : ''}
             ${days !== null ? `<span class="ap-meta-dot">·</span><span class="icard-date">${days} day${days !== 1 ? 's' : ''} to respond</span>` : ''}
-            ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
+            ${hot ? `<span class="ap-hot" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritize this one.</span></span>` : ''}
           </div>
           ${ivs.length ? `<span class="icard-date" style="color:var(--text-muted)">${done} done${upcoming ? ` · ${upcoming} upcoming` : ''}</span>` : ''}
         </div>
@@ -329,7 +329,7 @@ window.ApplicationsPage = (() => {
             <option value="Rejected"       ${app.status==='Rejected'       ?'selected':''}>Rejected</option>
           </select>` : `<span class="icard-stage-badge ${_esc(statusClass)}">${_esc(app.status)}</span>`}
         ${app.current_stage && CORE_STAGES.has(app.current_stage) ? `<span class="icard-stage-badge ${_esc(stageBadgeClass)}">${_esc(app.current_stage)}</span>` : ''}
-        ${hot ? `<span class="ap-hot" style="font-size:16px" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritise this one.</span></span>` : ''}
+        ${hot ? `<span class="ap-hot" style="font-size:16px" aria-label="Hot job">🔥<span class="ap-hot-tooltip">This role is moving fast. You heard back within ${days} day${days === 1 ? '' : 's'} of applying — a strong signal of company urgency or candidate fit. Prioritize this one.</span></span>` : ''}
       </div>`;
 
     if (window.wireImgFallbacks) window.wireImgFallbacks(el);

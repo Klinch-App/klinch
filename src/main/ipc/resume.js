@@ -34,7 +34,7 @@ Rules:
   3. AI-native language and forward-looking framing ("automated", "AI-assisted", "prompt engineering", "LLM workflows") — partial credit.
   Bands: 0–30 = no AI signals; 31–60 = vague mention, no specifics; 61–85 = tools named, outcomes missing; 86–100 = tools + quantified outcomes + forward-looking language.
 - ai_fluency_callouts: If ai_fluency < 70, include 1–2 callouts telling the candidate exactly what is missing (e.g. "No AI tools are mentioned — name specific tools like Claude, ChatGPT, or Gemini", "AI outcomes lack metrics — add a line like 'used AI prospecting tools to reduce list-building time by 40%'"). If ai_fluency >= 70, return [].
-- Include 5-8 annotations. Each "quote" must be copied character-for-character from the resume text below — it will be used to find and highlight the exact phrase. Do not paraphrase or summarise.
+- Include 5-8 annotations. Each "quote" must be copied character-for-character from the resume text below — it will be used to find and highlight the exact phrase. Do not paraphrase or summarize.
 - severity: "high" for major issues that significantly hurt the resume, "medium" for minor improvements.
 - Comments must be specific and actionable for ${roleType} roles, not generic.
 - Include 3-5 ATS tips specific to this resume, not generic advice.

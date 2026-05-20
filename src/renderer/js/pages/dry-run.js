@@ -38,7 +38,7 @@ window.DryRunPage = (() => {
     'Do not number your questions. Do not explain what you are doing. Just ask the question.';
 
   const REPORT_SYSTEM =
-    'You are an expert SDR interview coach. Analyse this mock interview transcript and return ' +
+    'You are an expert SDR interview coach. Analyze this mock interview transcript and return ' +
     'ONLY valid JSON, no preamble, no markdown:\n' +
     '{\n' +
     '  "overall_score": number (0-100),\n' +
@@ -510,7 +510,7 @@ window.DryRunPage = (() => {
           <div class="dr-mic-label" id="dr-mic-label">Generating question…</div>
         </div>
 
-        <div class="dr-session-footer">
+        <div class="dr-session-footer" id="dr-session-footer">
           <button class="dr-end-btn" id="dr-end-btn">End Session</button>
         </div>
       </div>
@@ -632,9 +632,11 @@ window.DryRunPage = (() => {
     }
 
     root.addEventListener('click', e => {
-      if (e.target.closest('#dr-start-btn')) _startRecording();
-      if (e.target.closest('#dr-stop-btn'))  _stopRecording();
-      if (e.target.closest('#dr-end-btn'))   _endSession();
+      if (e.target.closest('#dr-start-btn'))       _startRecording();
+      if (e.target.closest('#dr-stop-btn'))        _stopRecording();
+      if (e.target.closest('#dr-end-btn'))         _maybeEndSession();
+      if (e.target.closest('#dr-end-confirm-yes')) _endSession();
+      if (e.target.closest('#dr-end-confirm-no'))  _cancelEndConfirm();
     });
   }
 
@@ -743,10 +745,40 @@ window.DryRunPage = (() => {
 
   // ── End Session + Report ───────────────────────────────────────────────────
 
+  function _maybeEndSession() {
+    if (_history.length < MAX_QUESTIONS) {
+      const footer = _el('dr-session-footer');
+      if (!footer) return;
+      footer.innerHTML = `
+        <div class="dr-end-confirm">
+          <span class="dr-end-confirm-msg">End this session? Your progress so far will still be scored.</span>
+          <div class="dr-end-confirm-btns">
+            <button class="dr-end-confirm-yes" id="dr-end-confirm-yes">End Session</button>
+            <button class="dr-end-confirm-no"  id="dr-end-confirm-no">Keep Going</button>
+          </div>
+        </div>
+      `;
+    } else {
+      _endSession();
+    }
+  }
+
+  function _cancelEndConfirm() {
+    const footer = _el('dr-session-footer');
+    if (footer) footer.innerHTML = `<button class="dr-end-btn" id="dr-end-btn">End Session</button>`;
+  }
+
   async function _endSession() {
     _stopTimer();
     _currentQuestion = null;
-    if (_recognition) { try { _recognition.stop(); } catch (_) {} _recognition = null; }
+    // Stop any active recording without submitting the in-progress answer
+    if (_isRecording) {
+      _isRecording = false;
+      if (_mediaRecorder && _mediaRecorder.state !== 'inactive') { try { _mediaRecorder.stop(); } catch (_) {} }
+      _mediaRecorder = null;
+      if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+      if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
+    }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 
     _renderReportLoading();
@@ -788,7 +820,7 @@ window.DryRunPage = (() => {
           <div class="ivdp-skel-line w80"></div>
           <div class="ivdp-skel-line w60"></div>
         </div>
-        <div class="dr-report-loading-label">Analysing your session…</div>
+        <div class="dr-report-loading-label">Analyzing your session…</div>
       </div>
     `;
   }
@@ -801,8 +833,13 @@ window.DryRunPage = (() => {
 
     let bodyHtml = '';
 
+    const completedQs  = _history.length;
+    const partialNote  = completedQs < MAX_QUESTIONS
+      ? `<div class="dr-report-partial-note">You completed ${completedQs} of ${MAX_QUESTIONS} questions.</div>`
+      : '';
+
     if (!report) {
-      bodyHtml = `<div class="ivdp-ai-error" style="margin-bottom:24px">Could not generate report. Your session has been saved.</div>`;
+      bodyHtml = `${partialNote}<div class="ivdp-ai-error" style="margin-bottom:24px">Could not generate report. Your session has been saved.</div>`;
     } else {
       const score        = report.overall_score ?? '—';
       const strengths    = report.patterns?.strengths    || [];
@@ -812,6 +849,7 @@ window.DryRunPage = (() => {
       const qFeedback    = report.question_feedback      || [];
 
       bodyHtml = `
+        ${partialNote}
         <div class="dr-report-hero">
           ${window.buildDonut(score, 80)}
           <div class="dr-report-summary">${_esc(report.summary || '')}</div>
