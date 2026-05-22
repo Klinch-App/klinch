@@ -16,12 +16,17 @@ function init({ mainWindow }) {
 
   ipcMain.handle('auth:get-session', async () => {
     const { supabase } = supabaseApi;
-    if (!supabase) return _unavailable();
+    if (!supabase) {
+      console.log('[auth:get-session] supabase not configured → unavailable');
+      return _unavailable();
+    }
     try {
       const { data, error } = await supabase.auth.getSession();
+      console.log('[auth:get-session] error:', error?.message ?? null, '| session user:', data?.session?.user?.email ?? null);
       if (error) return { ok: false, error: error.message };
       return { ok: true, session: data.session, user: data.session?.user ?? null };
     } catch (err) {
+      console.log('[auth:get-session] threw:', err.message);
       return { ok: false, error: err.message };
     }
   });

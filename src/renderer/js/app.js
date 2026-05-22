@@ -598,12 +598,17 @@ function _klinchInitApp() {
 window._klinchInitApp = _klinchInitApp;
 
 // Flow: Welcome → Onboarding → Auth → App
-// Each step is checked in strict order. Dev bypass only skips auth, not welcome or onboarding.
 let _flowStarted = false;
+
+// Logs to both DevTools console and main-process stdout (visible in npm start terminal)
+function _log(msg) {
+  console.log(msg);
+  window.klinch.send('log:renderer', msg);
+}
 
 async function _initFlow() {
   if (_flowStarted) {
-    console.warn('[klinch] _initFlow: duplicate call blocked');
+    _log('[klinch] _initFlow: duplicate call blocked');
     return;
   }
   _flowStarted = true;
@@ -613,11 +618,11 @@ async function _initFlow() {
   const appShell = document.querySelector('.app-shell');
   if (appShell) appShell.style.opacity = '0';
 
-  console.log('[klinch] _initFlow called');
+  _log('[klinch] _initFlow called');
 
   // Step 1: Welcome — unconditionally first
   if (!localStorage.getItem('klinch_welcome_seen')) {
-    console.log('[klinch] step 1 → showing welcome screen');
+    _log('[klinch] step 1 → showing welcome screen');
     const overlay = document.getElementById('welcome-overlay');
     if (overlay) overlay.style.display = 'flex';
     if (appShell) appShell.style.opacity = ''; // overlay covers shell
@@ -629,29 +634,30 @@ async function _initFlow() {
     }, { once: true });
     return;
   }
-  console.log('[klinch] step 1 → welcome already seen, continuing');
+  _log('[klinch] step 1 → welcome already seen, continuing');
 
   // Step 2: Onboarding
   const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
-  console.log('[klinch] step 2 → klinch_profile raw:', localStorage.getItem('klinch_profile'), '| completed:', profile.completed);
+  _log(`[klinch] step 2 → klinch_profile: ${localStorage.getItem('klinch_profile')} | completed: ${profile.completed}`);
   if (!profile.completed) {
-    console.log('[klinch] step 2 → profile incomplete, showing onboarding');
+    _log('[klinch] step 2 → profile incomplete, showing onboarding');
     showOnboarding();
     if (appShell) appShell.style.opacity = ''; // overlay covers shell
     return;
   }
-  console.log('[klinch] step 2 → profile complete, continuing');
+  _log('[klinch] step 2 → profile complete, continuing');
 
-  // Step 4: Auth check
+  // Step 3: Auth check
+  _log('[klinch] step 3 → calling auth:get-session...');
   const res = await window.klinch.invoke('auth:get-session');
-  console.log('[klinch] step 4 → auth result:', res.ok, '| has session:', !!res.session);
+  _log(`[klinch] step 3 → auth:get-session result: ok=${res.ok} | session=${!!res.session} | user=${res.session?.user?.email ?? 'none'} | error=${res.error ?? 'none'}`);
   if (res.ok && res.session) {
+    _log('[klinch] step 3 → has session, syncing and going to app');
     await window.Sync?.syncAllDown?.();
-    console.log('[klinch] step 4 → signed in, going to app');
     if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
     _checkInterviewNudges();
   } else {
-    console.log('[klinch] step 4 → not signed in, showing auth screen');
+    _log('[klinch] step 3 → no session → showing auth screen');
     if (appShell) appShell.style.opacity = ''; // auth overlay covers shell
     window.Auth?.showAuthScreen();
   }

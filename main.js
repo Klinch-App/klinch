@@ -11,6 +11,12 @@ const supabaseApi    = require('./src/main/api/supabase');
 const authIpc        = require('./src/main/ipc/auth');
 const syncIpc        = require('./src/main/ipc/sync');
 
+// Normalize userData to 'Klinch' (capital K) regardless of whether running in dev
+// (app.name = 'klinch' from package.json "name") or as an installed DMG
+// (app.name = 'Klinch' from "productName"). Without this, they use separate stores,
+// so wiping one path doesn't clear the other's session.
+app.setPath('userData', path.join(app.getPath('appData'), 'Klinch'));
+
 // Register klinch:// custom protocol for OAuth callback (must happen before app ready).
 // In dev (electron .), process.defaultApp is true and macOS needs the full exec path
 // + argv so it knows how to relaunch the dev binary when a klinch:// URL is opened.
@@ -167,6 +173,11 @@ function unregisterOverlayShortcuts() {
 }
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
+
+// Renderer → forward log lines to main-process stdout (visible in npm start terminal)
+ipcMain.on('log:renderer', (_event, msg) => {
+  console.log('[renderer]', msg);
+});
 
 // Renderer → fire a native notification via main process
 ipcMain.on('notify', (_event, { title, body }) => {
@@ -402,14 +413,32 @@ function startReminderScheduler() {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  // If no persisted auth session exists, wipe renderer storage before the window
-  // opens so stale Supabase tokens in localStorage/IndexedDB can't bypass login.
   const SESSION_PATH = path.join(app.getPath('userData'), 'klinch-auth.json');
-  if (!fs.existsSync(SESSION_PATH)) {
-    await session.defaultSession.clearStorageData({
-      storages: ['cookies', 'indexdb', 'localstorage', 'websql', 'serviceworkers', 'cachestorage'],
-    });
-    console.log('[auth] no session file — renderer storage cleared');
+  const sessionFileExists = fs.existsSync(SESSION_PATH);
+  console.log('[auth:launch] userData path:', app.getPath('userData'));
+  console.log('[auth:launch] klinch-auth.json exists:', sessionFileExists);
+  if (sessionFileExists) {
+    try {
+      const raw = fs.readFileSync(SESSION_PATH, 'utf8');
+      const keys = Object.keys(JSON.parse(raw));
+      console.log('[auth:launch] klinch-auth.json keys:', keys);
+    } catch (e) {
+      console.log('[auth:launch] klinch-auth.json read error:', e.message);
+    }
+  }
+
+  if (!sessionFileExists) {
+    console.log('[auth:launch] no session file → clearing renderer storage...');
+    try {
+      await session.defaultSession.clearStorageData({
+        storages: ['cookies', 'indexdb', 'localstorage', 'websql', 'serviceworkers', 'cachestorage'],
+      });
+      console.log('[auth:launch] renderer storage cleared OK');
+    } catch (e) {
+      console.log('[auth:launch] clearStorageData error:', e.message);
+    }
+  } else {
+    console.log('[auth:launch] session file present — skipping storage clear');
   }
 
   // Auto-approve microphone permissions for Web Speech API + getUserMedia
