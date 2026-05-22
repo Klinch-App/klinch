@@ -786,9 +786,9 @@ if (_notifToggle) {
 })();
 
 // ── Settings — Sign Out ───────────────────────────────────────────────────────
-document.getElementById('st-sign-out-btn')?.addEventListener('click', async () => {
-  await window.klinch.invoke('auth:sign-out');
-  location.reload();
+document.getElementById('st-sign-out-btn')?.addEventListener('click', () => {
+  window.klinch.invoke('auth:sign-out');
+  // Main process handles session file deletion, storage clear, and window reload
 });
 
 // ── Settings — Terms of Service modal ────────────────────────────────────────

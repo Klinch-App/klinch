@@ -450,7 +450,7 @@ app.whenReady().then(async () => {
   startReminderScheduler();
 
   supabaseApi.init();
-  authIpc.init({ mainWindow: () => mainWindow });
+  authIpc.init({ mainWindow: () => mainWindow, app });
   syncIpc.init();
 
   interviewsData.init();
