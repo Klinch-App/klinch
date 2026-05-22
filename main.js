@@ -43,7 +43,7 @@ function createMainWindow() {
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#08061A',
-    titleBarStyle: 'hiddenInset',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -110,7 +110,9 @@ function createOverlayWindow() {
 
   // Sit above fullscreen apps (Zoom, Teams)
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  if (process.platform === 'darwin') {
+    overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  }
 
   // Default: clicks pass through to whatever's behind the overlay
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
@@ -242,7 +244,9 @@ function _createFullscreenOverlay() {
   });
 
   overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  if (process.platform === 'darwin') {
+    overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  }
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
 
   overlayWindow.loadFile(path.join(__dirname, 'src/renderer/overlay.html'));
