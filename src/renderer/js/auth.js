@@ -5,10 +5,13 @@ window.Auth = (() => {
   // Renderer-side Supabase client — lives here so window.localStorage is
   // available for the PKCE code verifier across the OAuth round-trip.
   // _supaAuth is the GoTrueClient (.auth), where signInWithOAuth etc. live.
+  // persistSession: false — the main-process klinch-auth.json is the authoritative
+  // session store. The renderer client must not write its own copy to localStorage,
+  // because that token survives userData deletion and bypasses the login flow.
   const _supaAuth = window.supabase?.createClient(
     window.klinch.supabaseUrl,
     window.klinch.supabaseAnonKey,
-    { auth: { flowType: 'pkce', persistSession: true, detectSessionInUrl: false } }
+    { auth: { flowType: 'pkce', persistSession: false, detectSessionInUrl: false } }
   )?.auth ?? null;
 
   let _mode = 'signup'; // 'signup' | 'login'

@@ -159,30 +159,9 @@ function showOnboarding() {
   const introEl          = document.getElementById('ob-intro');
   const progressWrap     = overlay.querySelector('.ob-progress-wrap');
   const navEl            = overlay.querySelector('.ob-nav');
-  const devSkipBtn       = document.getElementById('ob-dev-skip');
   const userSkipBtn      = document.getElementById('ob-user-skip');
 
   overlay.style.display = 'flex';
-
-  if (!window.klinch?.isDev) devSkipBtn?.remove();
-
-  devSkipBtn?.addEventListener('click', () => {
-    localStorage.setItem('klinch_profile', JSON.stringify({
-      completed: true,
-      role_type: 'SDR', experience_years: '1–3 years',
-      company_size: ['Startup (1–50)'], challenge: ['Nerves & confidence'],
-      job_search_status: 'Actively interviewing', strongest_asset: '[dev]',
-      improvement_area: '[dev]', tools: '[dev]',
-      salary_range: 'USD $70,000 – $90,000', additional_context: '',
-    }));
-    overlay.classList.add('ob-fade-out');
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      overlay.classList.remove('ob-fade-out');
-      _flowStarted = false;
-      _initFlow();
-    }, 400);
-  });
 
   // Hide Q&A chrome while intro screen is shown
   progressWrap.style.display = 'none';
@@ -353,7 +332,6 @@ function showOnboarding() {
     fill.style.width          = ((idx + 1) / OB_STEPS.length * 100) + '%';
     stepCount.textContent     = `${idx + 1} of ${OB_STEPS.length}`;
     backBtn.style.visibility  = idx === 0 ? 'hidden' : '';
-    if (devSkipBtn?.isConnected) devSkipBtn.style.display = idx <= 2 ? '' : 'none';
     userSkipBtn.style.display = idx >= 3 ? '' : 'none';
 
     if (dir === null) {

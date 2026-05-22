@@ -2,6 +2,7 @@ require('dotenv').config();
 process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
 const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog } = require('electron');
 const path = require('path');
+const fs   = require('fs');
 const interview      = require('./src/main/ipc/interview');
 const interviewsData = require('./src/main/ipc/interviews-data');
 const resumeData     = require('./src/main/ipc/resume');
@@ -400,7 +401,17 @@ function startReminderScheduler() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // If no persisted auth session exists, wipe renderer storage before the window
+  // opens so stale Supabase tokens in localStorage/IndexedDB can't bypass login.
+  const SESSION_PATH = path.join(app.getPath('userData'), 'klinch-auth.json');
+  if (!fs.existsSync(SESSION_PATH)) {
+    await session.defaultSession.clearStorageData({
+      storages: ['cookies', 'indexdb', 'localstorage', 'websql', 'serviceworkers', 'cachestorage'],
+    });
+    console.log('[auth] no session file — renderer storage cleared');
+  }
+
   // Auto-approve microphone permissions for Web Speech API + getUserMedia
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'media' || permission === 'microphone');
