@@ -653,7 +653,7 @@ async function _initFlow() {
   }
   console.log('[klinch] step 1 → welcome already seen, continuing');
 
-  // Step 2: Onboarding — checked before dev bypass so it can never be skipped
+  // Step 2: Onboarding
   const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
   console.log('[klinch] step 2 → klinch_profile raw:', localStorage.getItem('klinch_profile'), '| completed:', profile.completed);
   if (!profile.completed) {
@@ -663,17 +663,6 @@ async function _initFlow() {
     return;
   }
   console.log('[klinch] step 2 → profile complete, continuing');
-
-  // Dev bypass: welcome + onboarding already done; only skips the auth check
-  if (window.klinch.isDev && localStorage.getItem('klinch_dev_auth_bypass') === '1') {
-    console.log('[klinch] step 3 → dev bypass active, skipping auth → going to app');
-    if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
-    _checkInterviewNudges();
-    // coach.js loads after app.js in script order; defer badge until all scripts are parsed
-    setTimeout(() => window.CoachPage?.refreshBadge(), 0);
-    return;
-  }
-  console.log('[klinch] step 3 → no dev bypass, running auth check');
 
   // Step 4: Auth check
   const res = await window.klinch.invoke('auth:get-session');
@@ -789,7 +778,7 @@ if (_notifToggle) {
 
   confirmBtn?.addEventListener('click', () => {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('klinch') && k !== 'klinch_dev_auth_bypass')
+      .filter(k => k.startsWith('klinch'))
       .forEach(k => localStorage.removeItem(k));
     location.reload();
   });
@@ -814,7 +803,6 @@ if (_notifToggle) {
 
 // ── Settings — Sign Out ───────────────────────────────────────────────────────
 document.getElementById('st-sign-out-btn')?.addEventListener('click', async () => {
-  localStorage.removeItem('klinch_dev_auth_bypass');
   await window.klinch.invoke('auth:sign-out');
   location.reload();
 });

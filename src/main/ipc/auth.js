@@ -11,16 +11,12 @@ function _unavailable() {
   return { ok: false, error: 'Supabase not configured — add SUPABASE_URL and SUPABASE_ANON_KEY to .env' };
 }
 
-function _devSession() {
-  return { ok: true, session: { user: { id: 'dev', email: 'dev@local' } }, user: { id: 'dev', email: 'dev@local' } };
-}
-
 function init({ mainWindow }) {
   _getMainWindow = mainWindow;
 
   ipcMain.handle('auth:get-session', async () => {
     const { supabase } = supabaseApi;
-    if (!supabase) return _devSession(); // no keys → bypass auth in dev
+    if (!supabase) return _unavailable();
     try {
       const { data, error } = await supabase.auth.getSession();
       if (error) return { ok: false, error: error.message };

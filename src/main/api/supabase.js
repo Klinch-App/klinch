@@ -96,7 +96,7 @@ function init() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
-    console.warn('[auth] SUPABASE_URL or SUPABASE_ANON_KEY not set — auth running in dev bypass mode');
+    console.warn('[auth] SUPABASE_URL or SUPABASE_ANON_KEY not set — Supabase unavailable');
     return;
   }
 

@@ -299,17 +299,6 @@ window.Auth = (() => {
     _bind();
     _updateMode();
 
-    // Dev-only skip button — bypasses auth entirely
-    if (window.klinch.isDev) {
-      const devSkip = document.getElementById('auth-dev-skip');
-      if (devSkip) {
-        devSkip.style.display = '';
-        devSkip.addEventListener('click', () => {
-          localStorage.setItem('klinch_dev_auth_bypass', '1');
-          _onAuthSuccess();
-        });
-      }
-    }
   }
 
   return { showAuthScreen, init };

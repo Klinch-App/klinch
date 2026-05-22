@@ -28,7 +28,6 @@
   document.getElementById('st-reset-welcome-btn')?.addEventListener('click', () => {
     localStorage.removeItem('klinch_welcome_seen');
     localStorage.removeItem('klinch_profile');
-    localStorage.removeItem('klinch_dev_auth_bypass');
     location.reload();
   });
 
@@ -53,7 +52,7 @@
   function _load() {
     // Clear all existing klinch data (preserve dev auth bypass so reload doesn't show login)
     Object.keys(localStorage)
-      .filter(k => k.startsWith('klinch') && k !== 'klinch_dev_auth_bypass')
+      .filter(k => k.startsWith('klinch'))
       .forEach(k => localStorage.removeItem(k));
 
     // ── IDs ────────────────────────────────────────────────────────────────────
@@ -761,7 +760,7 @@ Cold calling, email copywriting, objection handling, territory management`,
 
   function _loadScreenshot() {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('klinch') && k !== 'klinch_dev_auth_bypass')
+      .filter(k => k.startsWith('klinch'))
       .forEach(k => localStorage.removeItem(k));
 
     // ── IDs ──────────────────────────────────────────────────────────────────────
