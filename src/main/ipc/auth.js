@@ -1,18 +1,22 @@
 'use strict';
 
-const { ipcMain } = require('electron');
+const { ipcMain, session: electronSession } = require('electron');
 const http        = require('http');
+const path        = require('path');
+const fs          = require('fs');
 const supabaseApi  = require('../api/supabase');
 
 let _getMainWindow = null;
+let _getApp        = null;
 let _oauthServer   = null;
 
 function _unavailable() {
   return { ok: false, error: 'Supabase not configured — add SUPABASE_URL and SUPABASE_ANON_KEY to .env' };
 }
 
-function init({ mainWindow }) {
+function init({ mainWindow, app }) {
   _getMainWindow = mainWindow;
+  _getApp        = app;
 
   ipcMain.handle('auth:get-session', async () => {
     const { supabase } = supabaseApi;
@@ -61,15 +65,27 @@ function init({ mainWindow }) {
   });
 
   ipcMain.handle('auth:sign-out', async () => {
+    // 1. Supabase sign-out (best-effort — don't block on error)
     const { supabase } = supabaseApi;
-    if (!supabase) return { ok: true };
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) return { ok: false, error: error.message };
-      return { ok: true };
-    } catch (err) {
-      return { ok: false, error: err.message };
+    if (supabase) {
+      try { await supabase.auth.signOut(); } catch (_) {}
     }
+
+    // 2. Delete klinch-auth.json so the session file check on next launch is clean
+    const sessionPath = path.join(_getApp.getPath('userData'), 'klinch-auth.json');
+    try { fs.unlinkSync(sessionPath); } catch (_) {}
+
+    // 3. Clear all renderer storage (localStorage, IndexedDB, cookies, etc.)
+    try {
+      await electronSession.defaultSession.clearStorageData({
+        storages: ['cookies', 'indexdb', 'localstorage', 'websql', 'serviceworkers', 'cachestorage'],
+      });
+    } catch (_) {}
+
+    // 4. Reload the window — launch guard finds no session file → shows auth screen
+    _getMainWindow?.()?.webContents.reload();
+
+    return { ok: true };
   });
 
   ipcMain.handle('auth:change-password', async (_event, { currentPassword, newPassword }) => {
