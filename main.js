@@ -421,9 +421,25 @@ function startReminderScheduler() {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(async () => {
-  const SESSION_PATH = path.join(app.getPath('userData'), 'klinch-auth.json');
+  const userData       = app.getPath('userData');
+  const SESSION_PATH   = path.join(userData, 'klinch-auth.json');
+  const STAMP_PATH     = path.join(userData, 'klinch-version.txt');
+  const appVersion     = app.getVersion();
+
+  // On Windows, NSIS uninstall/reinstall leaves %APPDATA%\Klinch intact, so
+  // klinch-auth.json from a previous install survives and bypasses the login
+  // screen. Detect a new install by comparing the stored version stamp; if it
+  // changed (or doesn't exist), wipe the session file so _initFlow forces auth.
+  const storedVersion = (() => { try { return fs.readFileSync(STAMP_PATH, 'utf8').trim(); } catch { return null; } })();
+  const freshInstall  = storedVersion !== appVersion;
+  if (freshInstall) {
+    console.log(`[auth:launch] version changed (${storedVersion} → ${appVersion}) → clearing session`);
+    try { fs.unlinkSync(SESSION_PATH); } catch (_) {}
+    try { fs.writeFileSync(STAMP_PATH, appVersion, 'utf8'); } catch (_) {}
+  }
+
   const sessionFileExists = fs.existsSync(SESSION_PATH);
-  console.log('[auth:launch] userData path:', app.getPath('userData'));
+  console.log('[auth:launch] userData path:', userData);
   console.log('[auth:launch] klinch-auth.json exists:', sessionFileExists);
   if (sessionFileExists) {
     try {
