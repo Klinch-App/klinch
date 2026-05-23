@@ -479,7 +479,7 @@ window.Billing = (() => {
       creditsHtml = `<span class="billing-badge billing-badge-unlimited">Unlimited</span>`;
     } else {
       const n = b.credits_remaining || 0;
-      const suffix = b.plan === 'starter' ? ` of ${meta.max_credits} this month` : ` interview${n !== 1 ? 's' : ''} remaining`;
+      const suffix = b.plan === 'starter' ? ` of ${meta.max_credits} this month` : ` Klinch Ear session${n !== 1 ? 's' : ''} remaining`;
       creditsHtml = `<span class="billing-badge">${n}${suffix}</span>`;
     }
 

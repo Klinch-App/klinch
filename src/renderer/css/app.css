@@ -5264,6 +5264,9 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
 }
 
 .plan-current-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -5272,7 +5275,6 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   background: rgba(124, 58, 255, 0.15);
   border-radius: 20px;
   padding: 3px 9px;
-  width: fit-content;
 }
 
 .plan-name {
