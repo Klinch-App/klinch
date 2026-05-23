@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
   },
   "build": {
     "appId": "com.klinch.app",
