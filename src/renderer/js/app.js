@@ -597,7 +597,7 @@ function _klinchInitApp() {
 }
 window._klinchInitApp = _klinchInitApp;
 
-// Flow: Welcome → Onboarding → Auth → App
+// Flow: Welcome → Auth → Onboarding → App
 let _flowStarted = false;
 
 // Logs to both DevTools console and main-process stdout (visible in npm start terminal)
@@ -620,7 +620,7 @@ async function _initFlow() {
 
   _log('[klinch] _initFlow called');
 
-  // Step 1: Welcome — unconditionally first
+  // Step 1: Welcome — shown once to brand-new visitors before they create an account
   if (!localStorage.getItem('klinch_welcome_seen')) {
     _log('[klinch] step 1 → showing welcome screen');
     const overlay = document.getElementById('welcome-overlay');
@@ -636,31 +636,36 @@ async function _initFlow() {
   }
   _log('[klinch] step 1 → welcome already seen, continuing');
 
-  // Step 2: Onboarding
+  // Step 2: Auth — must come before onboarding so sign-out always lands on login,
+  // never on the onboarding screen
+  _log('[klinch] step 2 → calling auth:get-session...');
+  const res = await window.klinch.invoke('auth:get-session');
+  _log(`[klinch] step 2 → auth:get-session result: ok=${res.ok} | session=${!!res.session} | user=${res.session?.user?.email ?? 'none'} | error=${res.error ?? 'none'}`);
+  if (!res.ok || !res.session) {
+    _log('[klinch] step 2 → no session → showing auth screen');
+    if (appShell) appShell.style.opacity = ''; // auth overlay covers shell
+    window.Auth?.showAuthScreen();
+    return;
+  }
+  _log('[klinch] step 2 → session valid, continuing');
+
+  // Step 3: Sync down — safe to run now that we have a valid session
+  await window.Sync?.syncAllDown?.();
+
+  // Step 4: Onboarding — only reached by authenticated users who haven't finished it yet
   const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
-  _log(`[klinch] step 2 → klinch_profile: ${localStorage.getItem('klinch_profile')} | completed: ${profile.completed}`);
+  _log(`[klinch] step 4 → klinch_profile completed: ${profile.completed}`);
   if (!profile.completed) {
-    _log('[klinch] step 2 → profile incomplete, showing onboarding');
+    _log('[klinch] step 4 → profile incomplete, showing onboarding');
     showOnboarding();
     if (appShell) appShell.style.opacity = ''; // overlay covers shell
     return;
   }
-  _log('[klinch] step 2 → profile complete, continuing');
 
-  // Step 3: Auth check
-  _log('[klinch] step 3 → calling auth:get-session...');
-  const res = await window.klinch.invoke('auth:get-session');
-  _log(`[klinch] step 3 → auth:get-session result: ok=${res.ok} | session=${!!res.session} | user=${res.session?.user?.email ?? 'none'} | error=${res.error ?? 'none'}`);
-  if (res.ok && res.session) {
-    _log('[klinch] step 3 → has session, syncing and going to app');
-    await window.Sync?.syncAllDown?.();
-    if (appShell) appShell.style.opacity = ''; // going to app, reveal shell
-    _checkInterviewNudges();
-  } else {
-    _log('[klinch] step 3 → no session → showing auth screen');
-    if (appShell) appShell.style.opacity = ''; // auth overlay covers shell
-    window.Auth?.showAuthScreen();
-  }
+  // Dashboard
+  _log('[klinch] step 4 → profile complete, going to app');
+  if (appShell) appShell.style.opacity = '';
+  _checkInterviewNudges();
 }
 
 _initFlow();
