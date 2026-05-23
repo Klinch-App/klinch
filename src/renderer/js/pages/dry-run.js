@@ -569,15 +569,16 @@ window.DryRunPage = (() => {
         return;
       }
 
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus' : 'audio/webm';
+      const opusSupported = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
+      const mimeType = opusSupported ? 'audio/webm;codecs=opus' : 'audio/webm';
 
-      _dgSocket = new WebSocket(
-        'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true',
-        ['token', dgKey]
-      );
+      const dgUrl = 'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true';
+      console.log(`[dry-run] opening Deepgram WS — key=${dgKey.slice(0, 6)}… mime support: audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
+
+      _dgSocket = new WebSocket(dgUrl, ['token', dgKey]);
 
       _dgSocket.onopen = () => {
+        console.log('[dry-run] Deepgram connected');
         const waveform = _el('dr-waveform');
         if (waveform) waveform.style.display = '';
         if (micLabel) micLabel.textContent = 'Listening…';
@@ -587,6 +588,7 @@ window.DryRunPage = (() => {
           if (e.data.size > 0 && _dgSocket?.readyState === WebSocket.OPEN) _dgSocket.send(e.data);
         };
         _mediaRecorder.start(200);
+        console.log(`[dry-run] MediaRecorder started — ${mimeType}`);
       };
 
       _dgSocket.onmessage = e => {
@@ -600,8 +602,14 @@ window.DryRunPage = (() => {
         } catch (_) {}
       };
 
-      _dgSocket.onerror = () => _resetMicUI('Connection error — try again.');
-      _dgSocket.onclose = () => { if (_isRecording) _resetMicUI('Connection lost — try again.'); };
+      _dgSocket.onerror = (e) => {
+        console.error(`[dry-run] Deepgram WS error — type=${e.type} message=${e.message ?? '(none)'}`);
+        _resetMicUI('Connection error — try again.');
+      };
+      _dgSocket.onclose = (e) => {
+        console.log(`[dry-run] Deepgram closed — code=${e.code} reason="${e.reason}" wasClean=${e.wasClean}`);
+        if (_isRecording) _resetMicUI('Connection lost — try again.');
+      };
     }
 
     function _stopRecording() {
