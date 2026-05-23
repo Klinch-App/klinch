@@ -563,30 +563,6 @@ window.DryRunPage = (() => {
         return;
       }
 
-      // Log which device Windows actually picked and whether the track is live
-      const audioTrack = _micStream.getAudioTracks()[0];
-      console.log(`[dry-run] audio track — label="${audioTrack?.label}" state=${audioTrack?.readyState} enabled=${audioTrack?.enabled}`);
-      try {
-        const s = audioTrack?.getSettings?.();
-        if (s) console.log('[dry-run] track settings:', JSON.stringify(s));
-      } catch (_) {}
-
-      // Sample audio levels for 3 seconds to confirm real signal (not silence)
-      try {
-        const actx    = new AudioContext();
-        const analyser = actx.createAnalyser();
-        actx.createMediaStreamSource(_micStream).connect(analyser);
-        analyser.fftSize = 256;
-        const buf = new Uint8Array(analyser.frequencyBinCount);
-        let levelTick = 0;
-        const levelTimer = setInterval(() => {
-          analyser.getByteFrequencyData(buf);
-          const avg = (buf.reduce((a, b) => a + b, 0) / buf.length).toFixed(2);
-          console.log(`[dry-run] audio level #${++levelTick} — avg=${avg} (0=silence, >10=real audio)`);
-          if (levelTick >= 6) { clearInterval(levelTimer); actx.close(); }
-        }, 500);
-      } catch (_) {}
-
       const dgKey = window.klinch?.deepgramKey;
       if (!dgKey) {
         _resetMicUI('No API key — check your .env file.');
@@ -597,37 +573,24 @@ window.DryRunPage = (() => {
       const mimeType = opusSupported ? 'audio/webm;codecs=opus' : 'audio/webm';
 
       const dgUrl = 'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true&encoding=opus&container=webm';
-      console.log(`[dry-run] opening Deepgram WS — key=${dgKey.slice(0, 6)}… mime support: audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
 
       _dgSocket = new WebSocket(dgUrl, ['token', dgKey]);
-      let _msgCount = 0;
 
       _dgSocket.onopen = () => {
-        console.log('[dry-run] Deepgram connected');
         const waveform = _el('dr-waveform');
         if (waveform) waveform.style.display = '';
         if (micLabel) micLabel.textContent = 'Listening…';
 
         _mediaRecorder = new MediaRecorder(_micStream, { mimeType });
-        let _chunkCount = 0;
         _mediaRecorder.ondataavailable = e => {
-          _chunkCount++;
-          if (_chunkCount <= 10 || _chunkCount % 50 === 0) {
-            console.log(`[dry-run] ondataavailable #${_chunkCount} — size=${e.data.size} wsState=${_dgSocket?.readyState}`);
-          }
           if (e.data.size > 0 && _dgSocket?.readyState === WebSocket.OPEN) _dgSocket.send(e.data);
         };
         _mediaRecorder.start(200);
-        console.log(`[dry-run] MediaRecorder started — ${mimeType}`);
       };
 
       _dgSocket.onmessage = e => {
         try {
           const data = JSON.parse(e.data);
-          _msgCount++;
-          if (_msgCount <= 20 || data.type !== 'Results') {
-            console.log(`[dry-run] DG message #${_msgCount} — type=${data.type} transcript="${data?.channel?.alternatives?.[0]?.transcript ?? ''}" is_final=${data.is_final ?? '-'} speech_final=${data.speech_final ?? '-'}`);
-          }
           const alt = data?.channel?.alternatives?.[0];
           if (!alt?.transcript) return;
           if (data.is_final) finalTranscript += alt.transcript + ' ';
@@ -636,14 +599,8 @@ window.DryRunPage = (() => {
         } catch (_) {}
       };
 
-      _dgSocket.onerror = (e) => {
-        console.error(`[dry-run] Deepgram WS error — type=${e.type} message=${e.message ?? '(none)'}`);
-        _resetMicUI('Connection error — try again.');
-      };
-      _dgSocket.onclose = (e) => {
-        console.log(`[dry-run] Deepgram closed — code=${e.code} reason="${e.reason}" wasClean=${e.wasClean}`);
-        if (_isRecording) _resetMicUI('Connection lost — try again.');
-      };
+      _dgSocket.onerror = () => _resetMicUI('Connection error — try again.');
+      _dgSocket.onclose = () => { if (_isRecording) _resetMicUI('Connection lost — try again.'); };
     }
 
     function _stopRecording() {
