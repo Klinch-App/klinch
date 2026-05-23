@@ -71,14 +71,16 @@ window.STT = (() => {
       const apiKey = window.klinch.deepgramKey;
       if (!apiKey) { reject(new Error('DEEPGRAM_API_KEY not set')); return; }
 
+      console.log(`[stt] opening Deepgram WS — key=${apiKey.slice(0, 6)}… url=${DG_BASE}`);
       const socket = new WebSocket(DG_BASE, ['token', apiKey]);
       socket.binaryType = 'arraybuffer';
 
       socket.onopen = () => {
         console.log('[stt] Deepgram connected (candidate)');
 
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus' : 'audio/webm';
+        const opusSupported = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
+        const mimeType = opusSupported ? 'audio/webm;codecs=opus' : 'audio/webm';
+        console.log(`[stt] MIME support — audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
 
         recMic = new MediaRecorder(stream, { mimeType });
         recMic.ondataavailable = (e) => {
@@ -92,10 +94,13 @@ window.STT = (() => {
         resolve(socket);
       };
 
-      socket.onerror = () => reject(new Error('WebSocket error (candidate)'));
+      socket.onerror = (e) => {
+        console.error(`[stt] Deepgram WS error (candidate) — type=${e.type} message=${e.message ?? '(none)'}`);
+        reject(new Error(`WebSocket error (candidate): ${e.message ?? e.type}`));
+      };
 
       socket.onclose = (e) => {
-        console.log(`[stt] Deepgram closed (candidate) — code=${e.code}`);
+        console.log(`[stt] Deepgram closed (candidate) — code=${e.code} reason="${e.reason}" wasClean=${e.wasClean}`);
         if (recMic && recMic.state !== 'inactive') recMic.stop();
         recMic = null;
 
