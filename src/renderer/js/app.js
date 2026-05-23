@@ -592,8 +592,12 @@ function _showNudge(iv, remaining) {
 // Called by auth.js after successful sign-in
 function _klinchInitApp() {
   const p = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
-  if (!p.completed) showOnboarding();
-  else _checkInterviewNudges();
+  if (!p.completed) {
+    showOnboarding();
+    return;
+  }
+  // Mic setup runs after auth and onboarding — never before
+  window.runSetup?.(() => _checkInterviewNudges());
 }
 window._klinchInitApp = _klinchInitApp;
 
@@ -618,33 +622,40 @@ async function _initFlow() {
   const appShell = document.querySelector('.app-shell');
   if (appShell) appShell.style.opacity = '0';
 
+  // Trigger the main-window fade-in now that the renderer is ready.
+  // Previously this was sent from setup.js IIFE, which caused the mic prompt
+  // to fire before auth. Sending it here ensures the window becomes visible
+  // at the right time regardless of which overlay we're about to show.
+  window.klinch.send('app:initialized');
+
   _log('[klinch] _initFlow called');
 
-  // Step 1: Auth check — always first so a signed-out user can never reach
-  // onboarding or the dashboard without re-authenticating.
+  // Step 1: Auth check — always first. A signed-out user must never reach
+  // setup, onboarding, or the dashboard without re-authenticating.
   _log('[klinch] step 1 → calling auth:get-session...');
   const res = await window.klinch.invoke('auth:get-session');
   _log(`[klinch] step 1 → auth:get-session result: ok=${res.ok} | session=${!!res.session} | user=${res.session?.user?.email ?? 'none'} | error=${res.error ?? 'none'}`);
 
   if (!res.ok || !res.session) {
     // No valid session. Decide between welcome screen and login screen:
-    // - klinch_welcome_seen set → returning user who signed out → go straight to login
-    // - klinch_welcome_seen not set → brand-new visitor → show welcome first
+    // - klinch_welcome_seen set → returning user who signed out → login directly
+    // - klinch_welcome_seen not set → brand-new visitor → welcome screen first
     if (localStorage.getItem('klinch_welcome_seen')) {
-      _log('[klinch] step 1 → no session, returning user → showing auth screen');
+      _log('[klinch] step 1 → no session + welcome_seen → showing auth screen');
       if (appShell) appShell.style.opacity = '';
       window.Auth?.showAuthScreen();
       return;
     }
 
-    _log('[klinch] step 1 → no session, new user → showing welcome screen');
+    _log('[klinch] step 1 → no session + no welcome_seen → showing welcome screen');
     const overlay = document.getElementById('welcome-overlay');
     if (overlay) overlay.style.display = 'flex';
     if (appShell) appShell.style.opacity = ''; // overlay covers shell
     document.getElementById('welcome-cta-btn')?.addEventListener('click', () => {
+      _log('[klinch] welcome: Get Started clicked → re-entering flow');
       localStorage.setItem('klinch_welcome_seen', '1');
       if (overlay) overlay.style.display = 'none';
-      _flowStarted = false; // reset so the continuation can re-enter
+      _flowStarted = false;
       _initFlow(); // re-enters: step 1 → no session + welcome_seen → auth screen
     }, { once: true });
     return;
@@ -665,10 +676,13 @@ async function _initFlow() {
     return;
   }
 
-  // Dashboard
-  _log('[klinch] step 3 → profile complete, going to app');
-  if (appShell) appShell.style.opacity = '';
-  _checkInterviewNudges();
+  // Step 4: Mic setup — only runs post-auth, post-onboarding
+  _log('[klinch] step 4 → running setup (mic permission check)');
+  window.runSetup?.(() => {
+    _log('[klinch] step 4 → setup complete, going to app');
+    if (appShell) appShell.style.opacity = '';
+    _checkInterviewNudges();
+  });
 }
 
 _initFlow();
