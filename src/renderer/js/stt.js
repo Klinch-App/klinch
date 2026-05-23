@@ -33,26 +33,21 @@ window.STT = (() => {
       await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch (_) {}
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const inputs = devices.filter((d) => d.kind === 'audioinput');
-    console.log('[stt] audio inputs:', inputs.map((d) => `"${d.label}" [${d.deviceId.slice(0, 8)}]`));
-    return inputs;
+    return devices.filter((d) => d.kind === 'audioinput');
   }
 
   function pickMic(inputs) {
-    const mic = inputs.find((d) =>
+    return inputs.find((d) =>
       !d.label.toLowerCase().includes('blackhole') &&
       d.deviceId !== 'default' &&
       d.deviceId !== 'communications'
     ) || null;
-    if (mic) console.log('[stt] mic:', mic.label);
-    else     console.warn('[stt] no mic found');
-    return mic;
   }
 
   // ── Audio stream ───────────────────────────────────────────────────────────
 
   async function openStream(deviceId) {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    return navigator.mediaDevices.getUserMedia({
       audio: {
         deviceId:         deviceId ? { exact: deviceId } : undefined,
         echoCancellation: true,
@@ -61,9 +56,6 @@ window.STT = (() => {
       },
       video: false,
     });
-    const labels = stream.getAudioTracks().map((t) => `"${t.label}" state=${t.readyState}`);
-    console.log('[stt] mic stream opened:', labels);
-    return stream;
   }
 
   // ── Deepgram WebSocket ─────────────────────────────────────────────────────
@@ -73,41 +65,28 @@ window.STT = (() => {
       const apiKey = window.klinch.deepgramKey;
       if (!apiKey) { reject(new Error('DEEPGRAM_API_KEY not set')); return; }
 
-      console.log(`[stt] opening Deepgram WS — key=${apiKey.slice(0, 6)}… url=${DG_BASE}`);
       const socket = new WebSocket(DG_BASE, ['token', apiKey]);
       socket.binaryType = 'arraybuffer';
 
       socket.onopen = () => {
-        console.log('[stt] Deepgram connected (candidate)');
-
-        const opusSupported = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
-        const mimeType = opusSupported ? 'audio/webm;codecs=opus' : 'audio/webm';
-        console.log(`[stt] MIME support — audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus' : 'audio/webm';
 
         recMic = new MediaRecorder(stream, { mimeType });
-        let _chunkCount = 0;
         recMic.ondataavailable = (e) => {
-          _chunkCount++;
-          if (_chunkCount <= 10 || _chunkCount % 50 === 0) {
-            console.log(`[stt] ondataavailable #${_chunkCount} — size=${e.data.size} wsState=${socket.readyState}`);
-          }
           if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
             socket.send(e.data);
           }
         };
         recMic.start(250);
-
-        console.log(`[stt] MediaRecorder started (candidate) — ${mimeType}`);
         resolve(socket);
       };
 
       socket.onerror = (e) => {
-        console.error(`[stt] Deepgram WS error (candidate) — type=${e.type} message=${e.message ?? '(none)'}`);
         reject(new Error(`WebSocket error (candidate): ${e.message ?? e.type}`));
       };
 
-      socket.onclose = (e) => {
-        console.log(`[stt] Deepgram closed (candidate) — code=${e.code} reason="${e.reason}" wasClean=${e.wasClean}`);
+      socket.onclose = () => {
         if (recMic && recMic.state !== 'inactive') recMic.stop();
         recMic = null;
 
@@ -126,11 +105,9 @@ window.STT = (() => {
         if (!transcript) return;
 
         if (msg.is_final) {
-          console.log(`[stt] final (candidate): "${transcript}" | speech_final=${msg.speech_final}`);
-
           window.klinch.send('interview:transcript-entry', {
-            speaker: 'you',
-            text:    transcript,
+            speaker:   'you',
+            text:      transcript,
             timestamp: Date.now(),
           });
 
@@ -153,18 +130,15 @@ window.STT = (() => {
                 || Date.now() > _reconnectDeadline;
 
     if (gaveUp) {
-      console.error(`[stt] giving up reconnect after ${_reconnectAttempts - 1} attempts`);
       window.klinch.send('stt:reconnect-failed');
       return;
     }
 
-    console.log(`[stt] reconnecting (candidate) — attempt ${_reconnectAttempts}/${RECONNECT_MAX_ATTEMPTS}…`);
     try {
       wsMic = await connectDeepgram(streamMic);
       _reconnectAttempts = 0;
       _reconnectDeadline = 0;
-    } catch (err) {
-      console.error('[stt] reconnect failed (candidate):', err.message);
+    } catch {
       setTimeout(() => reconnect(), 2000);
     }
   }
@@ -175,7 +149,6 @@ window.STT = (() => {
     const text = candidateBuf.trim();
     candidateBuf = '';
     if (text && sessionActive) {
-      console.log('[stt] flushing to Claude:', text);
       window.klinch.send('interview:question', text);
     }
   }
@@ -187,23 +160,20 @@ window.STT = (() => {
 
   async function startSession(interviewId) {
     if (sessionActive) return true;
-    console.log('[stt] startSession()');
 
     const inputs = await enumerateInputs();
     const micDev  = pickMic(inputs);
 
     try {
       streamMic = await openStream(micDev?.deviceId || null);
-    } catch (err) {
-      console.error('[stt] mic stream failed:', err.message);
+    } catch {
       document.dispatchEvent(new CustomEvent('stt:device-status', { detail: 'error' }));
       return false;
     }
 
     try {
       wsMic = await connectDeepgram(streamMic);
-    } catch (err) {
-      console.error('[stt] Deepgram (candidate) failed:', err.message);
+    } catch {
       document.dispatchEvent(new CustomEvent('stt:device-status', { detail: 'error' }));
       streamMic?.getTracks().forEach((t) => t.stop());
       streamMic = null;
@@ -217,13 +187,11 @@ window.STT = (() => {
 
     document.dispatchEvent(new CustomEvent('stt:device-status', { detail: 'mic' }));
     await window.klinch.invoke('interview:start', { interviewId: interviewId || null });
-    console.log('[stt] session active — mic:', !!wsMic);
     return true;
   }
 
   async function stopSession() {
     if (!sessionActive) return;
-    console.log('[stt] stopSession()');
     sessionActive = false;
     candidateBuf  = '';
 
