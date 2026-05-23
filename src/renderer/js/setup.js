@@ -1,6 +1,8 @@
-(async () => {
+// Exposed as window.runSetup(onComplete) — called from _initFlow only after a
+// valid Supabase session is confirmed. Never runs at page load.
+window.runSetup = async function runSetup(onComplete) {
   const modal = document.getElementById('setup-modal');
-  if (!modal) return;
+  if (!modal) { onComplete?.(); return; }
 
   async function requestMic() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -12,17 +14,16 @@
     try {
       await requestMic();
       modal.style.display = 'none';
-      window.klinch.send('app:initialized');
+      onComplete?.();
       return;
     } catch (_) {
       localStorage.removeItem('klinch_setup_complete');
     }
   }
 
-  // Show modal synchronously so the main window renders with it already visible
+  // Show modal and wait for the user to grant mic access
   modal.style.display = 'flex';
   renderPrompt();
-  window.klinch.send('app:initialized');
 
   function renderPrompt() {
     modal.innerHTML = `
@@ -40,6 +41,7 @@
         await requestMic();
         localStorage.setItem('klinch_setup_complete', '1');
         modal.style.display = 'none';
+        onComplete?.();
       } catch (_) {
         renderError();
       }
@@ -54,4 +56,4 @@
       </div>
     `;
   }
-})();
+};
