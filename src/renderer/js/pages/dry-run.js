@@ -572,7 +572,7 @@ window.DryRunPage = (() => {
       const opusSupported = MediaRecorder.isTypeSupported('audio/webm;codecs=opus');
       const mimeType = opusSupported ? 'audio/webm;codecs=opus' : 'audio/webm';
 
-      const dgUrl = 'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true';
+      const dgUrl = 'wss://api.deepgram.com/v1/listen?interim_results=true&punctuate=true&smart_format=true&encoding=opus&container=webm';
       console.log(`[dry-run] opening Deepgram WS — key=${dgKey.slice(0, 6)}… mime support: audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
 
       _dgSocket = new WebSocket(dgUrl, ['token', dgKey]);

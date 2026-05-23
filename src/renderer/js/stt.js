@@ -22,7 +22,9 @@ window.STT = (() => {
     '&interim_results=true' +
     '&punctuate=true' +
     '&smart_format=true' +
-    '&endpointing=400';
+    '&endpointing=400' +
+    '&encoding=opus' +
+    '&container=webm';
 
   // ── Device discovery ───────────────────────────────────────────────────────
 
