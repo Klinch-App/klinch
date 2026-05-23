@@ -83,7 +83,12 @@ window.STT = (() => {
         console.log(`[stt] MIME support — audio/webm;codecs=opus=${opusSupported} → using ${mimeType}`);
 
         recMic = new MediaRecorder(stream, { mimeType });
+        let _chunkCount = 0;
         recMic.ondataavailable = (e) => {
+          _chunkCount++;
+          if (_chunkCount <= 10 || _chunkCount % 50 === 0) {
+            console.log(`[stt] ondataavailable #${_chunkCount} — size=${e.data.size} wsState=${socket.readyState}`);
+          }
           if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
             socket.send(e.data);
           }

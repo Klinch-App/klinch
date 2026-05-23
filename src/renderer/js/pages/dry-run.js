@@ -584,7 +584,12 @@ window.DryRunPage = (() => {
         if (micLabel) micLabel.textContent = 'Listening…';
 
         _mediaRecorder = new MediaRecorder(_micStream, { mimeType });
+        let _chunkCount = 0;
         _mediaRecorder.ondataavailable = e => {
+          _chunkCount++;
+          if (_chunkCount <= 10 || _chunkCount % 50 === 0) {
+            console.log(`[dry-run] ondataavailable #${_chunkCount} — size=${e.data.size} wsState=${_dgSocket?.readyState}`);
+          }
           if (e.data.size > 0 && _dgSocket?.readyState === WebSocket.OPEN) _dgSocket.send(e.data);
         };
         _mediaRecorder.start(200);
