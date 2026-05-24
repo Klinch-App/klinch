@@ -16,6 +16,7 @@ const interview      = require('./src/main/ipc/interview');
 const interviewsData = require('./src/main/ipc/interviews-data');
 const resumeData     = require('./src/main/ipc/resume');
 const billing        = require('./src/main/ipc/billing');
+const { autoUpdater } = require('electron-updater');
 const supabaseApi    = require('./src/main/api/supabase');
 const authIpc        = require('./src/main/ipc/auth');
 const syncIpc        = require('./src/main/ipc/sync');
@@ -473,6 +474,21 @@ app.whenReady().then(async () => {
 
   createMainWindow();
   startReminderScheduler();
+
+  // Auto-updater
+  autoUpdater.checkForUpdatesAndNotify();
+
+  autoUpdater.on('update-downloaded', () => {
+    const { dialog } = require('electron');
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Ready',
+      message: 'A new version of Klinch has been downloaded. It will be installed when you restart the app.',
+      buttons: ['Restart Now', 'Later']
+    }).then(result => {
+      if (result.response === 0) autoUpdater.quitAndInstall();
+    });
+  });
 
   supabaseApi.init();
   authIpc.init({ mainWindow: () => mainWindow, app });
