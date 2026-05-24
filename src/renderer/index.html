@@ -655,48 +655,6 @@
 
           </div>
 
-          <div class="st-section-label" style="margin-top:32px">Data</div>
-          <div class="st-toggle-row">
-            <div class="st-toggle-info">
-              <div class="st-toggle-label">Reset Onboarding</div>
-              <div class="st-toggle-sub">Re-run the profile setup and update your preferences.</div>
-            </div>
-            <button id="st-ob-reset-btn" class="st-reset-trigger" style="color:#ef4444;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08)">Reset Profile</button>
-          </div>
-
-          <div class="st-toggle-row">
-            <div class="st-toggle-info">
-              <div class="st-toggle-label">Reset App Data</div>
-              <div class="st-toggle-sub">Wrapping up a job search or starting fresh? This permanently deletes all your interviews, companies, applications, resume, and Dry Run history — giving you a completely clean slate for your next search.</div>
-            </div>
-            <button id="st-reset-btn" class="st-reset-trigger" style="color:#ef4444;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08)">Reset Everything</button>
-          </div>
-
-          <div id="st-dev-section" style="display:none;margin-top:32px">
-            <div class="st-section-label" style="color:#f87171">Developer</div>
-            <div class="st-toggle-row">
-              <div class="st-toggle-info">
-                <div class="st-toggle-label">Seed Data</div>
-                <div class="st-toggle-sub">Wipes all app data and loads realistic test interviews, applications, resume, and a Dry Run report. Use after a full reset.</div>
-              </div>
-              <button id="st-seed-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Seed Data →</button>
-            </div>
-            <div class="st-toggle-row">
-              <div class="st-toggle-info">
-                <div class="st-toggle-label">Screenshot Data</div>
-                <div class="st-toggle-sub">Loads fictional company data (Vantage, Nexus, Meridian, Crestline) — safe for demos and screenshots. Logo fallbacks use distinct brand colors.</div>
-              </div>
-              <button id="st-screenshot-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Screenshot Data →</button>
-            </div>
-            <div class="st-toggle-row">
-              <div class="st-toggle-info">
-                <div class="st-toggle-label">Reset Full Flow</div>
-                <div class="st-toggle-sub">Clears welcome and profile so the complete welcome → onboarding → auth flow runs from scratch.</div>
-              </div>
-              <button id="st-reset-welcome-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Reset Full Flow →</button>
-            </div>
-          </div>
-
           <div class="st-section-label" style="margin-top:32px">Account</div>
           <div class="st-toggle-row">
             <div class="st-toggle-info">
@@ -729,6 +687,23 @@
             <button id="st-sign-out-btn" class="st-reset-trigger">Sign Out</button>
           </div>
 
+          <div class="st-section-label" style="margin-top:32px">Data</div>
+          <div class="st-toggle-row">
+            <div class="st-toggle-info">
+              <div class="st-toggle-label">Reset Onboarding</div>
+              <div class="st-toggle-sub">Re-run the profile setup and update your preferences.</div>
+            </div>
+            <button id="st-ob-reset-btn" class="st-reset-trigger" style="color:#ef4444;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08)">Reset Profile</button>
+          </div>
+
+          <div class="st-toggle-row">
+            <div class="st-toggle-info">
+              <div class="st-toggle-label">Reset App Data</div>
+              <div class="st-toggle-sub">Wrapping up a job search or starting fresh? This permanently deletes all your interviews, companies, applications, resume, and Dry Run history — giving you a completely clean slate for your next search.</div>
+            </div>
+            <button id="st-reset-btn" class="st-reset-trigger" style="color:#ef4444;border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.08)">Reset Everything</button>
+          </div>
+
           <div class="st-section-label" style="margin-top:32px">Legal</div>
           <div class="st-toggle-row">
             <div class="st-toggle-info">
@@ -744,6 +719,46 @@
               <div class="st-toggle-sub">Effective May 2026 · Klinch LLC</div>
             </div>
             <button id="st-pp-btn" class="st-reset-trigger">View Privacy Policy →</button>
+          </div>
+
+          <div id="st-dev-section" style="margin-top:32px">
+            <div class="st-dev-section-wrap">
+              <div class="st-dev-header">
+                <span class="st-section-label" style="margin-bottom:0">🔒 Developer</span>
+                <button id="st-dev-login-btn" class="st-dev-login-btn">Login to Dev Mode</button>
+              </div>
+              <div id="st-dev-gate" style="display:none;margin-top:12px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input id="st-dev-password" type="password" class="st-dev-password-input" placeholder="Enter password…">
+                  <button id="st-dev-confirm-btn" class="st-dev-confirm-btn">Unlock</button>
+                </div>
+                <div id="st-dev-error" style="display:none;font-size:12px;color:#ef4444;margin-top:6px">Incorrect password.</div>
+              </div>
+              <div id="st-dev-tools" style="display:none">
+                <div class="st-toggle-row" style="margin-top:12px">
+                  <div class="st-toggle-info">
+                    <div class="st-toggle-label">Seed Data</div>
+                    <div class="st-toggle-sub">Wipes all app data and loads realistic test interviews, applications, resume, and a Dry Run report. Use after a full reset.</div>
+                  </div>
+                  <button id="st-seed-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Seed Data →</button>
+                </div>
+                <div class="st-toggle-row">
+                  <div class="st-toggle-info">
+                    <div class="st-toggle-label">Screenshot Data</div>
+                    <div class="st-toggle-sub">Loads fictional company data (Vantage, Nexus, Meridian, Crestline) — safe for demos and screenshots. Logo fallbacks use distinct brand colors.</div>
+                  </div>
+                  <button id="st-screenshot-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Load Screenshot Data →</button>
+                </div>
+                <div class="st-toggle-row" style="margin-bottom:12px">
+                  <div class="st-toggle-info">
+                    <div class="st-toggle-label">Reset Full Flow</div>
+                    <div class="st-toggle-sub">Clears welcome and profile so the complete welcome → onboarding → auth flow runs from scratch.</div>
+                  </div>
+                  <button id="st-reset-welcome-btn" class="plan-upgrade-btn" style="background:#dc2626;flex-shrink:0">Reset Full Flow →</button>
+                </div>
+                <button id="st-dev-lock-btn" class="st-dev-login-btn">🔓 Lock Dev Mode</button>
+              </div>
+            </div>
           </div>
         </div>
 
