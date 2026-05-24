@@ -834,9 +834,22 @@ document.getElementById('nav-bug-report')?.addEventListener('click', () => {
   const version  = window.klinch.appVersion || 'unknown';
   const rawPlat  = window.klinch.platform   || '';
   const platform = rawPlat === 'darwin' ? 'Mac' : rawPlat === 'win32' ? 'Windows' : rawPlat || 'unknown';
-  const body = `Version: ${version}\nOS: ${platform}\n\nDescribe the bug:\n`;
-  window.klinch.invoke('shell:open-external', {
-    url: `mailto:support@tryklinch.com?subject=Klinch%20Bug%20Report&body=${encodeURIComponent(body)}`,
+  const text = [
+    'To: support@tryklinch.com',
+    'Subject: Klinch Bug Report',
+    '',
+    `Version: ${version}`,
+    `OS: ${platform}`,
+    '',
+    'Describe the bug:',
+    '',
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    const tip = document.getElementById('nav-bug-report-tip');
+    if (!tip) return;
+    tip.classList.add('visible');
+    setTimeout(() => tip.classList.remove('visible'), 3000);
   });
 });
 
