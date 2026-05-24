@@ -8,7 +8,7 @@ if (!process.env.SUPABASE_URL) {
 }
 
 process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
-const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog } = require('electron');
+const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog, clipboard } = require('electron');
 process.env.APP_VERSION = app.getVersion();
 const path = require('path');
 const fs   = require('fs');
@@ -481,6 +481,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('dev:unlock', (_e, password) =>
     typeof password === 'string' && password === process.env.DEV_PASSWORD
   );
+
+  ipcMain.handle('clipboard:write', (_e, text) => { clipboard.writeText(String(text)); });
 
   interviewsData.init();
   resumeData.init();

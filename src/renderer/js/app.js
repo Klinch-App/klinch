@@ -845,7 +845,7 @@ document.getElementById('nav-bug-report')?.addEventListener('click', () => {
     '',
   ].join('\n');
 
-  navigator.clipboard.writeText(text).then(() => {
+  window.klinch.invoke('clipboard:write', text).then(() => {
     const tip = document.getElementById('nav-bug-report-tip');
     if (!tip) return;
     tip.classList.add('visible');
