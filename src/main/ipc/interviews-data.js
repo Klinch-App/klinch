@@ -193,7 +193,7 @@ function init() {
   });
 
   ipcMain.handle('shell:open-external', async (_e, { url }) => {
-    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+    if (url && (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:'))) {
       await shell.openExternal(url);
     }
   });
