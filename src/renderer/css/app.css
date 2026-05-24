@@ -186,6 +186,22 @@ html, body {
   flex-shrink: 0;
 }
 
+.nav-bug-report-tip {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 0 12px;
+  line-height: 1.4;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.2s, max-height 0.2s;
+}
+.nav-bug-report-tip.visible {
+  opacity: 1;
+  max-height: 40px;
+  margin-bottom: 6px;
+}
+
 .nav-divider {
   height: 1px;
   background: var(--border-subtle);
