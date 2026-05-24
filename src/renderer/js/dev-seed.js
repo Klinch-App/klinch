@@ -1,11 +1,45 @@
 (() => {
-  const devSection = document.getElementById('st-dev-section');
-  if (!window.klinch?.isDev) {
-    devSection?.remove();
-    return;
+  let _devUnlocked = false;
+
+  const loginBtn   = document.getElementById('st-dev-login-btn');
+  const gate       = document.getElementById('st-dev-gate');
+  const pwInput    = document.getElementById('st-dev-password');
+  const confirmBtn = document.getElementById('st-dev-confirm-btn');
+  const errEl      = document.getElementById('st-dev-error');
+  const tools      = document.getElementById('st-dev-tools');
+  const lockBtn    = document.getElementById('st-dev-lock-btn');
+
+  loginBtn?.addEventListener('click', () => {
+    if (gate) gate.style.display = '';
+    pwInput?.focus();
+  });
+
+  async function _tryUnlock() {
+    const pw = pwInput?.value || '';
+    if (!pw) return;
+    const ok = await window.klinch.invoke('dev:unlock', pw);
+    if (ok) {
+      _devUnlocked = true;
+      if (gate)     gate.style.display     = 'none';
+      if (loginBtn) loginBtn.style.display = 'none';
+      if (errEl)    errEl.style.display    = 'none';
+      if (tools)    tools.style.display    = '';
+      if (pwInput)  pwInput.value          = '';
+    } else {
+      if (errEl) errEl.style.display = '';
+    }
   }
 
-  if (devSection) devSection.style.display = '';
+  confirmBtn?.addEventListener('click', _tryUnlock);
+  pwInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') _tryUnlock(); });
+
+  lockBtn?.addEventListener('click', () => {
+    _devUnlocked = false;
+    if (tools)    tools.style.display    = 'none';
+    if (loginBtn) loginBtn.style.display = '';
+    if (gate)     gate.style.display     = 'none';
+    if (errEl)    errEl.style.display    = 'none';
+  });
 
   document.getElementById('st-seed-btn')?.addEventListener('click', () => {
     window.KModal.confirm(

@@ -477,6 +477,10 @@ app.whenReady().then(async () => {
   authIpc.init({ mainWindow: () => mainWindow, app });
   syncIpc.init();
 
+  ipcMain.handle('dev:unlock', (_e, password) =>
+    typeof password === 'string' && password === process.env.DEV_PASSWORD
+  );
+
   interviewsData.init();
   resumeData.init();
   billing.init();

@@ -5389,6 +5389,68 @@ details[open] .ivdp-transcript-toggle::before { transform: rotate(90deg); }
   border-color: rgba(220, 60, 160, 0.45);
 }
 
+.st-dev-section-wrap {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.st-dev-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.st-dev-login-btn {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: color 0.15s, border-color 0.15s;
+}
+.st-dev-login-btn:hover {
+  color: var(--text-secondary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.st-dev-password-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  outline: none;
+}
+.st-dev-password-input:focus {
+  border-color: var(--primary);
+}
+
+.st-dev-confirm-btn {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background 0.15s;
+}
+.st-dev-confirm-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .st-toggle-switch {
   position: relative;
   width: 40px;
