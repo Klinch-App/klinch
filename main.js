@@ -9,6 +9,7 @@ if (!process.env.SUPABASE_URL) {
 
 process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
 const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog } = require('electron');
+process.env.APP_VERSION = app.getVersion();
 const path = require('path');
 const fs   = require('fs');
 const interview      = require('./src/main/ipc/interview');

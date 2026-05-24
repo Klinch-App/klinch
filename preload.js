@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('klinch', {
   platform:        process.platform,
+  appVersion:      process.env.APP_VERSION || '',
   isDev:           process.env.KLINCH_IS_DEV === '1',
   deepgramKey:     process.env.DEEPGRAM_API_KEY,
   logoDevKey:      process.env.LOGO_DEV_API_KEY || '',

@@ -829,6 +829,17 @@ document.getElementById('st-pp-btn')?.addEventListener('click', () => {
   window.klinch.invoke('shell:open-external', { url: 'https://tryklinch.com/privacy' });
 });
 
+// ── Sidebar — Report a Bug ────────────────────────────────────────────────────
+document.getElementById('nav-bug-report')?.addEventListener('click', () => {
+  const version  = window.klinch.appVersion || 'unknown';
+  const rawPlat  = window.klinch.platform   || '';
+  const platform = rawPlat === 'darwin' ? 'Mac' : rawPlat === 'win32' ? 'Windows' : rawPlat || 'unknown';
+  const body = `Version: ${version}\nOS: ${platform}\n\nDescribe the bug:\n`;
+  window.klinch.invoke('shell:open-external', {
+    url: `mailto:support@tryklinch.com?subject=Klinch%20Bug%20Report&body=${encodeURIComponent(body)}`,
+  });
+});
+
 // ── Settings — Account section ────────────────────────────────────────────────
 (async function() {
   // Populate email display
