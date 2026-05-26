@@ -222,15 +222,47 @@ body.fading-out {
   border-color: rgba(155, 107, 255, 0.6);
 }
 
-.ear-fs-btn-start {
-  background: rgb(109, 40, 217);
-  border-color: rgba(124, 58, 255, 0.7);
-  color: #fff;
+.ear-fs-btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.ear-fs-btn-start:hover {
-  background: rgb(124, 58, 255);
-  border-color: rgba(155, 107, 255, 0.9);
+.ear-fs-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── LIVE indicator ─────────────────────────────────────────────────────── */
+
+.ear-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #FF3B30;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  letter-spacing: 2px;
+  text-shadow: 0 0 14px rgba(255, 59, 48, 0.55);
+  padding: 0 6px;
+}
+
+.ear-live-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #FF3B30;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7);
+  animation: live-dot-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes live-dot-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+  70%  { box-shadow: 0 0 0 11px rgba(255, 59, 48, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
 }
 
 .ear-fs-btn-end {
@@ -316,6 +348,18 @@ body.fading-out {
 }
 
 .ear-fs-confirm-ok:hover {
+  background: rgba(239, 68, 68, 0.38);
+  border-color: rgba(239, 68, 68, 0.62);
+  color: #fecaca;
+}
+
+.ear-fs-confirm-discard {
+  background: rgba(239, 68, 68, 0.22);
+  border: 1px solid rgba(239, 68, 68, 0.42);
+  color: #fca5a5;
+}
+
+.ear-fs-confirm-discard:hover {
   background: rgba(239, 68, 68, 0.38);
   border-color: rgba(239, 68, 68, 0.62);
   color: #fecaca;

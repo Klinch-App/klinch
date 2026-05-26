@@ -239,7 +239,9 @@ ipcMain.handle('ear:fullscreen-launch', (_event, { interviewId, returnTo, roleTy
     // Overlay already open — drop passive-mode shortcuts before activating full-screen
     unregisterOverlayShortcuts();
     overlayWindow.webContents.send('ear:fs-mode');
-    overlayWindow.webContents.send('ear:fs-session-state', 'idle');
+    overlayWindow.webContents.send('ear:fs-session-state', 'recording');
+    mainWindow?.webContents.send('ear:do-start', { interviewId: earFsInterviewId });
+    interview.startSessionTimer();
     return;
   }
 
@@ -278,7 +280,9 @@ function _createFullscreenOverlay() {
   overlayWindow.webContents.once('did-finish-load', () => {
     overlayWindow.show();
     overlayWindow.webContents.send('ear:fs-mode');
-    overlayWindow.webContents.send('ear:fs-session-state', 'idle');
+    overlayWindow.webContents.send('ear:fs-session-state', 'recording');
+    mainWindow?.webContents.send('ear:do-start', { interviewId: earFsInterviewId });
+    interview.startSessionTimer();
   });
 
   overlayWindow.on('closed', () => {
@@ -323,6 +327,27 @@ ipcMain.on('ear:fs-resume', () => {
 // Overlay → user confirmed End session
 ipcMain.on('ear:fs-end', (_event, { markComplete } = {}) => {
   _doEndEarSession({ markComplete: !!markComplete });
+});
+
+// Overlay → user confirmed Cancel (stop without saving)
+ipcMain.on('ear:fs-cancel', () => {
+  interview.stopSessionTimer();
+  overlayWindow?.webContents.send('ear:fs-session-state', 'stopped');
+
+  const returnTo    = earFsReturnTo;
+  const interviewId = earFsInterviewId;
+  earFsReturnTo    = null;
+  earFsInterviewId = null;
+  interview.setEarFsMode(false, '');
+
+  mainWindow?.webContents.send('ear:do-cancel');
+
+  _fadeOutOverlay(() => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.close();
+    mainWindow?.show();
+    mainWindow?.focus();
+    mainWindow?.webContents.send('ear:fs-closed', { returnTo, interviewId, markComplete: false });
+  });
 });
 
 function _doEndEarSession({ markComplete = false } = {}) {
