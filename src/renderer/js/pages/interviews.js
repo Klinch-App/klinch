@@ -1023,6 +1023,7 @@ window.InterviewsPage = (() => {
           _fireAIAnalysis(iv, 'context');
         }
         if (action === 'retry-dry-run') {
+          if (!window.Billing?.canStartSession()) { window.Billing?.showUpgradeModal(); return; }
           window.navigateTo('dry-run');
           window.DryRunPage?.launch({ mode: 'retry', interviewId: id });
         }
