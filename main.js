@@ -1,14 +1,15 @@
-// Dev: dotenv reads from CWD (.env in project root).
-// Production (packaged DMG): CWD is not the project root, so .env isn't found
-// by the default path. electron-builder copies .env into Contents/Resources/
-// via extraResources, so fall back to process.resourcesPath when vars are absent.
-require('dotenv').config();
-if (!process.env.SUPABASE_URL) {
-  require('dotenv').config({ path: require('path').join(process.resourcesPath, '.env') });
+const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog, clipboard } = require('electron');
+
+// Dev: load from project-root .env via dotenv.
+// Production: load from build-config.js generated at build time by scripts/generate-build-config.js.
+// The .env file is never bundled with or shipped inside the packaged app.
+if (!app.isPackaged) {
+  require('dotenv').config();
+} else {
+  try { Object.assign(process.env, require('./src/main/build-config')); } catch (_) {}
 }
 
 process.env.KLINCH_IS_DEV = process.argv.includes('--dev') ? '1' : '';
-const { app, BrowserWindow, nativeTheme, screen, ipcMain, globalShortcut, session, Notification, dialog, clipboard } = require('electron');
 process.env.APP_VERSION = app.getVersion();
 const path = require('path');
 const fs   = require('fs');
