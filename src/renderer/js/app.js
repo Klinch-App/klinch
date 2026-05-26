@@ -1231,12 +1231,23 @@ if (btnExpand) {
 // Main process → start STT for full-screen Ear session
 window.klinch.on('ear:do-start', async ({ interviewId } = {}) => {
   await window.STT?.startSession(interviewId || null);
+  if (deviceDot)   { deviceDot.className = 'device-dot live'; }
+  if (deviceLabel) { deviceLabel.className = 'device-label-live'; deviceLabel.textContent = '● Recording'; }
 });
 
 // Main process → stop STT and generate feedback for full-screen Ear session
 window.klinch.on('ear:do-stop', async ({ interviewId } = {}) => {
   await window.STT?.stopSession();
+  if (deviceDot)   { deviceDot.className = 'device-dot'; }
+  if (deviceLabel) { deviceLabel.className = ''; }
   window.klinch.invoke('interview:feedback', { interviewId: interviewId || null }).catch(console.error);
+});
+
+// Main process → cancel session without saving (no feedback)
+window.klinch.on('ear:do-cancel', async () => {
+  await window.STT?.stopSession();
+  if (deviceDot)   { deviceDot.className = 'device-dot'; }
+  if (deviceLabel) { deviceLabel.className = ''; }
 });
 
 // Main process → overlay minimized (no exit modal — just restore panel)

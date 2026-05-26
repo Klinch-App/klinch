@@ -28,14 +28,17 @@
   <div class="ear-fs-bottom-glow" id="ear-fs-bottom-glow"></div>
 
   <!-- Full-screen Ear: attention toast -->
-  <div class="ear-fs-toast" id="ear-fs-toast">Klinch Ear is live — tap Start when ready</div>
+  <div class="ear-fs-toast" id="ear-fs-toast">Klinch Ear is recording</div>
 
   <!-- Full-screen Ear: bottom controls (hidden in passive mode) -->
   <div class="ear-fs-bottombar" id="ear-fs-bottombar">
-    <button class="ear-fs-btn ear-fs-btn-start" id="ear-fs-start">Start</button>
-    <button class="ear-fs-btn ear-fs-btn-pause" id="ear-fs-pause" style="display:none">Pause</button>
+    <div class="ear-live-indicator" id="ear-live-indicator">
+      <span class="ear-live-dot"></span>LIVE
+    </div>
+    <button class="ear-fs-btn ear-fs-btn-pause" id="ear-fs-pause">Pause</button>
     <button class="ear-fs-btn ear-fs-btn-resume" id="ear-fs-resume" style="display:none">Resume</button>
     <button class="ear-fs-btn ear-fs-btn-end" id="ear-fs-end">End</button>
+    <button class="ear-fs-btn ear-fs-btn-cancel" id="ear-fs-cancel">Cancel</button>
   </div>
 
   <!-- End session confirmation dialog -->
@@ -49,6 +52,17 @@
       <div class="ear-fs-confirm-btns">
         <button class="ear-fs-confirm-btn ear-fs-confirm-cancel" id="ear-fs-confirm-cancel">Cancel</button>
         <button class="ear-fs-confirm-btn ear-fs-confirm-ok" id="ear-fs-confirm-ok">End Session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel session confirmation dialog -->
+  <div class="ear-fs-confirm-backdrop" id="ear-fs-cancel-backdrop">
+    <div class="ear-fs-confirm-card">
+      <div class="ear-fs-confirm-title">Are you sure? This session will not be saved.</div>
+      <div class="ear-fs-confirm-btns">
+        <button class="ear-fs-confirm-btn ear-fs-confirm-cancel" id="ear-fs-cancel-no">Keep Going</button>
+        <button class="ear-fs-confirm-btn ear-fs-confirm-discard" id="ear-fs-cancel-yes">Discard Session</button>
       </div>
     </div>
   </div>

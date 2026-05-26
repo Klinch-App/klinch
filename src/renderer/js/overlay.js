@@ -4,13 +4,16 @@ const topbar          = document.getElementById('ear-fs-topbar');
 const bottombar       = document.getElementById('ear-fs-bottombar');
 const dot             = document.getElementById('ear-fs-dot');
 const minimizeBtn     = document.getElementById('ear-fs-minimize-btn');
-const startBtn        = document.getElementById('ear-fs-start');
 const pauseBtn        = document.getElementById('ear-fs-pause');
 const resumeBtn       = document.getElementById('ear-fs-resume');
 const endBtn          = document.getElementById('ear-fs-end');
+const cancelBtn       = document.getElementById('ear-fs-cancel');
 const confirmBackdrop = document.getElementById('ear-fs-confirm-backdrop');
 const confirmCancel   = document.getElementById('ear-fs-confirm-cancel');
 const confirmOk       = document.getElementById('ear-fs-confirm-ok');
+const cancelBackdrop  = document.getElementById('ear-fs-cancel-backdrop');
+const cancelNo        = document.getElementById('ear-fs-cancel-no');
+const cancelYes       = document.getElementById('ear-fs-cancel-yes');
 
 // ── Cue display (passive + full-screen modes) ─────────────────────────────────
 
@@ -46,10 +49,8 @@ function _dismissCue() {
 // Escape: dismiss current cue — does NOT exit full-screen
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if (confirmBackdrop.classList.contains('visible')) {
-    _closeConfirm();
-    return;
-  }
+  if (confirmBackdrop.classList.contains('visible')) { _closeConfirm(); return; }
+  if (cancelBackdrop.classList.contains('visible'))  { _closeCancelConfirm(); return; }
   if (cueEl.textContent.trim()) _dismissCue();
 });
 
@@ -90,14 +91,10 @@ bottombar.addEventListener('mouseenter',       _enableMouse);
 bottombar.addEventListener('mouseleave',       _disableMouse);
 confirmBackdrop.addEventListener('mouseenter', _enableMouse);
 confirmBackdrop.addEventListener('mouseleave', _disableMouse);
+cancelBackdrop.addEventListener('mouseenter',  _enableMouse);
+cancelBackdrop.addEventListener('mouseleave',  _disableMouse);
 
 // ── Control buttons ───────────────────────────────────────────────────────────
-
-startBtn.addEventListener('click', () => {
-  window.klinch.send('ear:fs-start');
-  startBtn.style.display  = 'none';
-  pauseBtn.style.display  = '';
-});
 
 pauseBtn.addEventListener('click', () => {
   window.klinch.send('ear:fs-pause');
@@ -112,6 +109,7 @@ resumeBtn.addEventListener('click', () => {
 });
 
 endBtn.addEventListener('click', _showConfirm);
+cancelBtn.addEventListener('click', _showCancelConfirm);
 
 minimizeBtn.addEventListener('click', () => {
   window.klinch.send('ear:fs-minimize');
@@ -146,4 +144,23 @@ confirmOk.addEventListener('click', () => {
   const markComplete = _markComplete;
   _closeConfirm();
   window.klinch.send('ear:fs-end', { markComplete });
+});
+
+// ── Cancel confirmation ───────────────────────────────────────────────────────
+
+function _showCancelConfirm() {
+  cancelBackdrop.classList.add('visible');
+  _enableMouse();
+}
+
+function _closeCancelConfirm() {
+  cancelBackdrop.classList.remove('visible');
+  _disableMouse();
+}
+
+cancelNo.addEventListener('click', _closeCancelConfirm);
+
+cancelYes.addEventListener('click', () => {
+  _closeCancelConfirm();
+  window.klinch.send('ear:fs-cancel');
 });
