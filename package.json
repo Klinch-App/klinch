@@ -6,11 +6,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "release": "electron-builder --mac --win --publish always",
-    "release:mac": "electron-builder --mac --publish always",
-    "release:win": "electron-builder --win --publish always"
+    "build": "node scripts/generate-build-config.js && electron-builder",
+    "build:win": "node scripts/generate-build-config.js && electron-builder --win",
+    "release": "node scripts/generate-build-config.js && electron-builder --mac --win --publish always",
+    "release:mac": "node scripts/generate-build-config.js && electron-builder --mac --publish always",
+    "release:win": "node scripts/generate-build-config.js && electron-builder --win --publish always"
   },
   "build": {
     "appId": "com.klinch.app",
@@ -18,12 +18,6 @@
     "directories": {
       "output": "dist"
     },
-    "extraResources": [
-      {
-        "from": ".env",
-        "to": ".env"
-      }
-    ],
     "mac": {
       "target": "dmg",
       "icon": "build/icon.icns"
