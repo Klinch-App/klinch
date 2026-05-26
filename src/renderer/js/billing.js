@@ -57,17 +57,26 @@ window.Billing = (() => {
       }).catch(() => {});
     } else {
       _checkPeriodReset();
-      // Backfill trial_started_at for users created before this field existed
+      // Backfill trial_started_at for users created before this field existed.
+      // Use the auth account's created_at so the trial window reflects when
+      // the account was actually created, not when the app was next launched.
       const b = _getBilling();
       if (!b.trial_started_at) {
-        const backfilled = { ...b, trial_started_at: new Date().toISOString() };
-        _saveBilling(backfilled);
-        window.klinch.invoke('billing:sync-to-supabase', {
-          plan:               backfilled.plan,
-          credits:            backfilled.credits_remaining || 0,
-          stripe_customer_id: backfilled.customer_id || null,
-          trial_started_at:   backfilled.trial_started_at,
-        }).catch(() => {});
+        (async () => {
+          let trial_started_at = new Date().toISOString(); // last-resort fallback
+          try {
+            const res = await window.klinch.invoke('billing:get-user-created-at');
+            if (res?.created_at) trial_started_at = res.created_at;
+          } catch { /* keep fallback */ }
+          const backfilled = { ..._getBilling(), trial_started_at };
+          _saveBilling(backfilled);
+          window.klinch.invoke('billing:sync-to-supabase', {
+            plan:               backfilled.plan,
+            credits:            backfilled.credits_remaining || 0,
+            stripe_customer_id: backfilled.customer_id || null,
+            trial_started_at:   backfilled.trial_started_at,
+          }).catch(() => {});
+        })();
       }
     }
     _bindUpgradeModal();
@@ -81,6 +90,30 @@ window.Billing = (() => {
     refreshSettings();
     _checkFivepackExpiry();
     _maybeSyncSubscription(); // fire-and-forget
+
+    // Re-check limits every 60 minutes for long-running sessions
+    setInterval(() => {
+      // Period reset: restore Starter credits if billing period rolled over
+      const creditsBefore = _getBilling().credits_remaining;
+      _checkPeriodReset();
+      if (_getBilling().credits_remaining !== creditsBefore) {
+        refreshBanner();
+        refreshSettings();
+      }
+
+      // Fivepack expiry: show lock modal unless a session is currently active
+      const b = _getBilling();
+      const fivepackJustExpired = b.plan !== 'starter' && b.plan !== 'unlimited'
+        && b.fivepack_expires_at && isFivepackExpired();
+      if (fivepackJustExpired || _fivepackExpiryPending) {
+        if (_isSessionActive()) {
+          _fivepackExpiryPending = true; // defer — will show on next tick when session is over
+        } else {
+          showFivepackLockModal();
+          _fivepackExpiryPending = false;
+        }
+      }
+    }, 60 * 60 * 1000);
   }
 
   function _checkPeriodReset() {
@@ -157,6 +190,14 @@ window.Billing = (() => {
     if (b.plan === 'starter' || b.plan === 'unlimited') return;
     if (b.fivepack_expires_at && isFivepackExpired()) showFivepackLockModal();
   }
+
+  // True while a session started via the interview panel is running
+  function _isSessionActive() {
+    const stop = document.getElementById('btn-stop-interview');
+    return stop !== null && stop.style.display !== 'none';
+  }
+
+  let _fivepackExpiryPending = false;
 
   function canStartSession() {
     const b = _getBilling();

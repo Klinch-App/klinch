@@ -207,6 +207,18 @@ function init() {
     }
   });
 
+  // ── Fetch auth user's account creation date ────────────────────────────────
+  ipcMain.handle('billing:get-user-created-at', async () => {
+    const { supabase } = supabaseApi;
+    if (!supabase) return { ok: true, created_at: null };
+    try {
+      const { data } = await supabase.auth.getUser();
+      return { ok: true, created_at: data?.user?.created_at ?? null };
+    } catch {
+      return { ok: true, created_at: null };
+    }
+  });
+
   // ── Persist billing state to Supabase profiles ─────────────────────────────
   // Called by renderer after any successful checkout or credit change.
   ipcMain.handle('billing:sync-to-supabase', async (_e, { plan, credits, stripe_customer_id, trial_started_at, fivepack_expires_at }) => {
