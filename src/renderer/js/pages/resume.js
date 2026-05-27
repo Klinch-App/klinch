@@ -3,6 +3,7 @@ window.ResumePage = (() => {
   const profile = JSON.parse(localStorage.getItem('klinch_profile') || '{}');
 
   let _selectedIvId = '';
+  let _activeTab    = 'resume';
 
   function _el(id) { return document.getElementById(id); }
   function _esc(s) {
@@ -188,10 +189,24 @@ window.ResumePage = (() => {
       <div class="iv-page-header">
         <div class="iv-page-title">Resume</div>
       </div>
-      ${_buildUploadSection(r)}
-      ${r ? _buildCoachSection(r) : ''}
-      ${r ? _buildResumeViewSection(r) : ''}
-      ${r ? _buildRoleFitSection(r) : ''}
+      <div class="rs-tab-bar">
+        <button class="rs-tab${_activeTab === 'resume' ? ' rs-tab-active' : ''}" data-tab="resume">
+          <div class="rs-tab-label">Resume</div>
+          <div class="rs-tab-sub">Review &amp; strengthen your bullets</div>
+        </button>
+        <button class="rs-tab${_activeTab === 'rolefit' ? ' rs-tab-active' : ''}" data-tab="rolefit">
+          <div class="rs-tab-label">Role Fit</div>
+          <div class="rs-tab-sub">Match your resume to a role</div>
+        </button>
+      </div>
+      <div id="rs-tab-resume"${_activeTab !== 'resume' ? ' style="display:none"' : ''}>
+        ${_buildUploadSection(r)}
+        ${r ? _buildCoachSection(r) : ''}
+        ${r ? _buildResumeViewSection(r) : ''}
+      </div>
+      <div id="rs-tab-rolefit"${_activeTab !== 'rolefit' ? ' style="display:none"' : ''}>
+        ${r ? _buildRoleFitSection(r) : ''}
+      </div>
     `;
 
     _wireEvents(r);
@@ -428,6 +443,18 @@ window.ResumePage = (() => {
   // ── Event wiring ──────────────────────────────────────────────────────────────
 
   function _wireEvents(r) {
+    // Tab switching
+    const container = _el('rs-content');
+    container?.querySelectorAll('.rs-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        _activeTab = tab.dataset.tab;
+        container.querySelectorAll('.rs-tab').forEach(t =>
+          t.classList.toggle('rs-tab-active', t === tab));
+        _el('rs-tab-resume').style.display  = _activeTab === 'resume'  ? '' : 'none';
+        _el('rs-tab-rolefit').style.display = _activeTab === 'rolefit' ? '' : 'none';
+      });
+    });
+
     const fileInput = _el('rs-file-input');
 
     const dropZone = _el('rs-dropzone');
