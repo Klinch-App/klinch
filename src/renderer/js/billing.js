@@ -348,6 +348,11 @@ window.Billing = (() => {
     refreshBanner();
     refreshSettings();
 
+    // Send purchase confirmation email for subscription plans
+    if (plan_key === 'starter' || plan_key === 'unlimited') {
+      window.klinch.invoke('billing:send-purchase-email', { plan_key }).catch(() => {});
+    }
+
     // Persist billing state to Supabase so it survives reinstalls
     window.klinch.invoke('billing:sync-to-supabase', {
       plan:                b.plan,
