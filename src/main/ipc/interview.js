@@ -254,8 +254,7 @@ function registerHandlers() {
   // VAD-flushed candidate utterance
   ipcMain.on('interview:question', (_event, text) => {
     if (!sessionActive) return;
-    // Mid-interview nudges disabled — under evaluation
-    // _analyzeEarUtterance(text);
+    _analyzeEarUtterance(text);
   });
 
   // Full-screen Ear: pause / resume cue generation
