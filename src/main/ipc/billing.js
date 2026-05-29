@@ -3,6 +3,7 @@
 const { ipcMain, shell } = require('electron');
 const { stripe }         = require('../api/stripe');
 const supabaseApi        = require('../api/supabase');
+const emails             = require('../api/emails');
 
 // Price IDs — create in Stripe Dashboard, then add to .env
 const PRICES = {
@@ -260,6 +261,17 @@ function init() {
       console.error('[billing] customer-portal:', err.message);
       return { ok: false, error: err.message };
     }
+  });
+
+  // ── Send purchase confirmation email ───────────────────────────────────────
+  ipcMain.handle('billing:send-purchase-email', async (_e, { plan_key }) => {
+    try {
+      const { email } = await _getSession();
+      if (email) await emails.sendPurchaseConfirmation(email, plan_key);
+    } catch (err) {
+      console.error('[billing] send-purchase-email:', err.message);
+    }
+    return { ok: true };
   });
 
   // ── Verify + parse an incoming webhook event ────────────────────────────────

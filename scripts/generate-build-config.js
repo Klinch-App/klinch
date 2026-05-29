@@ -22,6 +22,7 @@
 //   GOOGLE_CLIENT_ID        Google OAuth client ID
 //   GOOGLE_CLIENT_SECRET    Google OAuth client secret
 //   DEV_PASSWORD            Internal dev-unlock password
+//   RESEND_API_KEY          Resend transactional email API key
 //
 // NOT included here (used only by electron-builder itself during publishing, never by the app):
 //   GH_TOKEN                GitHub PAT for electron-builder publish step
@@ -50,6 +51,7 @@ const RUNTIME_KEYS = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'DEV_PASSWORD',
+  'RESEND_API_KEY',
 ];
 
 const missing = RUNTIME_KEYS.filter(k => !process.env[k]);
