@@ -738,10 +738,17 @@ function _klinchSettings() {
   return JSON.parse(localStorage.getItem('klinch_settings') || '{}');
 }
 
-window.klinchNotify = function(title, body) {
+window.klinchNotify = function(title, body, action) {
   if (_klinchSettings().notifications_enabled === false) return;
-  window.klinch.send('notify', { title, body });
+  window.klinch.send('notify', action ? { title, body, action } : { title, body });
 };
+
+window.klinch.on('notify:action', (action) => {
+  if (action?.type === 'open-interview-coach') {
+    window.navigateTo('interviews');
+    setTimeout(() => window.InterviewsPage?.openDetail(action.id), 80);
+  }
+});
 
 window._completeInterview = function(id) {
   const all = JSON.parse(localStorage.getItem('klinch_interviews') || '[]');
@@ -855,6 +862,10 @@ document.getElementById('nav-bug-report')?.addEventListener('click', () => {
 
 // ── Settings — Account section ────────────────────────────────────────────────
 (async function() {
+  // Populate version display
+  const versionEl = document.getElementById('st-version');
+  if (versionEl) versionEl.textContent = `v${window.klinch.appVersion || '—'}`;
+
   // Populate email display
   const emailEl = document.getElementById('st-account-email');
   if (emailEl) {

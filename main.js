@@ -191,8 +191,8 @@ ipcMain.on('log:renderer', (_event, msg) => {
 });
 
 // Renderer → fire a native notification via main process
-ipcMain.on('notify', (_event, { title, body }) => {
-  _fireMainNotification(title, body);
+ipcMain.on('notify', (_event, { title, body, action } = {}) => {
+  _fireMainNotification(title, body, action);
 });
 
 // Renderer → launch / close overlay
@@ -389,8 +389,19 @@ ipcMain.on('ear:fs-minimize', () => {
 const firedReminders    = new Set();
 const firedCompletions  = new Set();
 
-function _fireMainNotification(title, body) {
-  if (Notification.isSupported()) new Notification({ title, body }).show();
+function _fireMainNotification(title, body, action) {
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title, body });
+  if (action && mainWindow && !mainWindow.isDestroyed()) {
+    n.on('click', () => {
+      if (!mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+        mainWindow.webContents.send('notify:action', action);
+      }
+    });
+  }
+  n.show();
 }
 
 function startReminderScheduler() {

@@ -1282,6 +1282,13 @@ Be specific and actionable. Focus on what will most help the candidate prepare f
         if (coachBody)  { coachBody.innerHTML = _renderMarkdownish(text); coachBody.style.display = ''; }
         if (coachRefresh) coachRefresh.style.display = '';
         window.refreshDashboardStats?.();
+        if (sessionWithTranscript && window.klinchNotify) {
+          window.klinchNotify(
+            'Klinch',
+            `Your post-interview feedback for ${company} is ready — check the Coach tab.`,
+            { type: 'open-interview-coach', id: iv.id }
+          );
+        }
       }
       if (needContext && results[ri] !== undefined) {
         const text = results[ri];
