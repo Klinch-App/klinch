@@ -1,6 +1,6 @@
 {
   "name": "klinch",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "AI-powered SDR interview coach",
   "main": "main.js",
   "scripts": {
