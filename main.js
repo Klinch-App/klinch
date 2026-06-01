@@ -60,7 +60,7 @@ function createMainWindow() {
     height: 800,
     minWidth: 960,
     minHeight: 600,
-    backgroundColor: '#08061A',
+    backgroundColor: '#0D1117',
     ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
     show: false,
     webPreferences: {
