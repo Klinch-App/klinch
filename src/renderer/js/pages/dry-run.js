@@ -15,7 +15,8 @@ window.DryRunPage = (() => {
   let _mediaRecorder   = null;
   let _dgSocket        = null;
   let _micStream       = null;
-  let _retryQueue      = null;
+  let _retryQueue          = null;
+  let _communityQuestions  = [];   // fetched once per company-specific session
 
   const MAX_QUESTIONS = 10;
   const DR_WARN1_S    = 720;   // 12 min
@@ -34,7 +35,9 @@ window.DryRunPage = (() => {
 
   const INTERVIEW_SYSTEM =
     'You are conducting a realistic SDR job interview. Ask one question at a time based on ' +
-    'the stage and context provided. Questions should feel natural and conversational, not robotic. ' +
+    'the stage and context provided. If community_questions are provided, draw from that pool ' +
+    '(phrased naturally) before generating new ones — these are real questions asked at this company. ' +
+    'Questions should feel natural and conversational, not robotic. ' +
     'Do not number your questions. Do not explain what you are doing. Just ask the question.';
 
   const REPORT_SYSTEM =
@@ -457,6 +460,19 @@ window.DryRunPage = (() => {
       }
     }
 
+    _communityQuestions = [];
+    if (_config.mode === 'company' && _config.interview_id) {
+      const iv = _getInterviews().find(x => x.id === _config.interview_id);
+      const domain = iv?.company?.domain;
+      if (domain) {
+        try {
+          const cqRes = await window.klinch.invoke('community:get-questions', { domain });
+          _communityQuestions = cqRes?.data || [];
+          console.log('[dry-run] loaded', _communityQuestions.length, 'community questions for domain:', domain);
+        } catch (_) {}
+      }
+    }
+
     await _nextQuestion();
   }
 
@@ -688,11 +704,20 @@ window.DryRunPage = (() => {
         ? (interviews.find(iv => iv.id === _config.interview_id)?.jd?.structured ?? null)
         : null;
 
+      const communityQs = (_config.mode === 'company' && _communityQuestions.length)
+        ? _communityQuestions
+            .filter(q => !q.interview_stage || q.interview_stage === _config.stage)
+            .map(q => q.question)
+            .slice(0, 20)
+        : [];
+
       try {
         const profileCtx = window.profileContext ? window.profileContext(profile) : '';
+        const payload = { stage: _config.stage, mode: _config.mode, jd, history: _history };
+        if (communityQs.length) payload.community_questions = communityQs;
         question = await _claude(
           profileCtx ? profileCtx + '\n\n' + INTERVIEW_SYSTEM : INTERVIEW_SYSTEM,
-          JSON.stringify({ stage: _config.stage, mode: _config.mode, jd, history: _history }),
+          JSON.stringify(payload),
           300
         );
       } catch (_) {
@@ -973,13 +998,14 @@ window.DryRunPage = (() => {
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
     if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    _config          = null;
-    _history         = [];
-    _questionNum     = 0;
-    _isRecording     = false;
-    _sessionRunId    = null;
-    _currentQuestion = null;
-    _retryQueue      = null;
+    _config             = null;
+    _history            = [];
+    _questionNum        = 0;
+    _isRecording        = false;
+    _sessionRunId       = null;
+    _currentQuestion    = null;
+    _retryQueue         = null;
+    _communityQuestions = [];
     _renderSetup();
   }
 
@@ -990,13 +1016,14 @@ window.DryRunPage = (() => {
     if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
     if (_dgSocket)  { try { _dgSocket.close(); } catch (_) {} _dgSocket = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    _config          = null;
-    _history         = [];
-    _questionNum     = 0;
-    _isRecording     = false;
-    _sessionRunId    = null;
-    _currentQuestion = null;
-    _retryQueue      = null;
+    _config             = null;
+    _history            = [];
+    _questionNum        = 0;
+    _isRecording        = false;
+    _sessionRunId       = null;
+    _currentQuestion    = null;
+    _retryQueue         = null;
+    _communityQuestions = [];
 
     const iv    = _getInterviews().find(x => x.id === config.interviewId) || null;
     const stage = config.stage || iv?.stage || 'Interview';
