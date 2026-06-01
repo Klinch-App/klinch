@@ -80,6 +80,7 @@ function createMainWindow() {
     if (_shown || !mainWindow || mainWindow.isDestroyed()) return;
     _shown = true;
     mainWindow.setOpacity(0);
+    if (process.platform !== 'darwin') mainWindow.maximize();
     mainWindow.show();
     let step = 0;
     const STEPS = 8;
