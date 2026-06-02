@@ -31,8 +31,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico",
-      "backgroundColor": "#0D1117"
+      "icon": "build/icon.ico"
     },
     "publish": {
       "provider": "github",
