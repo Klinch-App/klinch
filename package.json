@@ -18,6 +18,22 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "!Design/**",
+      "!HTML/**",
+      "!dist/**",
+      "!.claude/**",
+      "!*.sql",
+      "!*.cer",
+      "!*.md",
+      "!OAuth/**",
+      "!Expenses/**"
+    ],
     "mac": {
       "target": "dmg",
       "icon": "build/icon.icns",
